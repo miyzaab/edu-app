@@ -1,0 +1,16 @@
+# File sensitif - JANGAN pernah di-push ke GitHub
+config/koneksi.php
+
+# Upload dari user (file besar, tidak perlu di Git)
+assets/uploads/
+
+# File temporary & sistem
+*.zip
+reset-password-darurat.php
+fix_paths.php
+temp.php
+.DS_Store
+Thumbs.db
+
+# VS Code (opsional, bisa di-include kalau mau share settings tim)
+.vscode/sftp.json
