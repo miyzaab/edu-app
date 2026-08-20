@@ -259,47 +259,52 @@ require_once __DIR__ . '/../../includes/header.php';
             </div>
         </div>
 
-        <!-- Card Backup & Restore Database -->
-        <div class="form-card mt-4" id="backup-section">
-            <h5 class="mb-3 text-primary"><i class="bi bi-database-down"></i> Backup & Restore Database</h5>
-            <p class="text-muted small mb-3">Gunakan fitur ini untuk membuat cadangan data seluruh aplikasi (.sql) atau
-                mengembalikan data dari file backup sebelumnya.</p>
-
-            <!-- 1. BACKUP -->
-            <div class="p-3 mb-3 border rounded bg-light">
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <strong class="d-block text-dark mb-1"><i class="bi bi-download text-success"></i> Backup Data
-                            (Export SQL)</strong>
-                        <small class="text-muted">Unduh seluruh isi database aplikasi saat ini ke file .sql</small>
-                    </div>
-                    <a href="backup.php" class="btn btn-sm btn-success fw-bold px-3">
-                        <i class="bi bi-cloud-arrow-down-fill"></i> Download Backup
-                    </a>
-                </div>
             </div>
+        </div>
+    </div>
+</div>
 
-            <!-- 2. RESTORE -->
-            <div class="p-3 border rounded bg-light">
-                <strong class="d-block text-dark mb-1"><i class="bi bi-upload text-primary"></i> Restore Data (Import
-                    SQL)</strong>
-                <small class="text-muted d-block mb-2">Upload file `.sql` hasil backup untuk mengembalikan seluruh data
-                    ke sistem.</small>
-
-                <div class="alert alert-warning py-2 px-3 small mb-2" style="font-size: 0.78rem;">
-                    <i class="bi bi-exclamation-triangle-fill"></i> <strong>Perhatian:</strong> Proses restore akan
-                    menimpa/memperbarui data tabel di sistem dengan isi file SQL yang Anda upload.
+<!-- SECTION BACKUP & RESTORE DATABASE (FULL WIDTH) -->
+<div class="row mt-4" id="backup-section">
+    <div class="col-12">
+        <div class="form-card" style="border: 2px solid #3b82f6; background: #ffffff;">
+            <h5 class="mb-3 text-primary fw-bold"><i class="bi bi-database-down"></i> Backup & Restore Database</h5>
+            <p class="text-muted small mb-4">Gunakan fitur ini untuk membuat cadangan data seluruh aplikasi (.sql) atau mengembalikan data dari file backup sebelumnya.</p>
+            
+            <div class="row g-3">
+                <!-- 1. BACKUP -->
+                <div class="col-md-6">
+                    <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <strong class="d-block text-dark mb-1 fs-6"><i class="bi bi-download text-success"></i> Backup Data (Export SQL)</strong>
+                            <small class="text-muted d-block mb-3">Unduh seluruh isi database aplikasi saat ini (seluruh tabel & data) ke file `.sql`.</small>
+                        </div>
+                        <a href="backup.php" class="btn btn-success fw-bold w-100 py-2">
+                            <i class="bi bi-cloud-arrow-down-fill me-1"></i> Download Backup Database (.sql)
+                        </a>
+                    </div>
                 </div>
 
-                <form action="restore.php" method="POST" enctype="multipart/form-data"
-                    onsubmit="return confirm('⚠️ APAKAH ANDA YAKIN?\n\nProses restore akan mengganti data saat ini dengan data dari file backup SQL yang dipilih. Lanjutkan?')">
-                    <div class="input-group input-group-sm mb-2">
-                        <input type="file" name="backup_file" class="form-control" accept=".sql" required>
-                        <button class="btn btn-primary fw-bold" type="submit">
-                            <i class="bi bi-arrow-counterclockwise"></i> Restore Sekarang
-                        </button>
+                <!-- 2. RESTORE -->
+                <div class="col-md-6">
+                    <div class="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <strong class="d-block text-dark mb-1 fs-6"><i class="bi bi-upload text-primary"></i> Restore Data (Import SQL)</strong>
+                            <small class="text-muted d-block mb-2">Upload file `.sql` hasil backup untuk mengembalikan seluruh data ke sistem.</small>
+                            <div class="alert alert-warning py-1.5 px-2.5 small mb-2" style="font-size: 0.78rem;">
+                                <i class="bi bi-exclamation-triangle-fill"></i> <strong>Perhatian:</strong> Data lama di database akan diperbarui dengan isi file SQL ini.
+                            </div>
+                        </div>
+                        <form action="restore.php" method="POST" enctype="multipart/form-data" onsubmit="return confirm('⚠️ APAKAH ANDA YAKIN?\n\nProses restore akan mengganti data saat ini dengan data dari file backup SQL yang dipilih. Lanjutkan?')">
+                            <div class="input-group input-group-sm">
+                                <input type="file" name="backup_file" class="form-control" accept=".sql" required>
+                                <button class="btn btn-primary fw-bold px-3" type="submit">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
