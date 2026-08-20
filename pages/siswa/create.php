@@ -18,9 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($nis && $nama && $kelasId && $jk) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO siswa (nis, nama, kelas_id, jenis_kelamin, tahun_masuk) VALUES (:nis,:nama,:kelas,:jk,:tahun)");
-            $stmt->execute([':nis'=>$nis,':nama'=>$nama,':kelas'=>$kelasId,':jk'=>$jk,':tahun'=>$tahun]);
-            redirect('index.php', 'success', 'Siswa berhasil ditambahkan.');
+            $target_up = (float)str_replace(['.', ','], ['', '.'], $_POST['target_uang_pangkal'] ?? '0');
+            $stmt = $pdo->prepare("INSERT INTO siswa (nis, nama, kelas_id, jenis_kelamin, tahun_masuk, target_uang_pangkal) VALUES (:nis, :nama, :kelas, :jk, :tahun, :up)");
+            $stmt->execute([':nis'=>$nis, ':nama'=>$nama, ':kelas'=>$kelasId, ':jk'=>$jk, ':tahun'=>$tahun, ':up'=>$target_up]);
+            redirect('index.php', 'success', 'Siswa baru berhasil ditambahkan.');
         } catch (PDOException $e) {
             if ($e->getCode() == 23000) {
                 $error = 'NIS sudah terdaftar.';
@@ -56,7 +57,7 @@ require_once __DIR__ . '/../../includes/header.php';
             <input type="text" name="nama" class="form-control" value="<?= htmlspecialchars($nama ?? '') ?>" required>
         </div>
         <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
                 <label class="form-label">Kelas <span class="text-danger">*</span></label>
                 <select name="kelas_id" class="form-select" required>
                     <option value="">-- Pilih --</option>
@@ -65,7 +66,7 @@ require_once __DIR__ . '/../../includes/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
                 <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
                 <select name="jenis_kelamin" class="form-select" required>
                     <option value="">-- Pilih --</option>
@@ -73,10 +74,18 @@ require_once __DIR__ . '/../../includes/header.php';
                     <option value="P" <?= ($jk ?? '')==='P'?'selected':'' ?>>Perempuan</option>
                 </select>
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Tahun Masuk</label>
-                <input type="number" name="tahun_masuk" class="form-control" value="<?= $tahun ?? date('Y') ?>" min="2000" max="2099">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Tahun Masuk</label>
+            <input type="number" name="tahun_masuk" class="form-control" value="<?= date('Y') ?>" min="2000" max="2099">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Target Uang Pangkal (Total Kewajiban) <span class="text-danger">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text">Rp</span>
+                <input type="text" name="target_uang_pangkal" class="form-control fw-bold text-primary" placeholder="Contoh: 10.000.000" onkeyup="formatRupiahInput(this)">
             </div>
+            <div class="form-text">Atur total biaya uang pangkal yang harus dibayar santri ini.</div>
         </div>
         <div class="d-flex gap-2">
             <button type="submit" class="btn-primary-custom"><i class="bi bi-save"></i> Simpan</button>

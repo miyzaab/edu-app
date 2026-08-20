@@ -1,14 +1,14 @@
 -- ============================================================
--- DATABASE: e_pembayaran
--- Aplikasi E-Pembayaran SMP Islamic School of Minhaj Al-Ilmi
+-- DATABASE: edu-app
+-- Aplikasi Edu-App SMP Islamic School of Minhaj Al-Ilmi
 -- Dibuat: 2026-04-17
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS e_pembayaran
+CREATE DATABASE IF NOT EXISTS `edu-app`
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
---USE e_pembayaran;
+--USE `edu-app`;
 
 -- ============================================================
 -- TABEL: users

@@ -1,5 +1,5 @@
 /**
- * E-Pembayaran - Main JavaScript
+ * Edu-App - Main JavaScript
  */
 
 // ===== SIDEBAR MOBILE =====
@@ -26,19 +26,20 @@ function closeSidebar() {
     document.body.style.overflow = '';
 }
 
-// Tutup sidebar saat klik link menu (mobile)
+// Tutup sidebar saat klik link menu
 document.addEventListener('DOMContentLoaded', function () {
-    // Auto-close sidebar saat link diklik di mobile
     const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
     sidebarLinks.forEach(link => {
         link.addEventListener('click', function () {
-            if (window.innerWidth < 768) closeSidebar();
+            closeSidebar();
         });
     });
 
-    // Tutup sidebar saat resize ke desktop
-    window.addEventListener('resize', function () {
-        if (window.innerWidth >= 768) closeSidebar();
+    // Tutup sidebar dengan tombol Escape (ESC)
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeSidebar();
+        }
     });
 
     // Swipe gesture: geser ke kiri untuk tutup sidebar di mobile

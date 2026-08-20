@@ -63,18 +63,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
                 $errorList[] = "Format file harus .csv atau .txt";
             } else {
                 $handle = fopen($file['tmp_name'], 'r');
+                
+                // Deteksi delimiter (koma atau titik koma)
+                $firstLine = fgets($handle);
+                $delimiter = (strpos($firstLine, ';') !== false && strpos($firstLine, ',') === false) ? ';' : ',';
+                rewind($handle);
+
                 $lineNum = 0;
                 $kelasMap = [];
                 foreach ($kelasList as $k) {
                     $kelasMap[strtolower(trim($k['nama_kelas']))] = $k['id'];
                 }
 
-                while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+                while (($data = fgetcsv($handle, 1000, $delimiter)) !== false) {
                     $lineNum++;
-                    // Skip header (baris pertama)
+
+                    // Bersihkan BOM UTF-8 pada baris pertama kolom pertama
+                    if ($lineNum === 1 && isset($data[0])) {
+                        $data[0] = preg_replace('/^[\xEF\xBB\xBF]+/', '', $data[0]);
+                    }
+
+                    // Skip baris kosong
+                    if (empty(array_filter($data))) continue;
+
+                    // Skip header (baris pertama) jika mengandung kata kunci header
                     if ($lineNum === 1) {
-                        // Cek apakah ini header
-                        if (stripos($data[0] ?? '', 'nis') !== false || stripos($data[0] ?? '', 'no') !== false) {
+                        if (stripos($data[0] ?? '', 'nis') !== false || stripos($data[0] ?? '', 'no') !== false || stripos($data[1] ?? '', 'nama') !== false) {
                             continue;
                         }
                     }
@@ -86,21 +100,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
                     $jk    = strtoupper(trim($data[3] ?? ''));
                     $tahun = (int)(trim($data[4] ?? date('Y')));
 
-                    if (empty($nis) || empty($nama)) continue;
+                    if (empty($nis) || empty($nama)) {
+                        if (!empty($nis) || !empty($nama)) {
+                             $errorList[] = "Baris $lineNum: Data tidak lengkap (NIS: $nis, Nama: $nama).";
+                        }
+                        continue;
+                    }
 
                     // Cari kelas_id dari nama kelas
                     $kelasId = $kelasMap[$kelas] ?? 0;
                     if (!$kelasId) {
-                        $errorList[] = "Baris $lineNum: Kelas '$kelas' tidak ditemukan. (NIS: $nis)";
+                        $errorList[] = "Baris $lineNum: Kelas '$kelas' tidak ditemukan di database.";
                         continue;
                     }
 
                     if (!in_array($jk, ['L', 'P'])) {
-                        $errorList[] = "Baris $lineNum: Jenis kelamin harus L atau P. (NIS: $nis)";
+                        $errorList[] = "Baris $lineNum: Jenis kelamin harus L atau P (Ditemukan: $jk).";
                         continue;
                     }
 
-                    if ($tahun < 2000) $tahun = (int)date('Y');
+                    if ($tahun < 1900) $tahun = (int)date('Y');
 
                     try {
                         $stmt = $pdo->prepare("INSERT INTO siswa (nis, nama, kelas_id, jenis_kelamin, tahun_masuk) VALUES (:nis,:nama,:kelas,:jk,:tahun)");
@@ -110,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
                         if ($e->getCode() == 23000) {
                             $errorList[] = "Baris $lineNum: NIS '$nis' sudah terdaftar.";
                         } else {
-                            $errorList[] = "Baris $lineNum: Gagal menyimpan.";
+                            $errorList[] = "Baris $lineNum: Gagal menyimpan. " . $e->getMessage();
                         }
                     }
                 }

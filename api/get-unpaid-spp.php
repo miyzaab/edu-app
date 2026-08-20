@@ -22,15 +22,7 @@ try {
     // Bulan yang sudah LUNAS (di tabel pembayaran_spp)
     $stmtLunas = $pdo->prepare("SELECT bulan FROM pembayaran_spp WHERE siswa_id = :s AND tahun = :t");
     $stmtLunas->execute([':s' => $siswaId, ':t' => $tahun]);
-    $bulanLunas = $stmtLunas->fetchAll(PDO::FETCH_COLUMN);
-
-    // Bulan yang sedang PENDING (di tabel pembayaran_pending)
-    $stmtPending = $pdo->prepare("SELECT bulan FROM pembayaran_pending WHERE siswa_id = :s AND tahun = :t AND jenis = 'spp' AND status = 'pending'");
-    $stmtPending->execute([':s' => $siswaId, ':t' => $tahun]);
-    $bulanPending = $stmtPending->fetchAll(PDO::FETCH_COLUMN);
-
-    // Gabungkan bulan yang tidak tersedia
-    $bulanTerpakai = array_merge($bulanLunas, $bulanPending);
+    $bulanTerpakai = $stmtLunas->fetchAll(PDO::FETCH_COLUMN);
 
     // Nama bulan helper
     $namaBulan = [

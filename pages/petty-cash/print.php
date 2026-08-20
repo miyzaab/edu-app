@@ -3,7 +3,6 @@
  * PETTY CASH - Cetak / Export PDF
  * Semua teks header & tanda tangan diambil dari Pengaturan (database).
  */
-session_start();
 
 require_once __DIR__ . '/../../config/koneksi.php';
 

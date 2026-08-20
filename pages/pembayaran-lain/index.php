@@ -2,7 +2,7 @@
 /**
  * PEMBAYARAN LAIN - List transaksi
  */
-$pageTitle  = 'Pembayaran Lain';
+$pageTitle = 'Pembayaran Lain';
 $activePage = 'pembayaran-lain';
 require_once __DIR__ . '/../../config/auth.php';
 
@@ -27,21 +27,44 @@ require_once __DIR__ . '/../../includes/header.php';
 <div class="table-card">
     <div class="table-responsive">
         <table class="data-table">
-            <thead><tr><th>No</th><th>Tanggal</th><th>NIS</th><th>Nama</th><th>Kelas</th><th>Jenis</th><th>Nominal</th><th>Aksi</th></tr></thead>
-            <tbody>
-            <?php foreach ($data as $i => $d): ?>
+            <thead>
                 <tr>
-                    <td><?= $i+1 ?></td>
-                    <td><?= formatTanggal($d['tanggal_bayar']) ?></td>
-                    <td><code><?= htmlspecialchars($d['nis']) ?></code></td>
-                    <td><?= htmlspecialchars($d['nama']) ?></td>
-                    <td><?= htmlspecialchars($d['nama_kelas']) ?></td>
-                    <td><span class="badge-status badge-aktif"><?= htmlspecialchars($d['nama_pembayaran']) ?></span></td>
-                    <td><strong><?= formatRupiah($d['nominal']) ?></strong></td>
-                    <td><a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"><i class="bi bi-printer"></i></a></td>
+                    <th>No</th>
+                    <th>Tanggal</th>
+                    <th>NIS</th>
+                    <th>Nama</th>
+                    <th>Kelas</th>
+                    <th>Jenis</th>
+                    <th>Nominal</th>
+                    <th>Aksi</th>
                 </tr>
-            <?php endforeach; ?>
-            <?php if (empty($data)): ?><tr><td colspan="8" class="text-center text-muted py-4">Belum ada data.</td></tr><?php endif; ?>
+            </thead>
+            <tbody>
+                <?php foreach ($data as $i => $d): ?>
+                    <tr>
+                        <td class="text-muted font-monospace"><?= $i + 1 ?></td>
+                        <td class="text-muted small font-monospace"><?= formatTanggal($d['tanggal_bayar']) ?></td>
+                        <td><code><?= htmlspecialchars($d['nis']) ?></code></td>
+                        <td>
+                            <div class="table-avatar-item">
+                                <div class="table-avatar-circle"><?= strtoupper(substr($d['nama'], 0, 1)) ?></div>
+                                <span class="fw-bold text-dark"><?= htmlspecialchars($d['nama']) ?></span>
+                            </div>
+                        </td>
+                        <td><span
+                                class="badge bg-light text-dark border px-2.5 py-1 rounded-pill fw-semibold"><?= htmlspecialchars($d['nama_kelas']) ?></span>
+                        </td>
+                        <td><span class="badge-status badge-aktif"><?= htmlspecialchars($d['nama_pembayaran']) ?></span>
+                        </td>
+                        <td><span class="nominal-pill"><?= formatRupiah($d['nominal']) ?></span></td>
+                        <td><a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"
+                                title="Cetak Kwitansi"><i class="bi bi-printer"></i></a></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($data)): ?>
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Belum ada data.</td>
+                    </tr><?php endif; ?>
             </tbody>
         </table>
     </div>

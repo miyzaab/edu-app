@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Orang Tua - Preview Desain Presisi & Progress Tagihan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #e8f0fe 0%, #d5e3f8 50%, #cadcf5 100%);
+            min-height: 100vh;
+            padding: 24px 16px 80px;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 480px; margin: 0 auto; }
+        
+        .preview-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 99px;
+            margin-bottom: 0.5rem;
+            border: 1px solid #bfdbfe;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .preview-title {
+            color: #0d47a1;
+            font-size: 1.65rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.5px;
+        }
+
+        .preview-description {
+            color: #64748b;
+            font-size: 0.84rem;
+            margin-top: 0.25rem;
+        }
+
+        /* ====== HERO CARD (BLUE LUXURY) ====== */
+        .home-hero {
+            position: relative;
+            overflow: hidden;
+            padding: 1.4rem;
+            border-radius: 28px;
+            color: #ffffff;
+            background: linear-gradient(135deg, #092040 0%, #0d47a1 45%, #1565c0 80%, #1e88e5 100%);
+            box-shadow: 0 20px 48px -10px rgba(13, 71, 161, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .home-hero::before {
+            content: '';
+            position: absolute;
+            width: 320px;
+            height: 320px;
+            right: -100px;
+            top: -100px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .home-hero::after {
+            content: '';
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            left: -60px;
+            bottom: -60px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.18) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .home-hero > * { position: relative; z-index: 1; }
+
+        .home-greeting {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #e0f2fe;
+            width: fit-content;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+        }
+
+        .home-profile {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            margin-bottom: 0.95rem;
+        }
+
+        .home-avatar {
+            position: relative;
+            flex: 0 0 auto;
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            border-radius: 18px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        .home-avatar-fallback {
+            display: grid;
+            width: 100%;
+            height: 100%;
+            place-items: center;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+            color: #0d47a1;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+        }
+
+        .online-status-dot {
+            width: 16px;
+            height: 16px;
+            background: #22c55e;
+            border: 2.5px solid #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            animation: pulseGreen 2s infinite;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+            z-index: 2;
+        }
+
+        @keyframes pulseGreen {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6), 0 2px 8px rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0), 0 2px 8px rgba(34, 197, 94, 0.4); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0), 0 2px 8px rgba(34, 197, 94, 0.4); }
+        }
+
+        .home-student-name {
+            margin: 0;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.28rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            line-height: 1.25;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .home-student-meta {
+            margin-top: 0.3rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #f1f5f9;
+            font-size: 0.74rem;
+            font-weight: 600;
+        }
+
+        .home-wallet {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 1.15rem;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.13);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        .home-wallet-label {
+            display: block;
+            color: rgba(241, 245, 249, 0.85);
+            font-size: 0.64rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .home-wallet-value {
+            display: block;
+            margin-top: 0.15rem;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .home-wallet-tools {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-toggle-balance {
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: #ffffff;
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .btn-toggle-balance:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.06);
+            color: #ffffff;
+        }
+
+        .home-topup-btn {
+            border: none;
+            border-radius: 13px;
+            padding: 0.6rem 1rem;
+            background: #ffffff;
+            color: #0a2540;
+            font-size: 0.76rem;
+            font-weight: 800;
+            white-space: nowrap;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .home-topup-btn:hover {
+            background: #ffffff;
+            color: #0d47a1;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        /* ====== AKSES CEPAT (PRECISE VERTICAL SQUIRCLE, NO ARROW) ====== */
+        .home-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 1.4rem 0 0.75rem;
+        }
+
+        .home-section-title-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .home-section-indicator {
+            width: 5px;
+            height: 18px;
+            border-radius: 99px;
+            background: linear-gradient(180deg, #38bdf8 0%, #0d47a1 100%);
+            box-shadow: 0 2px 8px rgba(13, 71, 161, 0.35);
+        }
+
+        .home-section-title {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0a2540;
+            letter-spacing: -0.3px;
+        }
+
+        .home-section-pill-tag {
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            padding: 3px 10px;
+            border-radius: 99px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .home-quick-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes quickTileEnter {
+            0% {
+                opacity: 0;
+                transform: translateY(16px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .home-quick-action {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.65rem;
+            padding: 1.15rem 0.75rem;
+            min-height: 108px;
+            border-radius: 20px;
+            background: linear-gradient(145deg, #ffffff 0%, #f8faff 100%);
+            border: 1.5px solid #e2e8f0;
+            color: #0f2744;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 4px 14px -2px rgba(13, 71, 161, 0.05), inset 0 1px 0 #ffffff;
+            transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            overflow: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            animation: quickTileEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .home-quick-action:nth-child(1) { animation-delay: 0.04s; }
+        .home-quick-action:nth-child(2) { animation-delay: 0.08s; }
+        .home-quick-action:nth-child(3) { animation-delay: 0.12s; }
+        .home-quick-action:nth-child(4) { animation-delay: 0.16s; }
+
+        /* Modern Shimmer Glint Sweep on Hover */
+        .home-quick-action::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 70%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.15), transparent);
+            transform: skewX(-22deg);
+            transition: left 0.65s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .home-quick-action:hover::before {
+            left: 150%;
+        }
+
+        .home-quick-action:hover {
+            border-color: rgba(37, 99, 235, 0.4);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 28px -4px rgba(13, 71, 161, 0.14), 0 2px 6px rgba(0, 0, 0, 0.02), inset 0 1px 0 #ffffff;
+            background: linear-gradient(145deg, #ffffff 0%, #f0f7ff 100%);
+        }
+
+        .home-quick-action:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 8px rgba(13, 71, 161, 0.08);
+            transition-duration: 0.1s;
+        }
+
+        /* 3D Blue Glass Squircle Icon Pod (Unified Blue Scheme) */
+        .home-quick-icon {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            width: 44px;
+            height: 44px;
+            place-items: center;
+            border-radius: 14px;
+            font-size: 1.25rem;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            color: #1d4ed8;
+            border: 1px solid rgba(59, 130, 246, 0.22);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            margin: 0 auto;
+        }
+
+        .home-quick-action:hover .home-quick-icon {
+            background: linear-gradient(135deg, #0d47a1 0%, #1d4ed8 50%, #2563eb 100%);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1) rotate(4deg);
+            box-shadow: 0 8px 20px rgba(29, 78, 216, 0.38);
+        }
+
+        .home-quick-label {
+            position: relative;
+            z-index: 2;
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: #0a2540;
+            letter-spacing: -0.2px;
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.25;
+            margin: 0;
+            text-align: center;
+            transition: color 0.2s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        .home-quick-action:hover .home-quick-label {
+            color: #0d47a1;
+        }
+
+        /* ====== TAGIHAN AKTIF CARD WITH PROGRESS BAR ====== */
+        .card-tagihan-item {
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 1.15rem 1.25rem;
+            box-shadow: 0 4px 18px -2px rgba(13, 71, 161, 0.06), 0 2px 6px rgba(0, 0, 0, 0.02);
+            border: 1.5px solid #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 0.85rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+        }
+
+        .card-tagihan-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.08), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease;
+            pointer-events: none;
+        }
+
+        .card-tagihan-item:hover::before { left: 150%; }
+
+        .card-tagihan-item:hover {
+            transform: translateY(-3px) scale(1.01);
+            border-color: rgba(37, 99, 235, 0.3);
+            box-shadow: 0 12px 28px -4px rgba(13, 71, 161, 0.12), 0 4px 10px rgba(0, 0, 0, 0.02);
+        }
+
+        .tagihan-card-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .tagihan-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .icon-box-tagihan {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .card-tagihan-item:hover .icon-box-tagihan {
+            transform: scale(1.12) rotate(-4deg);
+        }
+
+        .tagihan-info-wrap {
+            min-width: 0;
+        }
+
+        .tagihan-title {
+            font-size: 0.94rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tagihan-sub {
+            margin: 2px 0 0;
+            font-size: 0.72rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .tagihan-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        .tagihan-amount-wrap {
+            text-align: right;
+        }
+
+        .tagihan-sisa-label {
+            display: block;
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 1px;
+        }
+
+        .tagihan-price {
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: #c2410c;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.3px;
+            white-space: nowrap;
+        }
+
+        .badge-cicilan-pill {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            white-space: nowrap;
+        }
+
+        .btn-bayar-pill {
+            background: linear-gradient(135deg, #0d47a1 0%, #1d4ed8 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(13, 71, 161, 0.25);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-bayar-pill:hover {
+            transform: translateY(-2px) scale(1.06);
+            box-shadow: 0 6px 18px rgba(13, 71, 161, 0.38);
+        }
+
+        /* Tagihan Progress Section */
+        .tagihan-progress-box {
+            width: 100%;
+            padding-top: 0.75rem;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .progress-meta-text {
+            font-size: 0.72rem;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .progress-meta-percent {
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: #1d4ed8;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .tagihan-progress-track {
+            width: 100%;
+            height: 7px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .tagihan-progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%);
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 4px rgba(37, 99, 235, 0.35);
+        }
+
+        /* ====== KANTIN TRANSAKSI CARD ====== */
+        .kantin-list-card {
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 1.15rem 1.25rem;
+            box-shadow: 0 4px 18px -2px rgba(13, 71, 161, 0.06);
+            border: 1.5px solid #f1f5f9;
+            margin-bottom: 1.5rem;
+        }
+
+        .kantin-row-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0.5rem;
+            margin: 0 -0.5rem;
+            border-radius: 14px;
+            border-bottom: 1px solid #f8fafc;
+            transition: all 0.25s ease;
+        }
+
+        .kantin-row-item:last-child { border-bottom: none; }
+
+        .kantin-row-item:hover {
+            background: #f8faff;
+            transform: translateX(4px);
+        }
+
+        .icon-box-kantin {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .kantin-row-item:hover .icon-box-kantin {
+            transform: scale(1.1) rotate(4deg);
+        }
+
+        /* ====== SUMMARY HIGHLIGHT CARD ====== */
+        .summary-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 1.25rem;
+            border: 1px solid rgba(13, 71, 161, 0.12);
+            box-shadow: 0 4px 18px rgba(13, 71, 161, 0.05);
+            margin-top: 1.5rem;
+        }
+
+        .summary-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #0d47a1;
+            font-family: 'Outfit', sans-serif;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #334155;
+            line-height: 1.35;
+        }
+
+        .feature-item i {
+            color: #2563eb;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="preview-header">
+            <span class="preview-badge"><i class="bi bi-patch-check-fill"></i> Tampilan Presisi Modern Blue</span>
+            <h1 class="preview-title">Portal Orang Tua</h1>
+            <p class="preview-description">Tanpa Panah • Progress Bar Tagihan Real-Time</p>
+        </div>
+
+        <!-- HERO CARD (BLUE GRADIENT LUXURY) -->
+        <div class="home-hero">
+            <div class="home-greeting"><i class="bi bi-sun-fill"></i> Ahlan wa Sahlan</div>
+            
+            <div class="home-profile">
+                <div class="home-avatar">
+                    <div class="home-avatar-fallback">B</div>
+                    <div class="online-status-dot"></div>
+                </div>
+                
+                <div>
+                    <h2 class="home-student-name">Budi Santoso</h2>
+                    <p class="home-student-meta">
+                        NIS <strong>12345</strong> • Kelas VII-A
+                    </p>
+                </div>
+            </div>
+
+            <div class="home-wallet">
+                <div>
+                    <span class="home-wallet-label">Saldo Kantin</span>
+                    <div class="home-wallet-value" id="walletVal">Rp 279.000</div>
+                </div>
+                
+                <div class="home-wallet-tools">
+                    <button class="btn-toggle-balance" onclick="toggleEye()" title="Sembunyikan/Tampilkan Saldo">
+                        <i class="bi bi-eye-fill" id="eyeIcon"></i>
+                    </button>
+                    <button class="home-topup-btn">
+                        <i class="bi bi-plus-circle-fill"></i> Isi Saldo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AKSES CEPAT (PRECISE BLUE TILES - NO ARROWS) -->
+        <div class="home-section-header">
+            <div class="home-section-title-wrap">
+                <span class="home-section-indicator"></span>
+                <h3 class="home-section-title">Akses Cepat</h3>
+            </div>
+            <span class="home-section-pill-tag">Menu Utama</span>
+        </div>
+
+        <div class="home-quick-grid">
+            <div class="home-quick-action" onclick="alert('Navigasi ke Bayar Tagihan')">
+                <div class="home-quick-icon">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <span class="home-quick-label">Bayar Tagihan</span>
+            </div>
+
+            <div class="home-quick-action" onclick="alert('Navigasi ke Lihat Nilai')">
+                <div class="home-quick-icon">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+                <span class="home-quick-label">Lihat Nilai</span>
+            </div>
+
+            <div class="home-quick-action" onclick="alert('Navigasi ke Riwayat Kantin')">
+                <div class="home-quick-icon">
+                    <i class="bi bi-cup-hot-fill"></i>
+                </div>
+                <span class="home-quick-label">Riwayat Kantin</span>
+            </div>
+
+            <div class="home-quick-action" onclick="alert('Navigasi ke Kesantrian')">
+                <div class="home-quick-icon">
+                    <i class="bi bi-moon-stars-fill"></i>
+                </div>
+                <span class="home-quick-label">Kesantrian</span>
+            </div>
+        </div>
+
+        <!-- SECTION 2: TAGIHAN AKTIF -->
+        <div class="home-section-header">
+            <div class="home-section-title-wrap">
+                <span class="home-section-indicator"></span>
+                <h3 class="home-section-title">Tagihan Aktif</h3>
+            </div>
+            <a href="javascript:void(0)" style="font-size: 0.78rem; font-weight: 700; color: #1d4ed8; text-decoration: none;">Lihat Semua</a>
+        </div>
+
+        <!-- TAGIHAN 1: SPP -->
+        <div class="card-tagihan-item">
+            <div class="tagihan-card-main">
+                <div class="tagihan-left">
+                    <div class="icon-box-tagihan">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div class="tagihan-info-wrap">
+                        <h4 class="tagihan-title">SPP Bulan Ini</h4>
+                        <p class="tagihan-sub">Jatuh tempo: 10 Agustus 2026</p>
+                    </div>
+                </div>
+                <div class="tagihan-right">
+                    <div class="tagihan-amount-wrap">
+                        <span class="tagihan-sisa-label">Nominal</span>
+                        <span class="tagihan-price">Rp 500.000</span>
+                    </div>
+                    <button class="btn-bayar-pill">Bayar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAGIHAN 2: DAFTAR ULANG DENGAN PROGRESS CICILAN -->
+        <div class="card-tagihan-item">
+            <div class="tagihan-card-main">
+                <div class="tagihan-left">
+                    <div class="icon-box-tagihan">
+                        <i class="bi bi-card-checklist"></i>
+                    </div>
+                    <div class="tagihan-info-wrap">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h4 class="tagihan-title">Daftar Ulang</h4>
+                            <span class="badge-cicilan-pill">Cicilan 33%</span>
+                        </div>
+                        <p class="tagihan-sub">Jatuh tempo: 30 Agustus 2026</p>
+                    </div>
+                </div>
+                <div class="tagihan-right">
+                    <div class="tagihan-amount-wrap">
+                        <span class="tagihan-sisa-label">Sisa Tagihan</span>
+                        <span class="tagihan-price">Rp 1.000.000</span>
+                    </div>
+                    <button class="btn-bayar-pill">Bayar</button>
+                </div>
+            </div>
+
+            <!-- Progress Bar Cicilan -->
+            <div class="tagihan-progress-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <span class="progress-meta-text">Terbayar: <strong>Rp 500.000</strong> / Rp 1.500.000</span>
+                    <span class="progress-meta-percent">33%</span>
+                </div>
+                <div class="tagihan-progress-track">
+                    <div class="tagihan-progress-fill" style="width: 33%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAGIHAN 3: UANG PANGKAL DENGAN PROGRESS CICILAN 50% -->
+        <div class="card-tagihan-item">
+            <div class="tagihan-card-main">
+                <div class="tagihan-left">
+                    <div class="icon-box-tagihan">
+                        <i class="bi bi-piggy-bank"></i>
+                    </div>
+                    <div class="tagihan-info-wrap">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h4 class="tagihan-title">Uang Pangkal</h4>
+                            <span class="badge-cicilan-pill">Cicilan 50%</span>
+                        </div>
+                        <p class="tagihan-sub">Jatuh tempo: 30 Agustus 2026</p>
+                    </div>
+                </div>
+                <div class="tagihan-right">
+                    <div class="tagihan-amount-wrap">
+                        <span class="tagihan-sisa-label">Sisa Tagihan</span>
+                        <span class="tagihan-price">Rp 2.500.000</span>
+                    </div>
+                    <button class="btn-bayar-pill">Bayar</button>
+                </div>
+            </div>
+
+            <!-- Progress Bar Cicilan -->
+            <div class="tagihan-progress-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <span class="progress-meta-text">Terbayar: <strong>Rp 2.500.000</strong> / Rp 5.000.000</span>
+                    <span class="progress-meta-percent">50%</span>
+                </div>
+                <div class="tagihan-progress-track">
+                    <div class="tagihan-progress-fill" style="width: 50%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: TRANSAKSI KANTIN TERAKHIR -->
+        <div class="home-section-header">
+            <div class="home-section-title-wrap">
+                <span class="home-section-indicator"></span>
+                <h3 class="home-section-title">Transaksi Kantin Terakhir</h3>
+            </div>
+            <a href="javascript:void(0)" style="font-size: 0.78rem; font-weight: 700; color: #1d4ed8; text-decoration: none;">Riwayat</a>
+        </div>
+
+        <div class="kantin-list-card">
+            <div class="kantin-row-item">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="icon-box-kantin"><i class="bi bi-egg-fried"></i></div>
+                    <div>
+                        <strong style="font-size: 0.88rem; display: block; color: #0f172a;">Nasi Goreng Spesial</strong>
+                        <small style="color: #94a3b8; font-size: 0.72rem;">12:30 WIB</small>
+                    </div>
+                </div>
+                <span style="font-weight: 800; font-size: 0.88rem; color: #0f172a;">- Rp 15.000</span>
+            </div>
+            <div class="kantin-row-item">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="icon-box-kantin"><i class="bi bi-cup-straw"></i></div>
+                    <div>
+                        <strong style="font-size: 0.88rem; display: block; color: #0f172a;">Jus Jeruk Segar</strong>
+                        <small style="color: #94a3b8; font-size: 0.72rem;">09:45 WIB</small>
+                    </div>
+                </div>
+                <span style="font-weight: 800; font-size: 0.88rem; color: #0f172a;">- Rp 6.000</span>
+            </div>
+        </div>
+
+        <!-- SUMMARY HIGHLIGHT -->
+        <div class="summary-card">
+            <h4 class="summary-title"><i class="bi bi-stars"></i> Ringkasan Pembaharuan:</h4>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span><strong>Tanda Panah Dihilangkan</strong>: Kartu Akses Cepat kini tampil proporsional vertikal (icon squircle di atas, label judul di bawah) yang simetris dan bersih tanpa elemen chevron/panah.</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span><strong>Progress Bar Daftar Ulang &amp; Tagihan Cicilan</strong>: Sisa tagihan otomatis berkurang saat dicicil (misal bayar 500rb dari 1,5jt, sisa menjadi 1jt), dilengkapi visual progress bar &amp; badge persentase.</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span><strong>Otomatis Lunas &amp; Sinkronisasi Form</strong>: Tagihan yang lunas otomatis hilang dari daftar aktif, dan form pembayaran otomatis terisi nilai sisa yang belum dibayar.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isHidden = false;
+        function toggleEye() {
+            isHidden = !isHidden;
+            const val = document.getElementById('walletVal');
+            const icon = document.getElementById('eyeIcon');
+            if (isHidden) {
+                val.textContent = 'Rp •••••••';
+                icon.className = 'bi bi-eye-slash-fill';
+            } else {
+                val.textContent = 'Rp 279.000';
+                icon.className = 'bi bi-eye-fill';
+            }
+        }
+    </script>
+</body>
+</html>

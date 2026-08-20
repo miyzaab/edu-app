@@ -134,15 +134,20 @@ require_once __DIR__ . '/../../includes/header.php';
             <tbody>
             <?php foreach ($results as $i => $r): ?>
                 <tr>
-                    <td><?= $i+1 ?></td>
-                    <td><?= formatTanggal($r['tanggal_bayar']) ?></td>
+                    <td class="text-muted font-monospace"><?= $i+1 ?></td>
+                    <td class="text-muted small font-monospace"><?= formatTanggal($r['tanggal_bayar']) ?></td>
                     <td><code><?= htmlspecialchars($r['nis']) ?></code></td>
-                    <td><?= htmlspecialchars($r['nama']) ?></td>
-                    <td><?= htmlspecialchars($r['nama_kelas']) ?></td>
+                    <td>
+                        <div class="table-avatar-item">
+                            <div class="table-avatar-circle"><?= strtoupper(substr($r['nama'], 0, 1)) ?></div>
+                            <span class="fw-bold text-dark"><?= htmlspecialchars($r['nama']) ?></span>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill fw-semibold"><?= htmlspecialchars($r['nama_kelas']) ?></span></td>
                     <td><span class="badge-status badge-aktif"><?= htmlspecialchars($r['jenis']) ?></span></td>
-                    <td><?= htmlspecialchars($r['detail']) ?></td>
-                    <td><?= ucfirst($r['metode_bayar']) ?></td>
-                    <td><strong><?= formatRupiah($r['nominal']) ?></strong></td>
+                    <td class="text-muted small"><?= htmlspecialchars($r['detail']) ?></td>
+                    <td><span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 fw-bold"><?= ucfirst($r['metode_bayar']) ?></span></td>
+                    <td><span class="nominal-pill"><?= formatRupiah($r['nominal']) ?></span></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($results)): ?>
@@ -150,9 +155,9 @@ require_once __DIR__ . '/../../includes/header.php';
             <?php endif; ?>
             </tbody>
             <tfoot>
-                <tr style="background:var(--light);font-weight:700">
-                    <td colspan="8" class="text-end">TOTAL</td>
-                    <td><?= formatRupiah($totalNominal) ?></td>
+                <tr style="background: #f8fafc; border-top: 2px solid #e2e8f0; font-weight: 700; color: #334155;">
+                    <td colspan="8" class="text-end py-3.5 ps-4" style="color: #64748b; letter-spacing: 0.05em; font-size: 0.8rem; text-transform: uppercase;">Total Pemasukan:</td>
+                    <td class="py-3.5 pe-4"><span class="nominal-pill" style="font-size: 0.95rem; padding: 0.35rem 0.85rem;"><?= formatRupiah($totalNominal) ?></span></td>
                 </tr>
             </tfoot>
         </table>

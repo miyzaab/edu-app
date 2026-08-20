@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /edu-app/pages/perangkat-ajar/
+
+    # Jangan rewrite jika file / direktori fisik ada
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Route /[ID]/edit -> edit.php?id=[ID]
+    RewriteRule ^([0-9]+)/edit/?$ edit.php?id=$1 [QSA,L]
+
+    # Route /[ID]/(cp|tp|atp|modul) -> print.php?doc_type=[TYPE]&id=[ID]
+    RewriteRule ^([0-9]+)/(cp|tp|atp|modul)/?$ print.php?doc_type=$2&id=$1 [QSA,L]
+
+    # Route /[ID]/print -> print.php?id=[ID]
+    RewriteRule ^([0-9]+)/print/?$ print.php?id=$1 [QSA,L]
+
+    # Route /[ID] -> print.php?id=[ID] (default: modul ajar)
+    RewriteRule ^([0-9]+)/?$ print.php?id=$1 [QSA,L]
+</IfModule>

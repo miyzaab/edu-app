@@ -1,7 +1,7 @@
 <?php
 /**
  * ============================================================
- * PROSES LOGIN - E-Pembayaran
+ * PROSES LOGIN - Edu-App
  * ============================================================
  * File ini memproses form login dengan keamanan:
  * - Prepared statements (PDO) untuk anti SQL Injection
@@ -10,7 +10,6 @@
  * ============================================================
  */
 
-session_start();
 require_once __DIR__ . '/config/koneksi.php';
 
 // Hanya terima POST request
@@ -45,18 +44,27 @@ try {
         // Regenerasi session ID untuk keamanan (anti session fixation)
         session_regenerate_id(true);
 
+        require_once __DIR__ . '/config/auth_functions.php';
+
         // Simpan data user ke session
         $_SESSION['user_id']      = $user['id'];
         $_SESSION['username']     = $user['username'];
         $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
         $_SESSION['role']         = $user['role'];
+        $_SESSION['permissions']  = loadUserPermissions((int)$user['id']);
 
         // Update last_login di database
         $updateStmt = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = :id");
         $updateStmt->execute([':id' => $user['id']]);
 
-        // Redirect ke dashboard (atau URL yang sebelumnya diminta)
-        $redirectTo = $_SESSION['redirect_after_login'] ?? (BASE_URL . '/pages/dashboard.php');
+        // Redirect sesuai role
+        if ($user['role'] === 'ortu') {
+            $defaultRedirect = BASE_URL . '/portal-ortu.php';
+        } else {
+            $defaultRedirect = BASE_URL . '/pages/dashboard.php';
+        }
+
+        $redirectTo = $_SESSION['redirect_after_login'] ?? $defaultRedirect;
         unset($_SESSION['redirect_after_login']);
         header("Location: $redirectTo");
         exit;

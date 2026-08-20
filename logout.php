@@ -20,13 +20,6 @@ if (ini_get("session.use_cookies")) {
 // Hancurkan session
 session_destroy();
 
-// Auto-detect path tanpa perlu koneksi.php
-$base = rtrim(str_replace(
-    str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']),
-    '',
-    str_replace('\\', '/', dirname(__FILE__))
-), '/');
-
 // Redirect ke halaman login
-header('Location: ' . $base . '/index.php');
+header('Location: index.php');
 exit;

@@ -17,11 +17,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tanggal = $_POST['tanggal_bayar'] ?? date('Y-m-d');
     $metode  = $_POST['metode_bayar'] ?? 'tunai';
     $ket     = trim($_POST['keterangan'] ?? '');
+    
+    // Upload bukti transfer
+    $dbPath = NULL;
+    if (isset($_FILES['bukti_transfer']) && $_FILES['bukti_transfer']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['bukti_transfer'];
+        $allowed = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+        if (in_array($file['type'], $allowed) && $file['size'] <= 5 * 1024 * 1024) {
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'admin_bukti_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
+            $uploadDir = __DIR__ . '/../../assets/uploads/bukti/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                $dbPath = BASE_URL . '/assets/uploads/bukti/' . $filename;
+            }
+        }
+    }
 
     if ($siswaId && $bulan && $tahun && $nominal > 0) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO pembayaran_spp (siswa_id, bulan, tahun, nominal, tanggal_bayar, metode_bayar, keterangan, user_id) VALUES (:sid,:bln,:thn,:nom,:tgl,:met,:ket,:uid)");
-            $stmt->execute([':sid'=>$siswaId,':bln'=>$bulan,':thn'=>$tahun,':nom'=>$nominal,':tgl'=>$tanggal,':met'=>$metode,':ket'=>$ket,':uid'=>$_SESSION['user_id']]);
+            $stmt = $pdo->prepare("INSERT INTO pembayaran_spp (siswa_id, bulan, tahun, nominal, tanggal_bayar, metode_bayar, keterangan, bukti_transfer, user_id) VALUES (:sid,:bln,:thn,:nom,:tgl,:met,:ket,:bukti,:uid)");
+            $stmt->execute([':sid'=>$siswaId,':bln'=>$bulan,':thn'=>$tahun,':nom'=>$nominal,':tgl'=>$tanggal,':met'=>$metode,':ket'=>$ket,':bukti'=>$dbPath,':uid'=>$_SESSION['user_id']]);
             $lastId = $pdo->lastInsertId();
             redirect("kwitansi.php?id=$lastId", 'success', 'Pembayaran SPP berhasil disimpan.');
         } catch (PDOException $e) {
@@ -50,7 +66,7 @@ require_once __DIR__ . '/../../includes/header.php';
         <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         <div class="mb-3">
             <label class="form-label">Siswa <span class="text-danger">*</span></label>
             <select name="siswa_id" class="form-select" required>
@@ -92,9 +108,14 @@ require_once __DIR__ . '/../../includes/header.php';
                     <option value="transfer">Transfer</option>
                 </select>
             </div>
+        <div class="row">
             <div class="col-md-6 mb-3">
                 <label class="form-label">Keterangan</label>
                 <input type="text" name="keterangan" class="form-control" placeholder="Opsional">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Upload Bukti Transfer <small class="text-muted">(JPG/PNG/PDF, Max 5MB)</small></label>
+                <input type="file" name="bukti_transfer" class="form-control" accept="image/*,.pdf">
             </div>
         </div>
         <div class="d-flex gap-2">

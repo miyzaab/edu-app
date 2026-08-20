@@ -73,35 +73,39 @@ require_once __DIR__ . '/../../includes/header.php';
 </div>
 
 <?php if ($kelasId > 0): ?>
-    <div class="table-card">
+    <div class="table-card border-0 shadow-sm overflow-hidden">
         <div class="table-responsive">
-            <table class="table table-bordered table-hover align-middle text-center mb-0" style="font-size: 0.85rem; white-space: nowrap;">
-                <thead class="table-light">
+            <table class="table table-hover align-middle text-center mb-0" style="font-size: 0.85rem; white-space: nowrap;">
+                <thead>
                     <tr>
-                        <th class="text-start" style="width: 30px;">No</th>
-                        <th class="text-start" style="width: 250px;">Nama Siswa</th>
+                        <th class="text-start ps-4" style="width: 40px;">NO</th>
+                        <th class="text-start" style="width: 250px;">NAMA SISWA</th>
                         <?php for ($m=1; $m<=12; $m++): ?>
-                            <th style="width: 50px;"><?= substr(namaBulan($m), 0, 3) ?></th>
+                            <th style="width: 55px;"><?= substr(namaBulan($m), 0, 3) ?></th>
                         <?php endfor; ?>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if (empty($siswaData)): ?>
-                    <tr><td colspan="14" class="text-muted py-4">Belum ada siswa aktif di kelas ini.</td></tr>
+                    <tr><td colspan="14" class="text-muted py-5">Belum ada siswa aktif di kelas ini.</td></tr>
                 <?php else: ?>
                     <?php foreach ($siswaData as $i => $s): ?>
-                        <tr>
-                            <td class="text-start"><?= $i+1 ?></td>
-                            <td class="text-start fw-medium">
-                                <?= htmlspecialchars($s['nama']) ?>
-                                <br><small class="text-muted"><?= htmlspecialchars($s['nis']) ?></small>
+                        <tr style="transition: all 0.2s;">
+                            <td class="text-start ps-4 text-muted font-monospace"><?= $i+1 ?></td>
+                            <td class="text-start">
+                                <div class="fw-bold text-dark" style="font-size: 0.88rem;"><?= htmlspecialchars($s['nama']) ?></div>
+                                <div class="text-muted small font-monospace"><i class="bi bi-person-badge opacity-50 me-1"></i><?= htmlspecialchars($s['nis']) ?></div>
                             </td>
                             <?php for ($m=1; $m<=12; $m++): ?>
                                 <td>
                                     <?php if (isset($sppData[$s['id']][$m])): ?>
-                                        <i class="bi bi-check-circle-fill text-success fs-5" title="Lunas"></i>
+                                        <div class="d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background: rgba(16, 185, 129, 0.15); border-radius: 50%;">
+                                            <i class="bi bi-check-lg text-success fw-bold" style="font-size: 1rem;" title="Lunas"></i>
+                                        </div>
                                     <?php else: ?>
-                                        <i class="bi bi-x-circle text-danger opacity-50 fs-5" title="Belum"></i>
+                                        <div class="d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background: rgba(241, 245, 249, 0.8); border-radius: 50%;">
+                                            <i class="bi bi-x text-muted opacity-40" style="font-size: 1.1rem;" title="Belum"></i>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                             <?php endfor; ?>

@@ -2,7 +2,7 @@
 /**
  * KWITANSI SPP - Menggunakan template shared
  */
-require_once __DIR__ . '/../../config/auth.php';
+require_once __DIR__ . '/../../config/koneksi.php';
 
 $pdo = getConnection();
 $id = (int)($_GET['id'] ?? 0);

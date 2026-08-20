@@ -17,6 +17,7 @@ $alamatSekolah  = getSetting('alamat_sekolah', '');
 $teleponSekolah = getSetting('telepon_sekolah', '');
 $logoPath       = getSetting('logo_path', '');
 $kwitansiFooter = getSetting('kwitansi_footer', 'Terima kasih atas pembayarannya');
+$waTemplate     = getSetting('wa_share_template', "Halo Bapak/Ibu Wali Murid {nama},\n\nBerikut adalah rincian pembayaran Anda di {sekolah}:\n\n*{judul}*\nNo: {no}\nTotal: *{nominal}*\nStatus: *LUNAS*\n\nLink Kwitansi Digital: {link}\n\nTerima kasih.");
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -92,18 +93,21 @@ $kwitansiFooter = getSetting('kwitansi_footer', 'Terima kasih atas pembayarannya
 
 <div class="receipt-container">
     <div class="actions">
-        <button onclick="window.print()" class="btn btn-print"><i class="bi bi-printer"></i> Cetak Kwitansi</button>
-        <a href="<?= htmlspecialchars($backUrl) ?>" class="btn btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
+        <button onclick="window.print()" class="btn btn-print"><i class="bi bi-printer"></i> Cetak</button>
+        <button onclick="saveAsImage()" class="btn btn-save" style="background:#6c757d;color:#fff;"><i class="bi bi-image"></i> Simpan Gambar</button>
+        
+        <?php if (isset($_SESSION['user_id'])): ?>
+            <button onclick="shareKwitansi()" class="btn btn-share" style="background:#25D366;color:#fff;"><i class="bi bi-whatsapp"></i> Share WA</button>
+            <a href="<?= htmlspecialchars($backUrl) ?>" class="btn btn-back"><i class="bi bi-arrow-left"></i> Kembali</a>
+        <?php endif; ?>
     </div>
 
-    <div class="receipt">
+    <div class="receipt" id="receiptArea">
         <!-- Header dengan Logo -->
         <div class="receipt-header">
-            <?php if ($logoPath): ?>
-                <div class="receipt-logo">
-                    <img src="<?= htmlspecialchars($logoPath) ?>" alt="Logo">
-                </div>
-            <?php endif; ?>
+            <div class="receipt-logo">
+                <?= getLogoHtml(50) ?>
+            </div>
             <h4><?= htmlspecialchars($namaSekolah) ?></h4>
             <?php if ($alamatSekolah): ?><p class="addr"><?= htmlspecialchars($alamatSekolah) ?></p><?php endif; ?>
             <?php if ($teleponSekolah): ?><p class="addr">Telp: <?= htmlspecialchars($teleponSekolah) ?></p><?php endif; ?>
@@ -134,6 +138,57 @@ $kwitansiFooter = getSetting('kwitansi_footer', 'Terima kasih atas pembayarannya
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+function saveAsImage() {
+    const area = document.getElementById('receiptArea');
+    const btnSave = document.querySelector('.btn-save');
+    const originalText = btnSave.innerHTML;
+    btnSave.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
+    btnSave.disabled = true;
+
+    html2canvas(area, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'Kwitansi_<?= $kwitansiNo ?>.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btnSave.innerHTML = originalText;
+        btnSave.disabled = false;
+    }).catch(err => {
+        alert('Gagal menyimpan gambar. Pastikan browser mendukung.');
+        btnSave.innerHTML = originalText;
+        btnSave.disabled = false;
+    });
+}
+
+function shareKwitansi() {
+    const no = '<?= $kwitansiNo ?>';
+    const nominal = '<?= formatRupiah($nominal) ?>';
+    const nama = '<?= htmlspecialchars($data['nama'] ?? '') ?>';
+    const judul = '<?= htmlspecialchars($kwitansiJudul) ?>';
+    const school = '<?= htmlspecialchars($namaSekolah) ?>';
+    const link = window.location.href;
+    
+    let template = `<?= str_replace(["\r", "\n"], ["", "\\n"], addslashes($waTemplate)) ?>`;
+    
+    // Replace placeholders
+    let message = template
+        .replace(/{nama}/g, nama)
+        .replace(/{sekolah}/g, school)
+        .replace(/{judul}/g, judul)
+        .replace(/{no}/g, no)
+        .replace(/{nominal}/g, nominal)
+        .replace(/{link}/g, link);
+    
+    window.open('https://wa.me/?text=' + encodeURIComponent(message), '_blank');
+}
+</script>
 
 </body>
 </html>

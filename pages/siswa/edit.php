@@ -27,8 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($nis && $nama && $kelasId && $jk) {
         try {
-            $stmt = $pdo->prepare("UPDATE siswa SET nis=:nis, nama=:nama, kelas_id=:kelas, jenis_kelamin=:jk, tahun_masuk=:tahun, status=:status WHERE id=:id");
-            $stmt->execute([':nis'=>$nis,':nama'=>$nama,':kelas'=>$kelasId,':jk'=>$jk,':tahun'=>$tahun,':status'=>$status,':id'=>$id]);
+            $target_up = (float)str_replace(['.', ','], ['', '.'], $_POST['target_uang_pangkal'] ?? '0');
+            $stmt = $pdo->prepare("UPDATE siswa SET nis=:nis, nama=:nama, kelas_id=:kelas, jenis_kelamin=:jk, tahun_masuk=:tahun, status=:status, target_uang_pangkal=:up WHERE id=:id");
+            $stmt->execute([':nis'=>$nis,':nama'=>$nama,':kelas'=>$kelasId,':jk'=>$jk,':tahun'=>$tahun,':status'=>$status,':up'=>$target_up,':id'=>$id]);
             redirect('index.php', 'success', 'Data siswa berhasil diperbarui.');
         } catch (PDOException $e) {
             $error = ($e->getCode() == 23000) ? 'NIS sudah digunakan.' : 'Gagal memperbarui data.';
@@ -88,6 +89,14 @@ require_once __DIR__ . '/../../includes/header.php';
         <div class="mb-3">
             <label class="form-label">Tahun Masuk</label>
             <input type="number" name="tahun_masuk" class="form-control" value="<?= $siswa['tahun_masuk'] ?>" min="2000" max="2099">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Target Uang Pangkal (Total Kewajiban) <span class="text-danger">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text">Rp</span>
+                <input type="text" name="target_uang_pangkal" class="form-control fw-bold text-primary" value="<?= number_format($siswa['target_uang_pangkal'] ?? 0, 0, ',', '.') ?>" onkeyup="formatRupiahInput(this)">
+            </div>
+            <div class="form-text">Atur total biaya uang pangkal yang harus dibayar santri ini.</div>
         </div>
         <div class="d-flex gap-2">
             <button type="submit" class="btn-primary-custom"><i class="bi bi-save"></i> Simpan Perubahan</button>

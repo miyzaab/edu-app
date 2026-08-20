@@ -20,7 +20,10 @@ require_once __DIR__ . '/../../includes/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <p class="text-muted mb-0">Total: <strong><?= count($data) ?></strong> transaksi</p>
-    <a href="create.php" class="btn-primary-custom"><i class="bi bi-plus-lg"></i> Input Pembayaran</a>
+    <div class="d-flex gap-2">
+        <a href="monitoring.php" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"><i class="bi bi-display"></i> Monitoring Progres</a>
+        <a href="create.php" class="btn-primary-custom"><i class="bi bi-plus-lg"></i> Input Pembayaran</a>
+    </div>
 </div>
 
 <div class="table-card">
@@ -30,14 +33,19 @@ require_once __DIR__ . '/../../includes/header.php';
             <tbody>
             <?php foreach ($data as $i => $d): ?>
                 <tr>
-                    <td><?= $i+1 ?></td>
-                    <td><?= formatTanggal($d['tanggal_bayar']) ?></td>
+                    <td class="text-muted font-monospace"><?= $i+1 ?></td>
+                    <td class="text-muted small font-monospace"><?= formatTanggal($d['tanggal_bayar']) ?></td>
                     <td><code><?= htmlspecialchars($d['nis']) ?></code></td>
-                    <td><?= htmlspecialchars($d['nama']) ?></td>
-                    <td><?= htmlspecialchars($d['nama_kelas']) ?></td>
-                    <td><strong><?= formatRupiah($d['nominal']) ?></strong></td>
-                    <td><?= ucfirst($d['metode_bayar']) ?></td>
-                    <td><a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"><i class="bi bi-printer"></i></a></td>
+                    <td>
+                        <div class="table-avatar-item">
+                            <div class="table-avatar-circle"><?= strtoupper(substr($d['nama'], 0, 1)) ?></div>
+                            <span class="fw-bold text-dark"><?= htmlspecialchars($d['nama']) ?></span>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill fw-semibold"><?= htmlspecialchars($d['nama_kelas']) ?></span></td>
+                    <td><span class="nominal-pill"><?= formatRupiah($d['nominal']) ?></span></td>
+                    <td><span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 fw-bold"><?= ucfirst($d['metode_bayar']) ?></span></td>
+                    <td><a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank" title="Cetak Kwitansi"><i class="bi bi-printer"></i></a></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($data)): ?>

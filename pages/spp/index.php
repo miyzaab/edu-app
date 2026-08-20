@@ -55,10 +55,15 @@ require_once __DIR__ . '/../../includes/header.php';
             <tbody>
             <?php foreach ($data as $i => $d): ?>
                 <tr>
-                    <td><?= $i+1 ?></td>
+                    <td class="text-muted font-monospace"><?= $i+1 ?></td>
                     <td><code><?= htmlspecialchars($d['nis']) ?></code></td>
-                    <td><?= htmlspecialchars($d['nama']) ?></td>
-                    <td><?= htmlspecialchars($d['nama_kelas']) ?></td>
+                    <td>
+                        <div class="table-avatar-item">
+                            <div class="table-avatar-circle"><?= strtoupper(substr($d['nama'], 0, 1)) ?></div>
+                            <span class="fw-bold text-dark"><?= htmlspecialchars($d['nama']) ?></span>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill fw-semibold"><?= htmlspecialchars($d['nama_kelas']) ?></span></td>
                     <td>
                         <?php if ($d['spp_id']): ?>
                             <span class="badge-status badge-lunas">Lunas</span>
@@ -66,13 +71,13 @@ require_once __DIR__ . '/../../includes/header.php';
                             <span class="badge-status badge-belum">Belum</span>
                         <?php endif; ?>
                     </td>
-                    <td><?= $d['nominal'] ? formatRupiah($d['nominal']) : '-' ?></td>
-                    <td><?= $d['tanggal_bayar'] ? formatTanggal($d['tanggal_bayar']) : '-' ?></td>
+                    <td><?= $d['nominal'] ? '<span class="nominal-pill">' . formatRupiah($d['nominal']) . '</span>' : '<span class="text-muted opacity-50">-</span>' ?></td>
+                    <td><?= $d['tanggal_bayar'] ? formatTanggal($d['tanggal_bayar']) : '<span class="text-muted opacity-50">-</span>' ?></td>
                     <td>
                         <?php if ($d['spp_id']): ?>
-                            <a href="kwitansi.php?id=<?= $d['spp_id'] ?>" class="btn-sm-action btn-print" target="_blank"><i class="bi bi-printer"></i></a>
+                            <a href="kwitansi.php?id=<?= $d['spp_id'] ?>" class="btn-sm-action btn-print" target="_blank" title="Cetak Kwitansi"><i class="bi bi-printer"></i></a>
                         <?php else: ?>
-                            <a href="create.php?siswa_id=<?= $d['id'] ?>&bulan=<?= $bulanFilter ?>&tahun=<?= $tahunFilter ?>" class="btn-sm-action btn-edit"><i class="bi bi-plus"></i> Bayar</a>
+                            <a href="create.php?siswa_id=<?= $d['id'] ?>&bulan=<?= $bulanFilter ?>&tahun=<?= $tahunFilter ?>" class="btn-sm-action btn-edit" title="Bayar SPP"><i class="bi bi-plus-lg"></i></a>
                         <?php endif; ?>
                     </td>
                 </tr>

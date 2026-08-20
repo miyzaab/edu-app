@@ -1,8 +1,7 @@
 <?php
 /**
- * HALAMAN LOGIN - E-Pembayaran
+ * HALAMAN LOGIN - Edu-App
  */
-session_start();
 require_once __DIR__ . '/config/koneksi.php';
 
 if (isset($_SESSION['user_id'])) {
@@ -13,217 +12,205 @@ if (isset($_SESSION['user_id'])) {
 $error = $_SESSION['login_error'] ?? '';
 unset($_SESSION['login_error']);
 
-$namaSekolah = SCHOOL_NAME;
+$namaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
+$appName = getSetting('app_name', APP_NAME);
 $logoPath = '';
-try { $logoPath = getSetting('logo_path', ''); } catch (Exception $e) {}
+try {
+    $logoPath = getSetting('logo_path', '');
+} catch (Exception $e) {
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — <?= htmlspecialchars(APP_NAME) ?> | <?= htmlspecialchars($namaSekolah) ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Login — <?= htmlspecialchars($appName) ?> | <?= htmlspecialchars($namaSekolah) ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             display: flex;
-            background: #0f0c29;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 45%), radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%), #f4f6fc;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        /* ===== LEFT PANEL ===== */
-        .login-left {
-            flex: 1;
-            background: linear-gradient(145deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        /* Background blur circles */
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bg-orb-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(99, 102, 241, 0.12);
+            top: 10%;
+            left: 15%;
+        }
+
+        .bg-orb-2 {
+            width: 300px;
+            height: 300px;
+            background: rgba(6, 182, 212, 0.1);
+            bottom: 10%;
+            right: 15%;
+        }
+
+        /* ===== LOGIN CARD (GLASSMORPHISM) ===== */
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px) saturate(200%);
+            -webkit-backdrop-filter: blur(24px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 28px;
+            padding: 2.75rem 2.25rem;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+            z-index: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 3rem;
-            position: relative;
-            overflow: hidden;
         }
 
-        .login-left::before {
-            content: '';
-            position: absolute;
-            width: 500px; height: 500px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%);
-            top: -100px; right: -100px;
-        }
-
-        .login-left::after {
-            content: '';
-            position: absolute;
-            width: 350px; height: 350px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(6,182,212,0.25) 0%, transparent 70%);
-            bottom: -80px; left: -80px;
-        }
-
-        .left-content {
-            position: relative;
-            z-index: 1;
+        .login-header {
             text-align: center;
-            color: #fff;
+            margin-bottom: 2rem;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .school-logo {
-            width: 90px; height: 90px;
-            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
-            border-radius: 24px;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 20px 60px rgba(99,102,241,0.5);
-            animation: pulse 3s ease-in-out infinite;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 8px 32px rgba(15, 23, 42, 0.05);
+            padding: 12px;
+            transition: transform 0.3s ease;
         }
 
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 20px 60px rgba(99,102,241,0.5); }
-            50% { box-shadow: 0 20px 80px rgba(99,102,241,0.8); }
+        .school-logo:hover {
+            transform: scale(1.05) rotate(-2deg);
         }
 
-        .school-logo img { width: 60px; height: 60px; object-fit: contain; }
-        .school-logo .emoji { font-size: 2.5rem; }
-
-        .left-content h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, #c7d2fe 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
+        .school-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
-        .left-content p {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.875rem;
-            font-weight: 400;
-            max-width: 280px;
-            line-height: 1.6;
+        .school-logo .emoji {
+            font-size: 2.5rem;
         }
 
-        .feature-pills {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 2.5rem;
-            align-items: flex-start;
-        }
-
-        .pill {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 50px;
-            padding: 0.5rem 1rem 0.5rem 0.5rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .pill-icon {
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #6366f1, #06b6d4);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.85rem;
-            color: #fff;
-            flex-shrink: 0;
-        }
-
-        .pill span { color: rgba(255,255,255,0.75); font-size: 0.8rem; font-weight: 500; }
-
-        /* ===== RIGHT PANEL ===== */
-        .login-right {
-            width: 460px;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 3rem 2.5rem;
-            position: relative;
-        }
-
-        .right-content { width: 100%; max-width: 360px; }
-
-        .right-content .greeting {
+        .login-header h1 {
             font-size: 1.6rem;
             font-weight: 800;
             color: #1e1b4b;
-            margin-bottom: 0.35rem;
+            margin-bottom: 0.4rem;
         }
 
-        .right-content .sub-greeting {
-            color: #6b7280;
-            font-size: 0.875rem;
-            margin-bottom: 2rem;
+        .login-header p {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 400;
+            line-height: 1.4;
+            max-width: 280px;
+        }
+
+        .login-form {
+            width: 100%;
         }
 
         .error-box {
             background: #fef2f2;
             border: 1px solid #fecaca;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
             color: #dc2626;
             font-size: 0.8rem;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.05);
         }
 
         .form-label {
             display: block;
             font-size: 0.8rem;
             font-weight: 600;
-            color: #374151;
-            margin-bottom: 0.4rem;
+            color: #475569;
+            margin-bottom: 0.45rem;
         }
 
         .input-wrapper {
             position: relative;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
         }
 
-        .input-wrapper i {
+        .input-wrapper>i:first-child {
             position: absolute;
             left: 1rem;
             top: 50%;
             transform: translateY(-50%);
-            color: #9ca3af;
+            color: #94a3b8;
             font-size: 1rem;
+            pointer-events: none;
+            z-index: 5;
         }
 
         .input-wrapper input {
             width: 100%;
-            padding: 0.8rem 1rem 0.8rem 2.75rem;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 10px;
+            padding: 0.8rem 1rem 0.8rem 2.85rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             font-size: 0.875rem;
             font-family: 'Inter', sans-serif;
-            color: #1f2937;
-            background: #f9fafb;
-            transition: all 0.2s;
+            color: #0f172a;
+            background: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             outline: none;
         }
 
         .input-wrapper input:focus {
             border-color: #6366f1;
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+            background: #ffffff;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
         }
 
-        .input-wrapper input::placeholder { color: #d1d5db; }
+        .input-wrapper input::placeholder {
+            color: #cbd5e1;
+        }
 
         .btn-masuk {
             width: 100%;
@@ -231,7 +218,7 @@ try { $logoPath = getSetting('logo_path', ''); } catch (Exception $e) {}
             background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             color: #fff;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 0.9rem;
             font-weight: 700;
             font-family: 'Inter', sans-serif;
@@ -242,108 +229,72 @@ try { $logoPath = getSetting('logo_path', ''); } catch (Exception $e) {}
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.35);
         }
 
         .btn-masuk:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(99,102,241,0.45);
+            box-shadow: 0 12px 30px -4px rgba(99, 102, 241, 0.5);
         }
 
-        .btn-masuk:active { transform: translateY(0); }
+        .btn-masuk:active {
+            transform: translateY(0);
+        }
 
         .divider {
             border: none;
-            border-top: 1px solid #f3f4f6;
-            margin: 1.75rem 0 1rem;
+            border-top: 1px solid #e2e8f0;
+            margin: 1.75rem 0 1.25rem;
+            width: 100%;
         }
 
-        .portal-link {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
-            transition: all 0.2s;
-        }
-
-        .portal-link:hover {
-            background: #dcfce7;
-            transform: translateX(4px);
-        }
-
-        .portal-link .pl-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: #fff;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .portal-link .pl-text strong { display: block; font-size: 0.8rem; font-weight: 700; color: #065f46; }
-        .portal-link .pl-text span { font-size: 0.72rem; color: #6b7280; }
-        .portal-link .pl-arrow { margin-left: auto; color: #10b981; }
-
-        .login-footer-right {
-            position: absolute;
-            bottom: 1.5rem;
-            color: #d1d5db;
+        .login-footer {
+            margin-top: 2rem;
+            color: #94a3b8;
             font-size: 0.72rem;
             text-align: center;
+            width: 100%;
         }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .login-left { display: none; }
-            .login-right { width: 100%; }
+        .btn-toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .btn-toggle-password:hover {
+            color: #6366f1;
         }
     </style>
+    <?= getDynamicThemeCss() ?>
 </head>
+
 <body>
 
-<!-- LEFT PANEL -->
-<div class="login-left">
-    <div class="left-content">
-        <div class="school-logo">
-            <?php if ($logoPath): ?>
-                <img src="<?= htmlspecialchars($logoPath) ?>" alt="Logo">
-            <?php else: ?>
-                <span class="emoji">🏫</span>
-            <?php endif; ?>
-        </div>
-        <h1><?= htmlspecialchars(APP_NAME) ?></h1>
-        <p><?= htmlspecialchars($namaSekolah) ?></p>
+    <!-- Background glowing orbs -->
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
 
-        <div class="feature-pills">
-            <div class="pill">
-                <div class="pill-icon"><i class="bi bi-shield-check"></i></div>
-                <span>Verifikasi Pembayaran Online</span>
+    <!-- CENTERED LOGIN CARD -->
+    <div class="login-container">
+        <div class="login-header">
+            <div class="school-logo">
+                <?= getLogoHtml(60) ?>
             </div>
-            <div class="pill">
-                <div class="pill-icon"><i class="bi bi-grid-3x3-gap"></i></div>
-                <span>Rekap SPP Otomatis per Kelas</span>
-            </div>
-            <div class="pill">
-                <div class="pill-icon"><i class="bi bi-wallet2"></i></div>
-                <span>Laporan Buku Kas (Petty Cash)</span>
-            </div>
-            <div class="pill">
-                <div class="pill-icon"><i class="bi bi-file-earmark-pdf"></i></div>
-                <span>Cetak PDF & Ekspor Excel</span>
-            </div>
+            <h1><?= htmlspecialchars($appName) ?></h1>
+            <p><?= htmlspecialchars($namaSekolah) ?></p>
         </div>
-    </div>
-</div>
-
-<!-- RIGHT PANEL -->
-<div class="login-right">
-    <div class="right-content">
-        <p class="greeting">Selamat Datang 👋</p>
-        <p class="sub-greeting">Masuk ke dasbor bendahara Anda</p>
 
         <?php if ($error): ?>
             <div class="error-box">
@@ -352,7 +303,7 @@ try { $logoPath = getSetting('logo_path', ''); } catch (Exception $e) {}
             </div>
         <?php endif; ?>
 
-        <form action="<?= BASE_URL ?>/login_process.php" method="POST" autocomplete="off">
+        <form class="login-form" action="<?= BASE_URL ?>/login_process.php" method="POST" autocomplete="off">
             <label class="form-label" for="username">Username</label>
             <div class="input-wrapper">
                 <i class="bi bi-person"></i>
@@ -362,7 +313,11 @@ try { $logoPath = getSetting('logo_path', ''); } catch (Exception $e) {}
             <label class="form-label" for="password">Password</label>
             <div class="input-wrapper">
                 <i class="bi bi-lock"></i>
-                <input type="password" id="password" name="password" placeholder="Masukkan password" required>
+                <input type="password" id="password" name="password" placeholder="Masukkan password" required
+                    style="padding-right: 3rem;">
+                <button type="button" id="togglePassword" class="btn-toggle-password">
+                    <i class="bi bi-eye"></i>
+                </button>
             </div>
 
             <button type="submit" class="btn-masuk" id="btnLogin">
@@ -370,20 +325,28 @@ try { $logoPath = getSetting('logo_path', ''); } catch (Exception $e) {}
             </button>
         </form>
 
-        <hr class="divider">
 
-        <a href="<?= BASE_URL ?>/portal-ortu.php" class="portal-link">
-            <div class="pl-icon"><i class="bi bi-people-fill"></i></div>
-            <div class="pl-text">
-                <strong>Portal Orang Tua / Wali Murid</strong>
-                <span>Konfirmasi pembayaran tanpa login</span>
-            </div>
-            <i class="bi bi-chevron-right pl-arrow"></i>
-        </a>
+
+        <div class="login-footer">
+            <p>&copy; 2026 Developed by miyzaab.com | Zia Abdurrofi</p>
+        </div>
     </div>
 
-    <p class="login-footer-right">&copy; <?= date('Y') ?> <?= htmlspecialchars($namaSekolah) ?></p>
-</div>
+    <script>
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
 
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+
+            // toggle the eye icon
+            const icon = this.querySelector('i');
+            icon.classList.toggle('bi-eye');
+            icon.classList.toggle('bi-eye-slash');
+        });
+    </script>
 </body>
+
 </html>

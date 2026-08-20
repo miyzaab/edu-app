@@ -33,31 +33,25 @@ $countPending = $pdo->query("SELECT COUNT(id) FROM pembayaran_pending WHERE stat
 require_once __DIR__ . '/../../includes/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <p class="text-muted mb-0">Total: <strong><?= count($pendingList) ?></strong> data <?= $filterStatus ?></p>
-</div>
-
-<!-- Navigasi Status -->
-<ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item">
-        <a class="nav-link <?= $filterStatus === 'pending' ? 'active' : '' ?>" href="?status=pending">
-            <i class="bi bi-hourglass-split"></i> Pending
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div class="modern-filter-nav">
+        <a class="modern-filter-btn <?= $filterStatus === 'pending' ? 'active' : '' ?>" href="?status=pending">
+            <i class="bi bi-hourglass-split me-1 text-warning"></i> Pending
             <?php if ($countPending > 0): ?>
-                <span class="badge bg-danger rounded-pill ms-1"><?= $countPending ?></span>
+                <span class="modern-filter-badge bg-warning text-dark ms-1"><?= $countPending ?></span>
             <?php endif; ?>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link <?= $filterStatus === 'disetujui' ? 'active' : '' ?>" href="?status=disetujui">
-            <i class="bi bi-check-circle text-success"></i> Disetujui
+        <a class="modern-filter-btn <?= $filterStatus === 'disetujui' ? 'active' : '' ?>" href="?status=disetujui">
+            <i class="bi bi-check-circle-fill me-1 text-success"></i> Disetujui
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link <?= $filterStatus === 'ditolak' ? 'active' : '' ?>" href="?status=ditolak">
-            <i class="bi bi-x-circle text-danger"></i> Ditolak
+        <a class="modern-filter-btn <?= $filterStatus === 'ditolak' ? 'active' : '' ?>" href="?status=ditolak">
+            <i class="bi bi-x-circle-fill me-1 text-danger"></i> Ditolak
         </a>
-    </li>
-</ul>
+    </div>
+    <div class="text-muted small">
+        Total Filtered: <strong class="text-dark fw-bold"><?= count($pendingList) ?></strong> data
+    </div>
+</div>
 
 <div class="table-card">
     <div class="table-responsive">
@@ -76,23 +70,28 @@ require_once __DIR__ . '/../../includes/header.php';
             <tbody>
             <?php foreach ($pendingList as $p): ?>
                 <tr>
-                    <td><?= date('d/m/Y H:i', strtotime($p['created_at'])) ?></td>
+                    <td class="text-muted small font-monospace"><?= date('d/m/Y H:i', strtotime($p['created_at'])) ?></td>
                     <td>
-                        <strong><?= htmlspecialchars($p['nama']) ?></strong><br>
-                        <small class="text-muted"><?= htmlspecialchars($p['nama_kelas']) ?> - <?= htmlspecialchars($p['nis']) ?></small>
+                        <div class="table-avatar-item">
+                            <div class="table-avatar-circle"><?= strtoupper(substr($p['nama'], 0, 1)) ?></div>
+                            <div>
+                                <div class="fw-bold text-dark"><?= htmlspecialchars($p['nama']) ?></div>
+                                <small class="text-muted font-monospace"><i class="bi bi-person-badge opacity-50 me-1"></i><?= htmlspecialchars($p['nama_kelas']) ?> • <?= htmlspecialchars($p['nis']) ?></small>
+                            </div>
+                        </div>
                     </td>
                     <td>
                         <?php 
-                        if ($p['jenis'] === 'spp') echo "SPP (" . namaBulan($p['bulan']) . " " . $p['tahun'] . ")";
-                        elseif ($p['jenis'] === 'uang_pangkal') echo "Uang Pangkal";
-                        elseif ($p['jenis'] === 'lainnya') echo htmlspecialchars($p['nama_pembayaran']);
+                        if ($p['jenis'] === 'spp') echo '<span class="badge rounded-pill bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2.5 py-1 font-monospace fw-bold"><i class="bi bi-calendar-check me-1"></i> SPP (' . namaBulan($p['bulan']) . ' ' . $p['tahun'] . ')</span>';
+                        elseif ($p['jenis'] === 'uang_pangkal') echo '<span class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 font-monospace fw-bold"><i class="bi bi-bank me-1"></i> Uang Pangkal</span>';
+                        elseif ($p['jenis'] === 'lainnya') echo '<span class="badge rounded-pill bg-purple bg-opacity-10 text-purple border border-purple border-opacity-25 px-2.5 py-1 font-monospace fw-bold" style="background: rgba(168, 85, 247, 0.1); color: #9333ea; border: 1px solid rgba(168, 85, 247, 0.2);"><i class="bi bi-tags me-1"></i> ' . htmlspecialchars($p['nama_pembayaran']) . '</span>';
                         ?>
                     </td>
-                    <td class="fw-bold text-success"><?= formatRupiah($p['nominal']) ?></td>
-                    <td style="max-width:150px;white-space:normal;font-size:.8rem"><?= htmlspecialchars($p['catatan']) ?: '-' ?></td>
+                    <td><span class="nominal-pill"><?= formatRupiah($p['nominal']) ?></span></td>
+                    <td style="max-width:160px;white-space:normal;font-size:.82rem" class="text-muted"><?= htmlspecialchars($p['catatan']) ?: '<span class="opacity-50">-</span>' ?></td>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="lihatBukti('<?= htmlspecialchars($p['bukti_transfer']) ?>')">
-                            <i class="bi bi-image"></i> Lihat
+                        <button class="btn btn-sm btn-light border rounded-pill px-3 fw-bold text-dark shadow-sm" onclick="lihatBukti('<?= htmlspecialchars($p['bukti_transfer']) ?>')">
+                            <i class="bi bi-image text-primary me-1"></i> Lihat
                         </button>
                     </td>
                     <td class="text-center">
@@ -106,12 +105,34 @@ require_once __DIR__ . '/../../includes/header.php';
                                 <button class="btn btn-sm btn-danger" onclick="tolakPembayaran(<?= $p['id'] ?>)" title="Tolak"><i class="bi bi-x-lg"></i></button>
                             </div>
                         <?php else: ?>
-                            <span class="badge <?= $p['status'] === 'disetujui' ? 'bg-success' : 'bg-danger' ?>">
-                                <?= ucfirst($p['status']) ?>
-                            </span>
-                            <?php if ($p['status'] === 'ditolak'): ?>
-                                <div style="font-size:.7rem;margin-top:2px" class="text-danger"><?= htmlspecialchars($p['alasan_tolak']) ?></div>
-                            <?php endif; ?>
+                            <div class="d-flex flex-column gap-1 align-items-center">
+                                <span class="badge <?= $p['status'] === 'disetujui' ? 'bg-success' : 'bg-danger' ?>">
+                                    <?= ucfirst($p['status']) ?>
+                                </span>
+                                <?php if ($p['status'] === 'disetujui'): 
+                                    $template = getSetting('wa_share_template', "Halo Bapak/Ibu Wali Murid {nama},\n\nBerikut adalah rincian pembayaran Anda di {sekolah}:\n\n*{judul}*\nNo: {no}\nTotal: *{nominal}*\nStatus: *LUNAS*\n\nLink Kwitansi Digital: {link}\n\nTerima kasih.");
+                                    
+                                    $waNama    = $p['nama'];
+                                    $waSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
+                                    $waJudul   = ($p['jenis'] === 'spp' ? "SPP " . namaBulan($p['bulan']) . " " . $p['tahun'] : ($p['jenis'] === 'uang_pangkal' ? "Uang Pangkal" : $p['nama_pembayaran']));
+                                    $waNominal = formatRupiah($p['nominal']);
+                                    $waNo      = "PEND-" . $p['id']; // ID Pending sebagai referensi
+                                    $waLink    = BASE_URL . "/portal-ortu.php";
+
+                                    $waMsg = str_replace(
+                                        ['{nama}', '{sekolah}', '{judul}', '{no}', '{nominal}', '{link}'],
+                                        [$waNama, $waSekolah, $waJudul, $waNo, $waNominal, $waLink],
+                                        $template
+                                    );
+                                ?>
+                                    <a href="https://wa.me/?text=<?= urlencode($waMsg) ?>" target="_blank" class="btn btn-sm btn-outline-success" style="font-size:.7rem;padding:2px 5px">
+                                        <i class="bi bi-whatsapp"></i> Notify WA
+                                    </a>
+                                <?php endif; ?>
+                                <?php if ($p['status'] === 'ditolak'): ?>
+                                    <div style="font-size:.7rem;margin-top:2px" class="text-danger"><?= htmlspecialchars($p['alasan_tolak']) ?></div>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; ?>
                     </td>
                 </tr>

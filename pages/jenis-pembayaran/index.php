@@ -66,6 +66,23 @@ require_once __DIR__ . '/../../includes/header.php';
         <table class="data-table">
             <thead><tr><th>No</th><th>Nama Pembayaran</th><th>Nominal Default</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody>
+                <!-- Row Statis SPP (Sistem) -->
+                <tr style="background-color: #f8f9fa;">
+                    <td>-</td>
+                    <td><strong>📅 Pembayaran SPP</strong></td>
+                    <td>-</td>
+                    <td><small class="text-muted">Dikelola otomatis oleh sistem (bulanan)</small></td>
+                    <td><span class="badge-status badge-aktif">Sistem</span></td>
+                    <td><span class="text-muted">Fixed</span></td>
+                </tr>
+                <tr style="background-color: #f8f9fa;">
+                    <td>-</td>
+                    <td><strong>🏦 Uang Pangkal (Masuk)</strong></td>
+                    <td>-</td>
+                    <td><small class="text-muted">Target per siswa, mendukung cicilan & persentase</small></td>
+                    <td><span class="badge-status badge-aktif">Sistem</span></td>
+                    <td><a href="../uang-pangkal/index.php" class="btn btn-sm btn-outline-primary py-0" style="font-size: .7rem">Kelola</a></td>
+                </tr>
             <?php foreach ($jenisList as $i => $j): ?>
                 <tr>
                     <td><?= $i+1 ?></td>
