@@ -5,9 +5,10 @@
  * 1. Form dinamis (tambah baris manual)
  * 2. Upload file CSV/Excel
  */
-$pageTitle  = 'Tambah Siswa Massal';
+$pageTitle = 'Tambah Siswa Massal';
 $activePage = 'siswa';
 require_once __DIR__ . '/../../config/auth.php';
+requirePermission('siswa');
 
 $pdo = getConnection();
 $kelasList = $pdo->query("SELECT * FROM kelas ORDER BY nama_kelas")->fetchAll();
@@ -22,14 +23,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
     if ($_POST['mode'] === 'form') {
         $rows = $_POST['siswa'] ?? [];
         foreach ($rows as $idx => $row) {
-            $nis   = trim($row['nis'] ?? '');
-            $nama  = trim($row['nama'] ?? '');
-            $kelasId = (int)($row['kelas_id'] ?? 0);
-            $jk    = $row['jenis_kelamin'] ?? '';
-            $tahun = (int)($row['tahun_masuk'] ?? date('Y'));
+            $nis = trim($row['nis'] ?? '');
+            $nisn = trim($row['nisn'] ?? '');
+            $nama = trim($row['nama'] ?? '');
+            $noHpOrtu = trim($row['no_hp_ortu'] ?? '');
+            $kelasId = (int) ($row['kelas_id'] ?? 0);
+            $jk = $row['jenis_kelamin'] ?? '';
+            $tahun = (int) ($row['tahun_masuk'] ?? date('Y'));
 
             // Skip baris kosong
-            if (empty($nis) && empty($nama)) continue;
+            if (empty($nis) && empty($nama))
+                continue;
 
             // Validasi
             if (empty($nis) || empty($nama) || !$kelasId || empty($jk)) {
@@ -38,8 +42,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
             }
 
             try {
-                $stmt = $pdo->prepare("INSERT INTO siswa (nis, nama, kelas_id, jenis_kelamin, tahun_masuk) VALUES (:nis,:nama,:kelas,:jk,:tahun)");
-                $stmt->execute([':nis'=>$nis, ':nama'=>$nama, ':kelas'=>$kelasId, ':jk'=>$jk, ':tahun'=>$tahun]);
+                $stmt = $pdo->prepare("INSERT INTO siswa (nis, nisn, nama, no_hp_ortu, kelas_id, jenis_kelamin, tahun_masuk) VALUES (:nis,:nisn,:nama,:hp,:kelas,:jk,:tahun)");
+                $stmt->execute([
+                    ':nis' => $nis,
+                    ':nisn' => $nisn ?: null,
+                    ':nama' => $nama,
+                    ':hp' => $noHpOrtu ?: null,
+                    ':kelas' => $kelasId,
+                    ':jk' => $jk,
+                    ':tahun' => $tahun
+                ]);
                 $successCount++;
             } catch (PDOException $e) {
                 if ($e->getCode() == 23000) {
@@ -63,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
                 $errorList[] = "Format file harus .csv atau .txt";
             } else {
                 $handle = fopen($file['tmp_name'], 'r');
-                
+
                 // Deteksi delimiter (koma atau titik koma)
                 $firstLine = fgets($handle);
                 $delimiter = (strpos($firstLine, ';') !== false && strpos($firstLine, ',') === false) ? ';' : ',';
@@ -84,7 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
                     }
 
                     // Skip baris kosong
-                    if (empty(array_filter($data))) continue;
+                    if (empty(array_filter($data)))
+                        continue;
 
                     // Skip header (baris pertama) jika mengandung kata kunci header
                     if ($lineNum === 1) {
@@ -93,16 +106,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
                         }
                     }
 
-                    // Format CSV: NIS, Nama, Kelas, L/P, Tahun Masuk
-                    $nis   = trim($data[0] ?? '');
-                    $nama  = trim($data[1] ?? '');
+                    // Format CSV: NIS, Nama, Kelas, L/P, Tahun Masuk, [No HP Ortu]
+                    $nis = trim($data[0] ?? '');
+                    $nama = trim($data[1] ?? '');
                     $kelas = strtolower(trim($data[2] ?? ''));
-                    $jk    = strtoupper(trim($data[3] ?? ''));
-                    $tahun = (int)(trim($data[4] ?? date('Y')));
+                    $jk = strtoupper(trim($data[3] ?? ''));
+                    $tahun = (int) (trim($data[4] ?? date('Y')));
+                    $noHpOrtu = trim($data[5] ?? '');
 
                     if (empty($nis) || empty($nama)) {
                         if (!empty($nis) || !empty($nama)) {
-                             $errorList[] = "Baris $lineNum: Data tidak lengkap (NIS: $nis, Nama: $nama).";
+                            $errorList[] = "Baris $lineNum: Data tidak lengkap (NIS: $nis, Nama: $nama).";
                         }
                         continue;
                     }
@@ -119,11 +133,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mode'])) {
                         continue;
                     }
 
-                    if ($tahun < 1900) $tahun = (int)date('Y');
+                    if ($tahun < 1900)
+                        $tahun = (int) date('Y');
 
                     try {
-                        $stmt = $pdo->prepare("INSERT INTO siswa (nis, nama, kelas_id, jenis_kelamin, tahun_masuk) VALUES (:nis,:nama,:kelas,:jk,:tahun)");
-                        $stmt->execute([':nis'=>$nis, ':nama'=>$nama, ':kelas'=>$kelasId, ':jk'=>$jk, ':tahun'=>$tahun]);
+                        $stmt = $pdo->prepare("INSERT INTO siswa (nis, nama, no_hp_ortu, kelas_id, jenis_kelamin, tahun_masuk) VALUES (:nis,:nama,:hp,:kelas,:jk,:tahun)");
+                        $stmt->execute([
+                            ':nis' => $nis,
+                            ':nama' => $nama,
+                            ':hp' => $noHpOrtu ?: null,
+                            ':kelas' => $kelasId,
+                            ':jk' => $jk,
+                            ':tahun' => $tahun
+                        ]);
                         $successCount++;
                     } catch (PDOException $e) {
                         if ($e->getCode() == 23000) {
@@ -196,12 +218,14 @@ require_once __DIR__ . '/../../includes/header.php';
                         <thead class="table-light">
                             <tr>
                                 <th style="width:40px">No</th>
-                                <th style="width:130px">NIS <span class="text-danger">*</span></th>
+                                <th style="width:120px">NIS <span class="text-danger">*</span></th>
+                                <th style="width:120px">NISN</th>
                                 <th>Nama Lengkap <span class="text-danger">*</span></th>
-                                <th style="width:130px">Kelas <span class="text-danger">*</span></th>
-                                <th style="width:100px">L/P <span class="text-danger">*</span></th>
-                                <th style="width:110px">Thn Masuk</th>
-                                <th style="width:50px"></th>
+                                <th style="width:130px">No. HP Ortu</th>
+                                <th style="width:120px">Kelas <span class="text-danger">*</span></th>
+                                <th style="width:80px">L/P <span class="text-danger">*</span></th>
+                                <th style="width:95px">Thn Masuk</th>
+                                <th style="width:45px"></th>
                             </tr>
                         </thead>
                         <tbody id="tbodyMassal">
@@ -225,7 +249,8 @@ require_once __DIR__ . '/../../includes/header.php';
 
             <div class="alert alert-info" style="font-size:.8rem">
                 <strong>ℹ️ Format CSV yang diterima:</strong><br>
-                Kolom harus berurutan: <code>NIS, Nama, Kelas, L/P, Tahun Masuk</code><br>
+                Kolom harus berurutan: <code>NIS, Nama Lengkap, Kelas, L/P, Tahun Masuk, No HP Ortu</code><br>
+                <em>(Kolom No HP Ortu bersifat opsional pada file CSV).</em><br>
                 Baris pertama boleh berupa header (akan otomatis dilewati).<br>
                 Nama kelas harus sesuai: <strong><?= implode(', ', array_column($kelasList, 'nama_kelas')) ?></strong>
             </div>
@@ -239,7 +264,8 @@ require_once __DIR__ . '/../../includes/header.php';
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn-primary-custom"><i class="bi bi-upload"></i> Import Data</button>
                     <a href="index.php" class="btn btn-light">Kembali</a>
-                    <a href="template_siswa.php" class="btn btn-outline-success btn-sm ms-auto"><i class="bi bi-download"></i> Download Template CSV</a>
+                    <a href="template_siswa.php" class="btn btn-outline-success btn-sm ms-auto"><i
+                            class="bi bi-download"></i> Download Template CSV</a>
                 </div>
             </form>
         </div>
@@ -249,53 +275,55 @@ require_once __DIR__ . '/../../includes/header.php';
 
 <!-- JavaScript untuk Form Dinamis -->
 <script>
-// Data kelas untuk dropdown
-const kelasOptions = <?= json_encode($kelasList) ?>;
-let rowCount = 0;
+    // Data kelas untuk dropdown
+    const kelasOptions = <?= json_encode($kelasList) ?>;
+    let rowCount = 0;
 
-function tambahBaris(nis = '', nama = '', kelasId = '', jk = '', tahun = '<?= date('Y') ?>') {
-    rowCount++;
-    const tbody = document.getElementById('tbodyMassal');
+    function tambahBaris(nis = '', nisn = '', nama = '', noHpOrtu = '', kelasId = '', jk = '', tahun = '<?= date('Y') ?>') {
+        rowCount++;
+        const tbody = document.getElementById('tbodyMassal');
 
-    let kelasSelect = '<option value="">--</option>';
-    kelasOptions.forEach(k => {
-        const sel = (k.id == kelasId) ? 'selected' : '';
-        kelasSelect += `<option value="${k.id}" ${sel}>${k.nama_kelas}</option>`;
-    });
+        let kelasSelect = '<option value="">--</option>';
+        kelasOptions.forEach(k => {
+            const sel = (k.id == kelasId) ? 'selected' : '';
+            kelasSelect += `<option value="${k.id}" ${sel}>${k.nama_kelas}</option>`;
+        });
 
-    const row = document.createElement('tr');
-    row.innerHTML = `
+        const row = document.createElement('tr');
+        row.innerHTML = `
         <td class="text-center row-number">${rowCount}</td>
         <td><input type="text" name="siswa[${rowCount}][nis]" class="form-control form-control-sm" value="${nis}" placeholder="NIS"></td>
+        <td><input type="text" name="siswa[${rowCount}][nisn]" class="form-control form-control-sm" value="${nisn}" placeholder="NISN"></td>
         <td><input type="text" name="siswa[${rowCount}][nama]" class="form-control form-control-sm" value="${nama}" placeholder="Nama lengkap"></td>
+        <td><input type="text" name="siswa[${rowCount}][no_hp_ortu]" class="form-control form-control-sm" value="${noHpOrtu}" placeholder="0812..."></td>
         <td><select name="siswa[${rowCount}][kelas_id]" class="form-select form-select-sm">${kelasSelect}</select></td>
         <td><select name="siswa[${rowCount}][jenis_kelamin]" class="form-select form-select-sm">
                 <option value="">--</option>
-                <option value="L" ${jk==='L'?'selected':''}>L</option>
-                <option value="P" ${jk==='P'?'selected':''}>P</option>
+                <option value="L" ${jk === 'L' ? 'selected' : ''}>L</option>
+                <option value="P" ${jk === 'P' ? 'selected' : ''}>P</option>
             </select></td>
         <td><input type="number" name="siswa[${rowCount}][tahun_masuk]" class="form-control form-control-sm" value="${tahun}" min="2000" max="2099"></td>
         <td><button type="button" class="btn-sm-action btn-delete" onclick="hapusBaris(this)"><i class="bi bi-x-lg"></i></button></td>
     `;
-    tbody.appendChild(row);
-}
+        tbody.appendChild(row);
+    }
 
-function hapusBaris(btn) {
-    btn.closest('tr').remove();
-    updateNomor();
-}
+    function hapusBaris(btn) {
+        btn.closest('tr').remove();
+        updateNomor();
+    }
 
-function updateNomor() {
-    const rows = document.querySelectorAll('#tbodyMassal tr');
-    rows.forEach((row, i) => {
-        row.querySelector('.row-number').textContent = i + 1;
+    function updateNomor() {
+        const rows = document.querySelectorAll('#tbodyMassal tr');
+        rows.forEach((row, i) => {
+            row.querySelector('.row-number').textContent = i + 1;
+        });
+    }
+
+    // Mulai dengan 5 baris kosong
+    document.addEventListener('DOMContentLoaded', function () {
+        for (let i = 0; i < 5; i++) tambahBaris();
     });
-}
-
-// Mulai dengan 5 baris kosong
-document.addEventListener('DOMContentLoaded', function() {
-    for (let i = 0; i < 5; i++) tambahBaris();
-});
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

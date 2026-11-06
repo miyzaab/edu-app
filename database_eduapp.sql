@@ -192,6 +192,7 @@ CREATE TABLE `siswa` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nis` varchar(20) NOT NULL,
   `nama` varchar(100) NOT NULL,
+  `no_hp_ortu` varchar(30) DEFAULT NULL,
   `kelas_id` int(11) NOT NULL,
   `jenis_kelamin` enum('L','P') NOT NULL,
   `tahun_masuk` year(4) NOT NULL,
@@ -207,7 +208,7 @@ CREATE TABLE `siswa` (
   CONSTRAINT `siswa_ibfk_1` FOREIGN KEY (`kelas_id`) REFERENCES `kelas` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO siswa (id, nis, nama, kelas_id, jenis_kelamin, tahun_masuk, status, target_uang_pangkal, nominal_spp, created_at, updated_at) VALUES ('12', '12345', 'Budi', '1', 'L', '2026', 'aktif', '0.00', '350000.00', '2026-04-18 00:24:49', '2026-04-18 00:24:49');
+INSERT INTO siswa (id, nis, nama, no_hp_ortu, kelas_id, jenis_kelamin, tahun_masuk, status, target_uang_pangkal, nominal_spp, created_at, updated_at) VALUES ('12', '12345', 'Budi', '081234567890', '1', 'L', '2026', 'aktif', '0.00', '350000.00', '2026-04-18 00:24:49', '2026-04-18 00:24:49');
 
 CREATE TABLE `user_permissions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

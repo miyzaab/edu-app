@@ -4,11 +4,8 @@
  * Semua teks header & tanda tangan diambil dari Pengaturan (database).
  */
 
-require_once __DIR__ . '/../../config/koneksi.php';
-
-if (!isset($_SESSION['user_id'])) {
-    die("Akses ditolak. Silakan login terlebih dahulu.");
-}
+require_once __DIR__ . '/../../config/auth.php';
+requirePermission('petty_cash');
 
 $pdo = getConnection();
 

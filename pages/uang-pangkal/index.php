@@ -2,9 +2,10 @@
 /**
  * UANG PANGKAL - List pembayaran
  */
-$pageTitle  = 'Uang Pangkal';
+$pageTitle = 'Uang Pangkal';
 $activePage = 'uang-pangkal';
 require_once __DIR__ . '/../../config/auth.php';
+requirePermission('uang_pangkal');
 
 $pdo = getConnection();
 $data = $pdo->query("
@@ -18,10 +19,41 @@ $data = $pdo->query("
 require_once __DIR__ . '/../../includes/header.php';
 ?>
 
+<!-- SUB-TAB PILL NAVIGATION (SPP, Uang Pangkal, Pembayaran Lain, Jenis Pembayaran) -->
+<div class="rekap-tabs-bar mb-4 overflow-auto pb-1">
+    <div class="rekap-tabs-pill-container">
+        <?php if (hasPermission('spp')): ?>
+            <a href="<?= BASE_URL ?>/pages/spp/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/spp/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-cash-stack"></i> SPP Bulanan
+            </a>
+        <?php endif; ?>
+        <?php if (hasPermission('uang_pangkal')): ?>
+            <a href="<?= BASE_URL ?>/pages/uang-pangkal/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/uang-pangkal/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-wallet2"></i> Uang Pangkal
+            </a>
+        <?php endif; ?>
+        <?php if (hasPermission('pembayaran_lain')): ?>
+            <a href="<?= BASE_URL ?>/pages/pembayaran-lain/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/pembayaran-lain/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-receipt-cutoff"></i> Pembayaran Lain
+            </a>
+        <?php endif; ?>
+        <?php if (hasPermission('jenis_pembayaran')): ?>
+            <a href="<?= BASE_URL ?>/pages/jenis-pembayaran/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/jenis-pembayaran/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-tags-fill"></i> Jenis Pembayaran
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <p class="text-muted mb-0">Total: <strong><?= count($data) ?></strong> transaksi</p>
     <div class="d-flex gap-2">
-        <a href="monitoring.php" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"><i class="bi bi-display"></i> Monitoring Progres</a>
+        <a href="monitoring.php" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"><i
+                class="bi bi-display"></i> Monitoring Progres</a>
         <a href="create.php" class="btn-primary-custom"><i class="bi bi-plus-lg"></i> Input Pembayaran</a>
     </div>
 </div>
@@ -29,28 +61,46 @@ require_once __DIR__ . '/../../includes/header.php';
 <div class="table-card">
     <div class="table-responsive">
         <table class="data-table">
-            <thead><tr><th>No</th><th>Tanggal</th><th>NIS</th><th>Nama</th><th>Kelas</th><th>Nominal</th><th>Metode</th><th>Aksi</th></tr></thead>
-            <tbody>
-            <?php foreach ($data as $i => $d): ?>
+            <thead>
                 <tr>
-                    <td class="text-muted font-monospace"><?= $i+1 ?></td>
-                    <td class="text-muted small font-monospace"><?= formatTanggal($d['tanggal_bayar']) ?></td>
-                    <td><code><?= htmlspecialchars($d['nis']) ?></code></td>
-                    <td>
-                        <div class="table-avatar-item">
-                            <div class="table-avatar-circle"><?= strtoupper(substr($d['nama'], 0, 1)) ?></div>
-                            <span class="fw-bold text-dark"><?= htmlspecialchars($d['nama']) ?></span>
-                        </div>
-                    </td>
-                    <td><span class="badge bg-light text-dark border px-2.5 py-1 rounded-pill fw-semibold"><?= htmlspecialchars($d['nama_kelas']) ?></span></td>
-                    <td><span class="nominal-pill"><?= formatRupiah($d['nominal']) ?></span></td>
-                    <td><span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 fw-bold"><?= ucfirst($d['metode_bayar']) ?></span></td>
-                    <td><a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank" title="Cetak Kwitansi"><i class="bi bi-printer"></i></a></td>
+                    <th>No</th>
+                    <th>Tanggal</th>
+                    <th>NIS</th>
+                    <th>Nama</th>
+                    <th>Kelas</th>
+                    <th>Nominal</th>
+                    <th>Metode</th>
+                    <th>Aksi</th>
                 </tr>
-            <?php endforeach; ?>
-            <?php if (empty($data)): ?>
-                <tr><td colspan="8" class="text-center text-muted py-4">Belum ada data.</td></tr>
-            <?php endif; ?>
+            </thead>
+            <tbody>
+                <?php foreach ($data as $i => $d): ?>
+                    <tr>
+                        <td class="text-muted font-monospace"><?= $i + 1 ?></td>
+                        <td class="text-muted small font-monospace"><?= formatTanggal($d['tanggal_bayar']) ?></td>
+                        <td><code><?= htmlspecialchars($d['nis']) ?></code></td>
+                        <td>
+                            <div class="table-avatar-item">
+                                <div class="table-avatar-circle"><?= strtoupper(substr($d['nama'], 0, 1)) ?></div>
+                                <span class="fw-bold text-dark"><?= htmlspecialchars($d['nama']) ?></span>
+                            </div>
+                        </td>
+                        <td><span
+                                class="badge bg-light text-dark border px-2.5 py-1 rounded-pill fw-semibold"><?= htmlspecialchars($d['nama_kelas']) ?></span>
+                        </td>
+                        <td><span class="nominal-pill"><?= formatRupiah($d['nominal']) ?></span></td>
+                        <td><span
+                                class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 fw-bold"><?= ucfirst($d['metode_bayar']) ?></span>
+                        </td>
+                        <td><a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"
+                                title="Cetak Kwitansi"><i class="bi bi-printer"></i></a></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($data)): ?>
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Belum ada data.</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>

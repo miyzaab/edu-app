@@ -1,6 +1,5 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /edu-app/
 
     # Jangan rewrite jika file / direktori fisik ada
     RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -12,4 +11,24 @@
     RewriteRule ^pages/perangkat-ajar/([0-9]+)/(cp|tp|atp|modul)/?$ pages/perangkat-ajar/print.php?doc_type=$2&id=$1 [QSA,L]
     RewriteRule ^pages/perangkat-ajar/([0-9]+)/print/?$ pages/perangkat-ajar/print.php?id=$1 [QSA,L]
     RewriteRule ^pages/perangkat-ajar/([0-9]+)/?$ pages/perangkat-ajar/print.php?id=$1 [QSA,L]
+</IfModule>
+
+# COMPRESSION & SPEED OPTIMIZATIONS (ULTRA LIGHTWEIGHT MOBILE SPEED)
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType font/woff2 "access plus 1 year"
 </IfModule>

@@ -5,6 +5,7 @@
 $pageTitle = 'Pembayaran Lain';
 $activePage = 'pembayaran-lain';
 require_once __DIR__ . '/../../config/auth.php';
+requirePermission('pembayaran_lain');
 
 $pdo = getConnection();
 $data = $pdo->query("
@@ -18,6 +19,36 @@ $data = $pdo->query("
 
 require_once __DIR__ . '/../../includes/header.php';
 ?>
+
+<!-- SUB-TAB PILL NAVIGATION (SPP, Uang Pangkal, Pembayaran Lain, Jenis Pembayaran) -->
+<div class="rekap-tabs-bar mb-4 overflow-auto pb-1">
+    <div class="rekap-tabs-pill-container">
+        <?php if (hasPermission('spp')): ?>
+            <a href="<?= BASE_URL ?>/pages/spp/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/spp/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-cash-stack"></i> SPP Bulanan
+            </a>
+        <?php endif; ?>
+        <?php if (hasPermission('uang_pangkal')): ?>
+            <a href="<?= BASE_URL ?>/pages/uang-pangkal/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/uang-pangkal/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-wallet2"></i> Uang Pangkal
+            </a>
+        <?php endif; ?>
+        <?php if (hasPermission('pembayaran_lain')): ?>
+            <a href="<?= BASE_URL ?>/pages/pembayaran-lain/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/pembayaran-lain/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-receipt-cutoff"></i> Pembayaran Lain
+            </a>
+        <?php endif; ?>
+        <?php if (hasPermission('jenis_pembayaran')): ?>
+            <a href="<?= BASE_URL ?>/pages/jenis-pembayaran/index.php"
+                class="rekap-tab-pill <?= strpos($_SERVER['REQUEST_URI'] ?? '', '/pages/jenis-pembayaran/') !== false ? 'active' : '' ?>">
+                <i class="bi bi-tags-fill"></i> Jenis Pembayaran
+            </a>
+        <?php endif; ?>
+    </div>
+</div>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <p class="text-muted mb-0">Total: <strong><?= count($data) ?></strong> transaksi</p>
@@ -57,8 +88,16 @@ require_once __DIR__ . '/../../includes/header.php';
                         <td><span class="badge-status badge-aktif"><?= htmlspecialchars($d['nama_pembayaran']) ?></span>
                         </td>
                         <td><span class="nominal-pill"><?= formatRupiah($d['nominal']) ?></span></td>
-                        <td><a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"
-                                title="Cetak Kwitansi"><i class="bi bi-printer"></i></a></td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="../riwayat/edit.php?tipe=lainnya&id=<?= $d['id'] ?>&redirect=../pembayaran-lain/index.php"
+                                    class="btn-sm-action btn-edit" title="Edit Transaksi">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a href="kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"
+                                    title="Cetak Kwitansi"><i class="bi bi-printer"></i></a>
+                            </div>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if (empty($data)): ?>

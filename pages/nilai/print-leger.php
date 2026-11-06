@@ -6,11 +6,33 @@ require_once __DIR__ . '/../../config/auth.php';
 requirePermission('input_nilai');
 
 $pdo = getConnection();
+$userId = (int) $_SESSION['user_id'];
+$userRole = strtolower($_SESSION['role'] ?? '');
 
-$kelasId = (int)($_GET['kelas_id'] ?? 0);
-$mapel   = trim($_GET['mapel'] ?? 'Matematika');
-$sem     = trim($_GET['semester'] ?? 'Ganjil');
-$tahun   = trim($_GET['tahun_ajaran'] ?? (date('Y') . '/' . (date('Y') + 1)));
+$kelasId = (int) ($_GET['kelas_id'] ?? 0);
+$mapel = trim($_GET['mapel'] ?? 'Matematika');
+$sem = trim($_GET['semester'] ?? 'Ganjil');
+$tahun = trim($_GET['tahun_ajaran'] ?? (date('Y') . '/' . (date('Y') + 1)));
+$cleanAlpha = preg_replace('/[^a-z0-9]/', '', mb_strtolower($mapel));
+$isFiqih = in_array($cleanAlpha, ['fiqih', 'fikih', 'fiqh', 'fiqihvii', 'fiqihviii', 'fiqihix']);
+
+// Validasi plotting jika role Guru
+if ($userRole === 'guru') {
+    $stmtCheck = $pdo->prepare("
+        SELECT COUNT(*) FROM guru_mapel_kelas gmk
+        JOIN mata_pelajaran m ON gmk.mapel_id = m.id
+        WHERE gmk.user_id = :uid 
+        AND (
+            TRIM(LOWER(m.nama_mapel)) = LOWER(:mapel)
+            " . ($isFiqih ? "OR LOWER(TRIM(m.nama_mapel)) IN ('fiqih', 'fikih', 'fiqh', 'fiqih vii', 'fiqih viii', 'fiqih ix')" : "") . "
+        )
+        AND gmk.kelas_id = :kid
+    ");
+    $stmtCheck->execute([':uid' => $userId, ':mapel' => $mapel, ':kid' => $kelasId]);
+    if ((int) $stmtCheck->fetchColumn() === 0) {
+        die("<div style='font-family:sans-serif;padding:2rem;text-align:center;color:#ef4444;'><h3>Akses Ditolak</h3><p>Anda tidak terdaftar sebagai guru pengampu mata pelajaran <b>" . htmlspecialchars($mapel) . "</b> di kelas ini.</p></div>");
+    }
+}
 
 // Load Nama Kelas
 $stmtK = $pdo->prepare("SELECT * FROM kelas WHERE id = :id LIMIT 1");
@@ -18,38 +40,68 @@ $stmtK->execute([':id' => $kelasId]);
 $kelasObj = $stmtK->fetch();
 $namaKelas = $kelasObj['nama_kelas'] ?? 'Semua Kelas';
 
+// Load Materi Sumatif Bab
+$stmtMateri = $pdo->prepare("
+    SELECT * FROM materi_sumatif 
+    WHERE kelas_id = :kid 
+    AND (
+        TRIM(LOWER(mapel)) = LOWER(:mapel)
+        " . ($isFiqih ? "OR LOWER(TRIM(mapel)) IN ('fiqih', 'fikih', 'fiqh', 'fiqih vii', 'fiqih viii', 'fiqih ix')" : "") . "
+    )
+    AND semester = :sem AND tahun_ajaran = :th
+    LIMIT 1
+");
+$stmtMateri->execute([
+    ':kid' => $kelasId,
+    ':mapel' => $mapel,
+    ':sem' => $sem,
+    ':th' => $tahun
+]);
+$materiSumatif = $stmtMateri->fetch() ?: [];
+
 // Load List Siswa & Nilai
 $stmtSiswa = $pdo->prepare("
     SELECT s.nis, s.nama,
-           n.sumatif_1, n.sumatif_2, n.sumatif_3, n.sumatif_4, n.ats, n.aas, n.nilai_akhir, n.predikat, n.catatan
+           n.sumatif_1, n.sumatif_2, n.sumatif_3, n.sumatif_4, n.ats, n.aas, n.nilai_akhir, n.predikat, n.catatan,
+           n.catatan_s1, n.catatan_s2, n.catatan_s3, n.catatan_s4
     FROM siswa s
-    LEFT JOIN nilai_siswa n ON (s.id = n.siswa_id AND n.mapel = :mapel AND n.semester = :sem AND n.tahun_ajaran = :th)
+    LEFT JOIN nilai_siswa n ON (
+        s.id = n.siswa_id 
+        AND (
+            TRIM(LOWER(n.mapel)) = LOWER(:mapel)
+            " . ($isFiqih ? "OR LOWER(TRIM(n.mapel)) IN ('fiqih', 'fikih', 'fiqh', 'fiqih vii', 'fiqih viii', 'fiqih ix')" : "") . "
+        )
+        AND n.semester = :sem 
+        AND n.tahun_ajaran = :th
+    )
     WHERE s.kelas_id = :kid AND s.status = 'aktif'
     ORDER BY s.nama ASC
 ");
 $stmtSiswa->execute([
-    ':kid'   => $kelasId,
+    ':kid' => $kelasId,
     ':mapel' => $mapel,
-    ':sem'   => $sem,
-    ':th'    => $tahun
+    ':sem' => $sem,
+    ':th' => $tahun
 ]);
 $listSiswa = $stmtSiswa->fetchAll();
 
 // School Settings
-$namaSekolah   = getSetting('nama_sekolah', SCHOOL_NAME);
+$namaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
 $alamatSekolah = getSetting('alamat_sekolah', 'Jl. Pendidikan No. 1');
 $teleponSekolah = getSetting('telepon_sekolah', '0812-3456-7890');
-$namaKepsek    = getSetting('nama_kepala_sekolah', 'Kepala Sekolah, M.Pd');
-$nipKepsek     = getSetting('nip_kepsek', '—');
-$namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
+$namaKepsek = getSetting('nama_kepala_sekolah', 'Kepala Sekolah, M.Pd');
+$nipKepsek = getSetting('nip_kepsek', '—');
+$namaGuru = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leger Nilai <?= htmlspecialchars($mapel) ?> - <?= htmlspecialchars($namaKelas) ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman&family=Inter:wght@400;600;700&display=swap"
+        rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         body {
@@ -68,13 +120,14 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
             background: #fff;
             padding: 15px 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .action-bar button, .action-bar a {
+        .action-bar button,
+        .action-bar a {
             font-family: 'Inter', sans-serif;
             font-size: 0.9rem;
             font-weight: 600;
@@ -85,12 +138,13 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
 
         .paper {
             background: #fff;
-            width: 297mm; /* Landscape A4 */
+            width: 297mm;
+            /* Landscape A4 */
             min-height: 210mm;
             margin: 0 auto;
             padding: 15mm 15mm 15mm 15mm;
             box-sizing: border-box;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
         }
 
         .kop-sekolah {
@@ -101,15 +155,54 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
             margin-bottom: 15px;
         }
 
-        .kop-logo { width: 75px; text-align: center; }
-        .kop-text { flex: 1; text-align: center; }
-        .kop-text h2 { margin: 0; font-size: 15pt; font-weight: bold; text-transform: uppercase; }
-        .kop-text h3 { margin: 2px 0; font-size: 13pt; font-weight: bold; text-transform: uppercase; }
-        .kop-text p { margin: 0; font-size: 10pt; font-style: italic; }
+        .kop-logo {
+            width: 75px;
+            text-align: center;
+        }
 
-        .doc-title { text-align: center; margin-bottom: 15px; }
-        .doc-title h3 { margin: 0; font-size: 13pt; font-weight: bold; text-transform: uppercase; text-decoration: underline; }
-        .doc-title p { margin: 3px 0 0 0; font-size: 10.5pt; font-weight: bold; }
+        .kop-text {
+            flex: 1;
+            text-align: center;
+        }
+
+        .kop-text h2 {
+            margin: 0;
+            font-size: 15pt;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .kop-text h3 {
+            margin: 2px 0;
+            font-size: 13pt;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .kop-text p {
+            margin: 0;
+            font-size: 10pt;
+            font-style: italic;
+        }
+
+        .doc-title {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .doc-title h3 {
+            margin: 0;
+            font-size: 13pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-decoration: underline;
+        }
+
+        .doc-title p {
+            margin: 3px 0 0 0;
+            font-size: 10.5pt;
+            font-weight: bold;
+        }
 
         table.tbl-leger {
             width: 100%;
@@ -117,7 +210,8 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
             margin-bottom: 15px;
         }
 
-        table.tbl-leger td, table.tbl-leger th {
+        table.tbl-leger td,
+        table.tbl-leger th {
             border: 1px solid #000;
             padding: 5px 6px;
             font-size: 10pt;
@@ -135,25 +229,49 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
             page-break-inside: avoid;
         }
 
-        .ttd-table { width: 100%; border: none; }
-        .ttd-table td { border: none; text-align: center; vertical-align: top; width: 50%; }
+        .ttd-table {
+            width: 100%;
+            border: none;
+        }
+
+        .ttd-table td {
+            border: none;
+            text-align: center;
+            vertical-align: top;
+            width: 50%;
+        }
 
         @media print {
-            body { background: none; padding: 0; }
-            .action-bar { display: none !important; }
-            .paper { box-shadow: none; width: 100%; margin: 0; padding: 0; }
+            body {
+                background: none;
+                padding: 0;
+            }
+
+            .action-bar {
+                display: none !important;
+            }
+
+            .paper {
+                box-shadow: none;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <!-- ACTION BAR -->
     <div class="action-bar">
         <div>
-            <strong>Leger Nilai Kurikulum Merdeka</strong> — <?= htmlspecialchars($mapel) ?> (<?= htmlspecialchars($namaKelas) ?>)
+            <strong>Leger Nilai Kurikulum Merdeka</strong> — <?= htmlspecialchars($mapel) ?>
+            (<?= htmlspecialchars($namaKelas) ?>)
         </div>
         <div style="display: flex; gap: 10px;">
-            <a href="<?= BASE_URL ?>/pages/nilai/index.php?kelas_id=<?= $kelasId ?>&mapel=<?= urlencode($mapel) ?>&semester=<?= urlencode($sem) ?>&tahun_ajaran=<?= urlencode($tahun) ?>" style="background: #6c757d; color: #fff;">
+            <a href="<?= BASE_URL ?>/pages/nilai/index.php?kelas_id=<?= $kelasId ?>&mapel=<?= urlencode($mapel) ?>&semester=<?= urlencode($sem) ?>&tahun_ajaran=<?= urlencode($tahun) ?>"
+                style="background: #6c757d; color: #fff;">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
             <button onclick="window.print()" style="background: #dc3545; color: #fff; border: none; cursor: pointer;">
@@ -164,7 +282,7 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
 
     <!-- KERTAS A4 LANDSCAPE -->
     <div class="paper">
-        
+
         <!-- KOP SEKOLAH -->
         <div class="kop-sekolah">
             <div class="kop-logo"><?= getLogoHtml(60) ?></div>
@@ -178,8 +296,28 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
         <!-- JUDUL LEGER -->
         <div class="doc-title">
             <h3>LEGER REKAPITULASI PENILAIAN SISWA</h3>
-            <p>MATA PELAJARAN: <?= htmlspecialchars(strtoupper($mapel)) ?> | KELAS: <?= htmlspecialchars(strtoupper($namaKelas)) ?> | SEMESTER <?= htmlspecialchars(strtoupper($sem)) ?> TA <?= htmlspecialchars($tahun) ?></p>
+            <p>MATA PELAJARAN: <?= htmlspecialchars(strtoupper($mapel)) ?> | KELAS:
+                <?= htmlspecialchars(strtoupper($namaKelas)) ?> | SEMESTER <?= htmlspecialchars(strtoupper($sem)) ?> TA
+                <?= htmlspecialchars($tahun) ?>
+            </p>
         </div>
+
+        <?php if (!empty($materiSumatif['materi_s1']) || !empty($materiSumatif['materi_s2']) || !empty($materiSumatif['materi_s3']) || !empty($materiSumatif['materi_s4'])): ?>
+            <div
+                style="margin-bottom: 12px; padding: 6px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 9.5pt;">
+                <strong>Lingkup Materi / Bab yang Diujikan:</strong>
+                <span style="margin-left: 10px;">
+                    <?php if (!empty($materiSumatif['materi_s1'])): ?><b>S1:</b>
+                        <?= htmlspecialchars($materiSumatif['materi_s1']) ?> &nbsp;|&nbsp; <?php endif; ?>
+                    <?php if (!empty($materiSumatif['materi_s2'])): ?><b>S2:</b>
+                        <?= htmlspecialchars($materiSumatif['materi_s2']) ?> &nbsp;|&nbsp; <?php endif; ?>
+                    <?php if (!empty($materiSumatif['materi_s3'])): ?><b>S3:</b>
+                        <?= htmlspecialchars($materiSumatif['materi_s3']) ?> &nbsp;|&nbsp; <?php endif; ?>
+                    <?php if (!empty($materiSumatif['materi_s4'])): ?><b>S4:</b>
+                        <?= htmlspecialchars($materiSumatif['materi_s4']) ?>     <?php endif; ?>
+                </span>
+            </div>
+        <?php endif; ?>
 
         <!-- TABEL LEGER -->
         <table class="tbl-leger">
@@ -201,60 +339,98 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
                 </tr>
             </thead>
             <tbody>
-            <?php if (empty($listSiswa)): ?>
-                <tr><td colspan="13" style="text-align: center; padding: 20px;">Belum ada data siswa.</td></tr>
-            <?php else: ?>
-                <?php 
-                $totalNA = 0;
-                $maxNA = -1;
-                $minNA = 999;
-                $countSiswa = count($listSiswa);
+                <?php if (empty($listSiswa)): ?>
+                    <tr>
+                        <td colspan="13" style="text-align: center; padding: 20px;">Belum ada data siswa.</td>
+                    </tr>
+                <?php else: ?>
+                    <?php
+                    $totalNA = 0;
+                    $maxNA = -1;
+                    $minNA = 999;
+                    $countSiswa = count($listSiswa);
 
-                foreach ($listSiswa as $i => $s): 
-                    $s1  = (float)($s['sumatif_1'] ?? 0);
-                    $s2  = (float)($s['sumatif_2'] ?? 0);
-                    $s3  = (float)($s['sumatif_3'] ?? 0);
-                    $s4  = (float)($s['sumatif_4'] ?? 0);
-                    $ats = (float)($s['ats'] ?? 0);
-                    $aas = (float)($s['aas'] ?? 0);
-                    
-                    $rSumatif = ($s1 + $s2 + $s3 + $s4) / 4.0;
-                    $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
-                    $na = round($na, 2);
-                    
-                    $totalNA += $na;
-                    if ($na > $maxNA) $maxNA = $na;
-                    if ($na < $minNA) $minNA = $na;
+                    foreach ($listSiswa as $i => $s):
+                        $s1 = (float) ($s['sumatif_1'] ?? 0);
+                        $s2 = (float) ($s['sumatif_2'] ?? 0);
+                        $s3 = (float) ($s['sumatif_3'] ?? 0);
+                        $s4 = (float) ($s['sumatif_4'] ?? 0);
+                        $ats = (float) ($s['ats'] ?? 0);
+                        $aas = (float) ($s['aas'] ?? 0);
 
-                    if ($na >= 90) $pred = 'A';
-                    elseif ($na >= 80) $pred = 'B';
-                    elseif ($na >= 70) $pred = 'C';
-                    else $pred = 'D';
-                ?>
-                <tr>
-                    <td style="text-align: center;"><?= $i+1 ?></td>
-                    <td style="text-align: center;"><?= htmlspecialchars($s['nis']) ?></td>
-                    <td><strong><?= htmlspecialchars($s['nama']) ?></strong></td>
-                    <td style="text-align: center;"><?= $s1 ?></td>
-                    <td style="text-align: center;"><?= $s2 ?></td>
-                    <td style="text-align: center;"><?= $s3 ?></td>
-                    <td style="text-align: center;"><?= $s4 ?></td>
-                    <td style="text-align: center; font-weight: bold; background: #fafafa;"><?= number_format($rSumatif, 2) ?></td>
-                    <td style="text-align: center;"><?= $ats ?></td>
-                    <td style="text-align: center;"><?= $aas ?></td>
-                    <td style="text-align: center; font-weight: bold; background: #f0f0f0;"><?= number_format($na, 2) ?></td>
-                    <td style="text-align: center; font-weight: bold;"><?= $pred ?></td>
-                    <td><?= htmlspecialchars($s['catatan'] ?: '-') ?></td>
-                </tr>
-                <?php endforeach; ?>
-                
-                <!-- SUMMARY ROW -->
-                <tr style="font-weight: bold; background-color: #fafafa;">
-                    <td colspan="10" style="text-align: right;">RATA-RATA KELAS:</td>
-                    <td style="text-align: center; background: #e2e8f0;"><?= $countSiswa > 0 ? number_format($totalNA / $countSiswa, 2) : 0 ?></td>
-                    <td colspan="2">Nilai Max: <?= $maxNA >= 0 ? $maxNA : 0 ?> | Min: <?= $minNA < 999 ? $minNA : 0 ?></td>
-                </tr>
-            <?php endif; ?>
+                        $sumatifVals = array_filter([$s1, $s2, $s3, $s4], fn($v) => $v > 0);
+                        $rSumatif = !empty($sumatifVals) ? (array_sum($sumatifVals) / count($sumatifVals)) : 0;
+
+                        if ($ats > 0 && $aas > 0) {
+                            $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
+                        } elseif ($ats > 0) {
+                            $na = ($rSumatif * 0.85) + ($ats * 0.15);
+                        } elseif ($aas > 0) {
+                            $na = ($rSumatif * 0.85) + ($aas * 0.15);
+                        } else {
+                            $na = $rSumatif;
+                        }
+                        $na = round($na, 2);
+
+                        $totalNA += $na;
+                        if ($na > $maxNA)
+                            $maxNA = $na;
+                        if ($na < $minNA)
+                            $minNA = $na;
+
+                        if ($na >= 90)
+                            $pred = 'A';
+                        elseif ($na >= 80)
+                            $pred = 'B';
+                        elseif ($na >= 70)
+                            $pred = 'C';
+                        elseif ($na > 0)
+                            $pred = 'D';
+                        else
+                            $pred = '—';
+
+                        $notesArr = [];
+                        if (!empty(trim($s['catatan'] ?? ''))) {
+                            $notesArr[] = trim($s['catatan']);
+                        }
+                        foreach (['S1' => 'catatan_s1', 'S2' => 'catatan_s2', 'S3' => 'catatan_s3', 'S4' => 'catatan_s4'] as $tag => $fld) {
+                            if (!empty(trim($s[$fld] ?? ''))) {
+                                $notesArr[] = "$tag: " . trim($s[$fld]);
+                            }
+                        }
+                        $catatanFull = !empty($notesArr) ? implode(' | ', $notesArr) : '-';
+                        ?>
+                        <tr>
+                            <td style="text-align: center;"><?= $i + 1 ?></td>
+                            <td style="text-align: center;"><?= htmlspecialchars($s['nis']) ?></td>
+                            <td><strong><?= htmlspecialchars($s['nama']) ?></strong></td>
+                            <td style="text-align: center;"><?= $s1 > 0 ? $s1 : '-' ?></td>
+                            <td style="text-align: center;"><?= $s2 > 0 ? $s2 : '-' ?></td>
+                            <td style="text-align: center;"><?= $s3 > 0 ? $s3 : '-' ?></td>
+                            <td style="text-align: center;"><?= $s4 > 0 ? $s4 : '-' ?></td>
+                            <td style="text-align: center; font-weight: bold; background: #fafafa;">
+                                <?= $rSumatif > 0 ? number_format($rSumatif, 2) : '-' ?>
+                            </td>
+                            <td style="text-align: center;"><?= $ats > 0 ? $ats : '-' ?></td>
+                            <td style="text-align: center;"><?= $aas > 0 ? $aas : '-' ?></td>
+                            <td style="text-align: center; font-weight: bold; background: #f0f0f0;">
+                                <?= $na > 0 ? number_format($na, 2) : '-' ?>
+                            </td>
+                            <td style="text-align: center; font-weight: bold;"><?= $pred ?></td>
+                            <td><?= htmlspecialchars($catatanFull) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+
+                    <!-- SUMMARY ROW -->
+                    <tr style="font-weight: bold; background-color: #fafafa;">
+                        <td colspan="10" style="text-align: right;">RATA-RATA KELAS:</td>
+                        <td style="text-align: center; background: #e2e8f0;">
+                            <?= $countSiswa > 0 ? number_format($totalNA / $countSiswa, 2) : 0 ?>
+                        </td>
+                        <td colspan="2">Nilai Max: <?= $maxNA >= 0 ? $maxNA : 0 ?> | Min: <?= $minNA < 999 ? $minNA : 0 ?>
+                        </td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
 
@@ -282,4 +458,5 @@ $namaGuru      = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
     </div>
 
 </body>
+
 </html>

@@ -17,7 +17,7 @@ $apiKey = getSetting('gemini_api_key', '');
 
 if (empty($apiKey)) {
     echo json_encode([
-        'status' => 'error', 
+        'status' => 'error',
         'message' => 'API Key Gemini belum diatur. Silakan masukkan API Key di menu Pengaturan Sistem terlebih dahulu.'
     ]);
     exit;
@@ -27,9 +27,9 @@ $action = $_POST['action'] ?? '';
 $mapel = trim($_POST['mapel'] ?? '');
 $kelas = trim($_POST['kelas'] ?? '');
 $topik = trim($_POST['topik'] ?? '');
-$cp    = trim($_POST['cp'] ?? '');
-$tp    = trim($_POST['tp'] ?? '');
-$atp   = trim($_POST['atp'] ?? '');
+$cp = trim($_POST['cp'] ?? '');
+$tp = trim($_POST['tp'] ?? '');
+$atp = trim($_POST['atp'] ?? '');
 
 if (empty($action) || empty($mapel) || empty($kelas) || empty($topik) || empty($cp)) {
     echo json_encode(['status' => 'error', 'message' => 'Data Mata Pelajaran, Kelas, Topik, CP, dan Action wajib diisi.']);
@@ -58,7 +58,7 @@ KEMBALIKAN HANYA FORMAT JSON SANGAT BERSIH (tanpa markdown backtick):
     \"tp\": \"1. ...\\n2. ...\\n3. ...\"
 }";
 } elseif ($action === 'generate_atp') {
-    if(empty($tp)) {
+    if (empty($tp)) {
         echo json_encode(['status' => 'error', 'message' => 'Data Tujuan Pembelajaran (TP) wajib diisi untuk membuat ATP.']);
         exit;
     }
@@ -80,7 +80,7 @@ KEMBALIKAN HANYA FORMAT JSON SANGAT BERSIH (tanpa markdown backtick):
     \"atp\": \"Tahap 1 (2 JP): ...\\n\\nTahap 2 (4 JP): ...\\n\\nTahap 3 (2 JP): ...\"
 }";
 } elseif ($action === 'generate_modul') {
-    if(empty($tp) || empty($atp)) {
+    if (empty($tp) || empty($atp)) {
         echo json_encode(['status' => 'error', 'message' => 'Data TP dan ATP wajib diisi untuk membuat Modul Ajar.']);
         exit;
     }
@@ -142,11 +142,11 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-curl_setopt($ch, CURLOPT_TIMEOUT, 60); 
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); 
+curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $response = curl_exec($ch);
 
-if(curl_errno($ch)){
+if (curl_errno($ch)) {
     echo json_encode(['status' => 'error', 'message' => 'Gagal terhubung ke server AI: ' . curl_error($ch)]);
     curl_close($ch);
     exit;

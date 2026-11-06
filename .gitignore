@@ -6,6 +6,12 @@ assets/uploads/
 
 # File temporary & sistem
 *.zip
+test_*.html
+test_*.php
+check_*.php
+read_*.php
+sync_*.php
+update_*.php
 reset-password-darurat.php
 fix_paths.php
 temp.php

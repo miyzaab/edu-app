@@ -2,13 +2,13 @@
 /**
  * PERANGKAT AJAR KURIKULUM MERDEKA - Form Generator (CP, TP, ATP, & Modul Ajar)
  */
-$pageTitle  = 'Buat Perangkat Ajar AI';
+$pageTitle = 'Buat Perangkat Ajar AI';
 $activePage = 'perangkat-ajar';
 require_once __DIR__ . '/../../config/auth.php';
 requirePermission('perangkat_ajar');
 
 $pdo = getConnection();
-$userId = (int)$_SESSION['user_id'];
+$userId = (int) $_SESSION['user_id'];
 
 // Default Values
 $defaultNamaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
@@ -16,63 +16,83 @@ $defaultTahun = date('Y') . '/' . (date('Y') + 1);
 
 $userRole = strtolower($_SESSION['role'] ?? '');
 $isGuruRole = ($userRole === 'guru');
+$guruPlottingMap = [];
+$assignedMapels = [];
+$allKelases = [];
 
 if ($isGuruRole) {
     $stmtPlot = $pdo->prepare("
-        SELECT DISTINCT m.nama_mapel
+        SELECT m.nama_mapel, k.id AS kelas_id, k.nama_kelas, k.tingkat
         FROM guru_mapel_kelas gmk
         JOIN mata_pelajaran m ON gmk.mapel_id = m.id
+        JOIN kelas k ON gmk.kelas_id = k.id
         WHERE gmk.user_id = :uid
+        ORDER BY m.nama_mapel ASC, k.tingkat ASC, k.nama_kelas ASC
     ");
     $stmtPlot->execute([':uid' => $userId]);
-    $mapelOptions = $stmtPlot->fetchAll(PDO::FETCH_COLUMN);
+    $plotRows = $stmtPlot->fetchAll();
+
+    foreach ($plotRows as $pr) {
+        $mName = $pr['nama_mapel'];
+        if (!in_array($mName, $assignedMapels)) {
+            $assignedMapels[] = $mName;
+            $guruPlottingMap[$mName] = [];
+        }
+        $guruPlottingMap[$mName][] = [
+            'id' => (int) $pr['kelas_id'],
+            'nama_kelas' => $pr['nama_kelas'],
+            'tingkat' => $pr['tingkat']
+        ];
+    }
+    $mapelOptions = $assignedMapels;
 } else {
     try {
         $mapelOptions = $pdo->query("SELECT nama_mapel FROM mata_pelajaran WHERE status = 'aktif' ORDER BY kelompok ASC, kode_mapel ASC")->fetchAll(PDO::FETCH_COLUMN);
     } catch (Exception $e) {
         $mapelOptions = [];
     }
+    $allKelases = $pdo->query("SELECT id, nama_kelas, tingkat FROM kelas ORDER BY tingkat ASC, nama_kelas ASC")->fetchAll();
 }
 
 // Submit Form
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save') {
-    $mapel    = trim($_POST['mapel'] ?? '');
-    $kelas    = trim($_POST['kelas'] ?? 'VII');
-    $fase     = trim($_POST['fase'] ?? 'D');
+    $mapel = trim($_POST['mapel'] ?? '');
+    $kelas = trim($_POST['kelas'] ?? 'VII');
+    $fase = trim($_POST['fase'] ?? 'D');
     $semester = $_POST['semester'] ?? 'Ganjil';
-    $tahun    = trim($_POST['tahun_ajaran'] ?? $defaultTahun);
-    $topik    = trim($_POST['topik'] ?? '');
-    $elemen   = trim($_POST['elemen'] ?? '');
-    $alokasi  = trim($_POST['alokasi_waktu'] ?? '2 JP x 40 Menit');
-    
-    $cp  = trim($_POST['capaian_pembelajaran'] ?? '');
-    $tp  = trim($_POST['tujuan_pembelajaran'] ?? '');
+    $tahun = trim($_POST['tahun_ajaran'] ?? $defaultTahun);
+    $topik = trim($_POST['topik'] ?? '');
+    $elemen = trim($_POST['elemen'] ?? '');
+    $alokasi = trim($_POST['alokasi_waktu'] ?? '2 JP x 40 Menit');
+
+    $cp = trim($_POST['capaian_pembelajaran'] ?? '');
+    $tp = trim($_POST['tujuan_pembelajaran'] ?? '');
     $atp = trim($_POST['alur_tujuan_pembelajaran'] ?? '');
 
     // Modul Ajar JSON Structure
     $modulData = [
-        'nama_sekolah'         => trim($_POST['nama_sekolah'] ?? $defaultNamaSekolah),
-        'nama_guru'            => trim($_POST['nama_guru'] ?? $_SESSION['nama_lengkap']),
-        'nip_guru'             => trim($_POST['nip_guru'] ?? ''),
-        'nama_kepsek'          => trim($_POST['nama_kepsek'] ?? getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd')),
-        'nip_kepsek'           => trim($_POST['nip_kepsek'] ?? getSetting('nip_kepsek', '')),
-        'model_pembelajaran'   => trim($_POST['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)'),
-        'profil_pancasila'     => $_POST['profil_pancasila'] ?? ['Bernalar Kritis', 'Gotong Royong', 'Kreatif'],
-        'kompetensi_awal'      => trim($_POST['kompetensi_awal'] ?? ''),
-        'sarana_prasarana'     => trim($_POST['sarana_prasarana'] ?? 'Buku Siswa, PPT, LCD Projector, LKPD, HP/Laptop'),
-        'target_siswa'         => trim($_POST['target_siswa'] ?? 'Peserta didik reguler / tipikal (28-32 siswa)'),
-        'pemahaman_bermakna'   => trim($_POST['pemahaman_bermakna'] ?? ''),
-        'pertanyaan_pemantik'  => trim($_POST['pertanyaan_pemantik'] ?? ''),
+        'nama_sekolah' => trim($_POST['nama_sekolah'] ?? $defaultNamaSekolah),
+        'nama_guru' => trim($_POST['nama_guru'] ?? $_SESSION['nama_lengkap']),
+        'nip_guru' => trim($_POST['nip_guru'] ?? ''),
+        'nama_kepsek' => trim($_POST['nama_kepsek'] ?? getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd')),
+        'nip_kepsek' => trim($_POST['nip_kepsek'] ?? getSetting('nip_kepsek', '')),
+        'model_pembelajaran' => trim($_POST['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)'),
+        'profil_pancasila' => $_POST['profil_pancasila'] ?? ['Bernalar Kritis', 'Gotong Royong', 'Kreatif'],
+        'kompetensi_awal' => trim($_POST['kompetensi_awal'] ?? ''),
+        'sarana_prasarana' => trim($_POST['sarana_prasarana'] ?? 'Buku Siswa, PPT, LCD Projector, LKPD, HP/Laptop'),
+        'target_siswa' => trim($_POST['target_siswa'] ?? 'Peserta didik reguler / tipikal (28-32 siswa)'),
+        'pemahaman_bermakna' => trim($_POST['pemahaman_bermakna'] ?? ''),
+        'pertanyaan_pemantik' => trim($_POST['pertanyaan_pemantik'] ?? ''),
         'kegiatan_pendahuluan' => trim($_POST['kegiatan_pendahuluan'] ?? ''),
-        'kegiatan_inti'        => trim($_POST['kegiatan_inti'] ?? ''),
-        'kegiatan_penutup'     => trim($_POST['kegiatan_penutup'] ?? ''),
-        'asesmen_diagnostik'   => trim($_POST['asesmen_diagnostik'] ?? ''),
-        'asesmen_formatif'     => trim($_POST['asesmen_formatif'] ?? ''),
-        'asesmen_sumatif'      => trim($_POST['asesmen_sumatif'] ?? ''),
-        'lkpd_content'         => trim($_POST['lkpd_content'] ?? ''),
-        'bahan_bacaan'         => trim($_POST['bahan_bacaan'] ?? ''),
-        'glosarium'            => trim($_POST['glosarium'] ?? ''),
-        'daftar_pustaka'       => trim($_POST['daftar_pustaka'] ?? '')
+        'kegiatan_inti' => trim($_POST['kegiatan_inti'] ?? ''),
+        'kegiatan_penutup' => trim($_POST['kegiatan_penutup'] ?? ''),
+        'asesmen_diagnostik' => trim($_POST['asesmen_diagnostik'] ?? ''),
+        'asesmen_formatif' => trim($_POST['asesmen_formatif'] ?? ''),
+        'asesmen_sumatif' => trim($_POST['asesmen_sumatif'] ?? ''),
+        'lkpd_content' => trim($_POST['lkpd_content'] ?? ''),
+        'bahan_bacaan' => trim($_POST['bahan_bacaan'] ?? ''),
+        'glosarium' => trim($_POST['glosarium'] ?? ''),
+        'daftar_pustaka' => trim($_POST['daftar_pustaka'] ?? '')
     ];
 
     if ($mapel && $kelas && $topik) {
@@ -84,19 +104,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 (:uid, :mapel, :kelas, :fase, :sem, :th, :topik, :elem, :alokasi, :cp, :tp, :atp, :json)
             ");
             $stmtInsert->execute([
-                ':uid'     => $userId,
-                ':mapel'   => $mapel,
-                ':kelas'   => $kelas,
-                ':fase'    => $fase,
-                ':sem'     => $semester,
-                ':th'      => $tahun,
-                ':topik'   => $topik,
-                ':elem'    => $elemen,
+                ':uid' => $userId,
+                ':mapel' => $mapel,
+                ':kelas' => $kelas,
+                ':fase' => $fase,
+                ':sem' => $semester,
+                ':th' => $tahun,
+                ':topik' => $topik,
+                ':elem' => $elemen,
                 ':alokasi' => $alokasi,
-                ':cp'      => $cp,
-                ':tp'      => $tp,
-                ':atp'     => $atp,
-                ':json'    => json_encode($modulData, JSON_UNESCAPED_UNICODE)
+                ':cp' => $cp,
+                ':tp' => $tp,
+                ':atp' => $atp,
+                ':json' => json_encode($modulData, JSON_UNESCAPED_UNICODE)
             ]);
 
             $newId = $pdo->lastInsertId();
@@ -141,7 +161,8 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Mata Pelajaran *</label>
-                    <select name="mapel" id="inputMapel" class="form-select" required onchange="autoSuggestElemen()">
+                    <select name="mapel" id="inputMapel" class="form-select" required
+                        onchange="autoSuggestElemen(); updateKelasOptions();">
                         <option value="">-- Pilih Mata Pelajaran --</option>
                         <?php foreach ($mapelOptions as $m): ?>
                             <option value="<?= htmlspecialchars($m) ?>"><?= htmlspecialchars($m) ?></option>
@@ -151,14 +172,12 @@ require_once __DIR__ . '/../../includes/header.php';
                 <div class="col-md-2">
                     <label class="form-label fw-bold">Kelas *</label>
                     <select name="kelas" id="inputKelas" class="form-select" required>
-                        <option value="VII (Tujuh)">Kelas VII</option>
-                        <option value="VIII (Delapan)">Kelas VIII</option>
-                        <option value="IX (Sembilan)">Kelas IX</option>
+                        <!-- Diisi dinamis via JS -->
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label fw-bold">Fase</label>
-                    <input type="text" name="fase" class="form-control bg-light" value="D" readonly>
+                    <input type="text" name="fase" id="inputFase" class="form-control bg-light" value="D" readonly>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label fw-bold">Semester</label>
@@ -176,11 +195,13 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="row g-3 mt-2">
                 <div class="col-md-4">
                     <label class="form-label fw-bold">Elemen / Domain Kurikulum</label>
-                    <input type="text" name="elemen" id="inputElemen" class="form-control" placeholder="Contoh: Aljabar / Pemahaman IPA / Menyimak">
+                    <input type="text" name="elemen" id="inputElemen" class="form-control"
+                        placeholder="Contoh: Aljabar / Pemahaman IPA / Menyimak">
                 </div>
                 <div class="col-md-5">
                     <label class="form-label fw-bold">Topik / Materi Pokok *</label>
-                    <input type="text" name="topik" id="inputTopik" class="form-control" placeholder="Contoh: Persamaan Bentuk Aljabar / Sistem Pencernaan" required>
+                    <input type="text" name="topik" id="inputTopik" class="form-control"
+                        placeholder="Contoh: Persamaan Bentuk Aljabar / Sistem Pencernaan" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-bold">Alokasi Waktu</label>
@@ -191,18 +212,22 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="row g-3 mt-2">
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Nama Guru Pengampu *</label>
-                    <input type="text" name="nama_guru" class="form-control" value="<?= htmlspecialchars($_SESSION['nama_lengkap']) ?>" required>
+                    <input type="text" name="nama_guru" class="form-control"
+                        value="<?= htmlspecialchars($_SESSION['nama_lengkap']) ?>" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold">NIP Guru (Opsional)</label>
                     <input type="text" name="nip_guru" class="form-control" placeholder="-">
                 </div>
             </div>
-            
+
             <div class="mt-4">
                 <label class="form-label fw-bold text-dark">Capaian Pembelajaran (CP) *</label>
-                <textarea name="capaian_pembelajaran" id="inputCP" class="form-control" rows="4" placeholder="Ketik atau paste teks Capaian Pembelajaran dari SK BSKAP Kemendikbudristek di sini..." required></textarea>
-                <small class="text-muted"><i class="bi bi-info-circle"></i> AI akan membaca CP ini untuk men-generate TP, ATP, dan kelengkapan Modul Ajar secara otomatis.</small>
+                <textarea name="capaian_pembelajaran" id="inputCP" class="form-control" rows="4"
+                    placeholder="Ketik atau paste teks Capaian Pembelajaran dari SK BSKAP Kemendikbudristek di sini..."
+                    required></textarea>
+                <small class="text-muted"><i class="bi bi-info-circle"></i> AI akan membaca CP ini untuk men-generate
+                    TP, ATP, dan kelengkapan Modul Ajar secara otomatis.</small>
             </div>
 
             <!-- Old global generate button removed for step-by-step approach -->
@@ -212,26 +237,31 @@ require_once __DIR__ . '/../../includes/header.php';
     <!-- STEP 2: TUJUAN (TP) & ALUR (ATP) -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-dark text-white py-3">
-            <h6 class="m-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i> 2. Tujuan (TP) & Alur Tujuan Pembelajaran (ATP)</h6>
+            <h6 class="m-0 fw-bold"><i class="bi bi-diagram-3-fill me-2"></i> 2. Tujuan (TP) & Alur Tujuan Pembelajaran
+                (ATP)</h6>
         </div>
         <div class="card-body p-4">
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <label class="form-label fw-bold text-dark m-0">Tujuan Pembelajaran (TP)</label>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnGenTP" onclick="generatePerangkatAI('generate_tp', 'btnGenTP')">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnGenTP"
+                        onclick="generatePerangkatAI('generate_tp', 'btnGenTP')">
                         <i class="bi bi-cpu-fill"></i> Generate TP via AI
                     </button>
                 </div>
-                <textarea name="tujuan_pembelajaran" id="inputTP" class="form-control" rows="4" placeholder="Gunakan KKO Bloom: Peserta didik mampu menjelaskan..."></textarea>
+                <textarea name="tujuan_pembelajaran" id="inputTP" class="form-control" rows="4"
+                    placeholder="Gunakan KKO Bloom: Peserta didik mampu menjelaskan..."></textarea>
             </div>
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <label class="form-label fw-bold text-dark m-0">Alur Tujuan Pembelajaran (ATP)</label>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnGenATP" onclick="generatePerangkatAI('generate_atp', 'btnGenATP')">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnGenATP"
+                        onclick="generatePerangkatAI('generate_atp', 'btnGenATP')">
                         <i class="bi bi-cpu-fill"></i> Generate ATP via AI
                     </button>
                 </div>
-                <textarea name="alur_tujuan_pembelajaran" id="inputATP" class="form-control" rows="4" placeholder="Urutan alur pembelajaran dari awal hingga asesmen..."></textarea>
+                <textarea name="alur_tujuan_pembelajaran" id="inputATP" class="form-control" rows="4"
+                    placeholder="Urutan alur pembelajaran dari awal hingga asesmen..."></textarea>
             </div>
         </div>
     </div>
@@ -239,9 +269,11 @@ require_once __DIR__ . '/../../includes/header.php';
     <!-- STEP 3: MODUL AJAR LENGKAP -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 fw-bold"><i class="bi bi-file-earmark-text-fill me-2"></i> 3. Komponen Rincian Modul Ajar (RPP Merdeka)</h6>
+            <h6 class="m-0 fw-bold"><i class="bi bi-file-earmark-text-fill me-2"></i> 3. Komponen Rincian Modul Ajar
+                (RPP Merdeka)</h6>
             <div>
-                <button type="button" class="btn btn-sm btn-light text-primary fw-bold" id="btnGenModul" onclick="generatePerangkatAI('generate_modul', 'btnGenModul')">
+                <button type="button" class="btn btn-sm btn-light text-primary fw-bold" id="btnGenModul"
+                    onclick="generatePerangkatAI('generate_modul', 'btnGenModul')">
                     <i class="bi bi-cpu-fill"></i> Generate Modul Ajar via AI
                 </button>
                 <span class="badge bg-white text-primary ms-2">Standar Kemendikbudristek</span>
@@ -265,19 +297,23 @@ require_once __DIR__ . '/../../includes/header.php';
                     <label class="form-label fw-bold">Profil Pelajar Pancasila</label>
                     <div class="d-flex flex-wrap gap-3 mt-1">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]" value="Bernalar Kritis" id="p1" checked>
+                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]"
+                                value="Bernalar Kritis" id="p1" checked>
                             <label class="form-check-label" for="p1">Bernalar Kritis</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]" value="Gotong Royong" id="p2" checked>
+                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]"
+                                value="Gotong Royong" id="p2" checked>
                             <label class="form-check-label" for="p2">Gotong Royong</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]" value="Kreatif" id="p3" checked>
+                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]" value="Kreatif"
+                                id="p3" checked>
                             <label class="form-check-label" for="p3">Kreatif</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]" value="Mandiri" id="p4">
+                            <input class="form-check-input" type="checkbox" name="profil_pancasila[]" value="Mandiri"
+                                id="p4">
                             <label class="form-check-label" for="p4">Mandiri</label>
                         </div>
                     </div>
@@ -309,17 +345,20 @@ require_once __DIR__ . '/../../includes/header.php';
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-bold text-success"><i class="bi bi-play-circle me-1"></i> Kegiatan Pendahuluan (10-15 Menit)</label>
+                <label class="form-label fw-bold text-success"><i class="bi bi-play-circle me-1"></i> Kegiatan
+                    Pendahuluan (10-15 Menit)</label>
                 <textarea name="kegiatan_pendahuluan" id="inputPendahuluan" class="form-control" rows="3"></textarea>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-bold text-primary"><i class="bi bi-gear-wide-connected me-1"></i> Kegiatan Inti (50-60 Menit)</label>
+                <label class="form-label fw-bold text-primary"><i class="bi bi-gear-wide-connected me-1"></i> Kegiatan
+                    Inti (50-60 Menit)</label>
                 <textarea name="kegiatan_inti" id="inputInti" class="form-control" rows="5"></textarea>
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-bold text-danger"><i class="bi bi-stop-circle me-1"></i> Kegiatan Penutup (10-15 Menit)</label>
+                <label class="form-label fw-bold text-danger"><i class="bi bi-stop-circle me-1"></i> Kegiatan Penutup
+                    (10-15 Menit)</label>
                 <textarea name="kegiatan_penutup" id="inputPenutup" class="form-control" rows="3"></textarea>
             </div>
 
@@ -344,7 +383,8 @@ require_once __DIR__ . '/../../includes/header.php';
             <h6 class="fw-bold text-primary border-bottom pb-2 mb-3 mt-4">D. Lampiran & LKPD</h6>
             <div class="mb-3">
                 <label class="form-label fw-bold">Lembar Kerja Peserta Didik (LKPD)</label>
-                <textarea name="lkpd_content" id="inputLKPD" class="form-control" rows="4" placeholder="Ringkasan tugas / instruksi soal untuk siswa..."></textarea>
+                <textarea name="lkpd_content" id="inputLKPD" class="form-control" rows="4"
+                    placeholder="Ringkasan tugas / instruksi soal untuk siswa..."></textarea>
             </div>
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
@@ -360,11 +400,13 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="row g-3 mt-2 border-top pt-3">
                 <div class="col-md-6">
                     <label class="form-label fw-bold">Nama Kepala Sekolah *</label>
-                    <input type="text" name="nama_kepsek" class="form-control" value="<?= htmlspecialchars(getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd')) ?>" required>
+                    <input type="text" name="nama_kepsek" class="form-control"
+                        value="<?= htmlspecialchars(getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd')) ?>" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-bold">NIP Kepala Sekolah (Opsional)</label>
-                    <input type="text" name="nip_kepsek" class="form-control" value="<?= htmlspecialchars(getSetting('nip_kepsek', '')) ?>">
+                    <input type="text" name="nip_kepsek" class="form-control"
+                        value="<?= htmlspecialchars(getSetting('nip_kepsek', '')) ?>">
                 </div>
             </div>
         </div>
@@ -378,96 +420,150 @@ require_once __DIR__ . '/../../includes/header.php';
 </form>
 
 <script>
-function autoSuggestElemen() {
-    const mapel = document.getElementById('inputMapel').value;
-    if(mapel === 'Matematika') document.getElementById('inputElemen').value = 'Aljabar & Fungsi';
-    else if(mapel === 'Bahasa Indonesia') document.getElementById('inputElemen').value = 'Menyimak & Membaca';
-    else if(mapel === 'Ilmu Pengetahuan Alam (IPA)') document.getElementById('inputElemen').value = 'Pemahaman IPA & Keterampilan Proses';
-}
-
-async function generatePerangkatAI(actionType, btnId) {
-    const mapel = document.getElementById('inputMapel').value;
-    const kelas = document.getElementById('inputKelas').value;
-    const topik = document.getElementById('inputTopik').value;
-    const cp = document.getElementById('inputCP').value.trim();
-    const tp = document.getElementById('inputTP').value.trim();
-    const atp = document.getElementById('inputATP').value.trim();
-    const btn = document.getElementById(btnId);
-
-    if (!mapel || !topik || !cp) {
-        alert('Mohon isi Mata Pelajaran, Topik, dan Capaian Pembelajaran (CP) terlebih dahulu sebelum menggunakan AI.');
-        return;
+    function autoSuggestElemen() {
+        const mapel = document.getElementById('inputMapel').value;
+        if (mapel === 'Matematika') document.getElementById('inputElemen').value = 'Aljabar & Fungsi';
+        else if (mapel === 'Bahasa Indonesia') document.getElementById('inputElemen').value = 'Menyimak & Membaca';
+        else if (mapel === 'Ilmu Pengetahuan Alam (IPA)') document.getElementById('inputElemen').value = 'Pemahaman IPA & Keterampilan Proses';
     }
 
-    if (actionType === 'generate_atp' && !tp) {
-        alert('Tujuan Pembelajaran (TP) harus diisi atau di-generate terlebih dahulu untuk membuat ATP.');
-        return;
-    }
+    async function generatePerangkatAI(actionType, btnId) {
+        const mapel = document.getElementById('inputMapel').value;
+        const kelas = document.getElementById('inputKelas').value;
+        const topik = document.getElementById('inputTopik').value;
+        const cp = document.getElementById('inputCP').value.trim();
+        const tp = document.getElementById('inputTP').value.trim();
+        const atp = document.getElementById('inputATP').value.trim();
+        const btn = document.getElementById(btnId);
 
-    if (actionType === 'generate_modul' && (!tp || !atp)) {
-        alert('Tujuan (TP) dan Alur (ATP) harus diisi atau di-generate terlebih dahulu untuk membuat isi Modul Ajar.');
-        return;
-    }
-
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> AI memproses...';
-    btn.disabled = true;
-
-    try {
-        const formData = new FormData();
-        formData.append('action', actionType);
-        formData.append('mapel', mapel);
-        formData.append('kelas', kelas);
-        formData.append('topik', topik);
-        formData.append('cp', cp);
-        formData.append('tp', tp);
-        formData.append('atp', atp);
-
-        const response = await fetch('<?= BASE_URL ?>/ajax/generate-perangkat-ai.php', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            const data = result.data;
-            
-            // Auto Fill Text Areas with AI response based on action
-            if (actionType === 'generate_tp' && data.tp) {
-                document.getElementById('inputTP').value = data.tp;
-                alert('✨ Tujuan Pembelajaran (TP) berhasil dirumuskan AI! Silakan periksa dan edit bila perlu.');
-            } else if (actionType === 'generate_atp' && data.atp) {
-                document.getElementById('inputATP').value = data.atp;
-                alert('✨ Alur Tujuan Pembelajaran (ATP) berhasil dirumuskan AI! Silakan periksa dan edit bila perlu.');
-            } else if (actionType === 'generate_modul') {
-                if(data.kompetensi_awal) document.getElementById('inputKompetensiAwal').value = data.kompetensi_awal;
-                if(data.sarana_prasarana) document.getElementById('inputSarana').value = data.sarana_prasarana;
-                if(data.pemahaman_bermakna) document.getElementById('inputPemahaman').value = data.pemahaman_bermakna;
-                if(data.pertanyaan_pemantik) document.getElementById('inputPemantik').value = data.pertanyaan_pemantik;
-                if(data.kegiatan_pendahuluan) document.getElementById('inputPendahuluan').value = data.kegiatan_pendahuluan;
-                if(data.kegiatan_inti) document.getElementById('inputInti').value = data.kegiatan_inti;
-                if(data.kegiatan_penutup) document.getElementById('inputPenutup').value = data.kegiatan_penutup;
-                if(data.asesmen_diagnostik) document.getElementById('inputDiagnostik').value = data.asesmen_diagnostik;
-                if(data.asesmen_formatif) document.getElementById('inputFormatif').value = data.asesmen_formatif;
-                if(data.asesmen_sumatif) document.getElementById('inputSumatif').value = data.asesmen_sumatif;
-                if(data.lkpd_content) document.getElementById('inputLKPD').value = data.lkpd_content;
-                if(data.glosarium) document.getElementById('inputGlosarium').value = data.glosarium;
-                if(data.daftar_pustaka) document.getElementById('inputPustaka').value = data.daftar_pustaka;
-                
-                alert('✨ Seluruh kelengkapan Modul Ajar berhasil dirancang oleh AI! Silakan review dan sesuaikan.');
-            }
-        } else {
-            alert('Gagal: ' + result.message);
+        if (!mapel || !topik || !cp) {
+            alert('Mohon isi Mata Pelajaran, Topik, dan Capaian Pembelajaran (CP) terlebih dahulu sebelum menggunakan AI.');
+            return;
         }
-    } catch (error) {
-        alert('Terjadi kesalahan jaringan atau server saat menghubungi AI.');
-        console.error(error);
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-}
+
+        if (actionType === 'generate_atp' && !tp) {
+            alert('Tujuan Pembelajaran (TP) harus diisi atau di-generate terlebih dahulu untuk membuat ATP.');
+            return;
+        }
+
+        if (actionType === 'generate_modul' && (!tp || !atp)) {
+            alert('Tujuan (TP) dan Alur (ATP) harus diisi atau di-generate terlebih dahulu untuk membuat isi Modul Ajar.');
+            return;
+        }
+
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> AI memproses...';
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('action', actionType);
+            formData.append('mapel', mapel);
+            formData.append('kelas', kelas);
+            formData.append('topik', topik);
+            formData.append('cp', cp);
+            formData.append('tp', tp);
+            formData.append('atp', atp);
+
+            const response = await fetch('<?= BASE_URL ?>/ajax/generate-perangkat-ai.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const data = result.data;
+
+                // Auto Fill Text Areas with AI response based on action
+                if (actionType === 'generate_tp' && data.tp) {
+                    document.getElementById('inputTP').value = data.tp;
+                    alert('✨ Tujuan Pembelajaran (TP) berhasil dirumuskan AI! Silakan periksa dan edit bila perlu.');
+                } else if (actionType === 'generate_atp' && data.atp) {
+                    document.getElementById('inputATP').value = data.atp;
+                    alert('✨ Alur Tujuan Pembelajaran (ATP) berhasil dirumuskan AI! Silakan periksa dan edit bila perlu.');
+                } else if (actionType === 'generate_modul') {
+                    if (data.kompetensi_awal) document.getElementById('inputKompetensiAwal').value = data.kompetensi_awal;
+                    if (data.sarana_prasarana) document.getElementById('inputSarana').value = data.sarana_prasarana;
+                    if (data.pemahaman_bermakna) document.getElementById('inputPemahaman').value = data.pemahaman_bermakna;
+                    if (data.pertanyaan_pemantik) document.getElementById('inputPemantik').value = data.pertanyaan_pemantik;
+                    if (data.kegiatan_pendahuluan) document.getElementById('inputPendahuluan').value = data.kegiatan_pendahuluan;
+                    if (data.kegiatan_inti) document.getElementById('inputInti').value = data.kegiatan_inti;
+                    if (data.kegiatan_penutup) document.getElementById('inputPenutup').value = data.kegiatan_penutup;
+                    if (data.asesmen_diagnostik) document.getElementById('inputDiagnostik').value = data.asesmen_diagnostik;
+                    if (data.asesmen_formatif) document.getElementById('inputFormatif').value = data.asesmen_formatif;
+                    if (data.asesmen_sumatif) document.getElementById('inputSumatif').value = data.asesmen_sumatif;
+                    if (data.lkpd_content) document.getElementById('inputLKPD').value = data.lkpd_content;
+                    if (data.glosarium) document.getElementById('inputGlosarium').value = data.glosarium;
+                    if (data.daftar_pustaka) document.getElementById('inputPustaka').value = data.daftar_pustaka;
+
+                    alert('✨ Seluruh kelengkapan Modul Ajar berhasil dirancang oleh AI! Silakan review dan sesuaikan.');
+                }
+            } else {
+                alert('Gagal: ' + result.message);
+            }
+        } catch (error) {
+            alert('Terjadi kesalahan jaringan atau server saat menghubungi AI.');
+            console.error(error);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+        const plottingData = <?= json_encode($guruPlottingMap) ?>;
+        const allKelases = <?= json_encode($allKelases) ?>;
+        const isGuruRole = <?= $isGuruRole ? 'true' : 'false' ?>;
+
+        function updateKelasOptions() {
+            const selectMapel = document.getElementById('inputMapel');
+            const selectKelas = document.getElementById('inputKelas');
+            const inputFase = document.getElementById('inputFase');
+
+            if (!selectMapel || !selectKelas) return;
+
+            const selectedMapel = selectMapel.value;
+            selectKelas.innerHTML = '';
+
+            let kelasesToShow = [];
+
+            if (isGuruRole) {
+                kelasesToShow = plottingData[selectedMapel] || [];
+            } else {
+                kelasesToShow = allKelases;
+            }
+
+            if (kelasesToShow.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = isGuruRole ? '-- Tidak ada kelas diampu --' : '-- Pilih Kelas --';
+                selectKelas.appendChild(opt);
+            } else {
+                kelasesToShow.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k.nama_kelas;
+                    opt.textContent = 'Kelas ' + k.nama_kelas + (k.tingkat ? ' (Tingkat ' + k.tingkat + ')' : '');
+                    selectKelas.appendChild(opt);
+                });
+            }
+
+            if (inputFase) {
+                const firstTingkat = kelasesToShow[0] ? (kelasesToShow[0].tingkat || '7') : '7';
+                if (['10', '11', '12', 'X', 'XI', 'XII'].includes(firstTingkat.toString())) {
+                    inputFase.value = 'E / F';
+                } else if (['1', '2', 'I', 'II'].includes(firstTingkat.toString())) {
+                    inputFase.value = 'A';
+                } else if (['3', '4', 'III', 'IV'].includes(firstTingkat.toString())) {
+                    inputFase.value = 'B';
+                } else if (['5', '6', 'V', 'VI'].includes(firstTingkat.toString())) {
+                    inputFase.value = 'C';
+                } else {
+                    inputFase.value = 'D';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            updateKelasOptions();
+        });
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

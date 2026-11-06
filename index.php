@@ -304,10 +304,11 @@ try {
         <?php endif; ?>
 
         <form class="login-form" action="<?= BASE_URL ?>/login_process.php" method="POST" autocomplete="off">
-            <label class="form-label" for="username">Username</label>
+            <label class="form-label" for="username">Username / NIS / No. HP</label>
             <div class="input-wrapper">
                 <i class="bi bi-person"></i>
-                <input type="text" id="username" name="username" placeholder="Masukkan username" required autofocus>
+                <input type="text" id="username" name="username" placeholder="Username, NIS, atau No. HP Ortu" required
+                    autofocus>
             </div>
 
             <label class="form-label" for="password">Password</label>

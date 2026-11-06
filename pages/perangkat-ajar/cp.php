@@ -3,48 +3,66 @@
  * CAPAIAN PEMBELAJARAN (CP) - High Quality Modern UI/UX
  * Modul Perangkat Ajar Kurikulum Merdeka
  */
-$pageTitle  = 'Capaian Pembelajaran (CP)';
+$pageTitle = 'Capaian Pembelajaran (CP)';
 $activePage = 'perangkat-ajar';
 require_once __DIR__ . '/../../config/auth.php';
 requirePermission('perangkat_ajar');
 
 $pdo = getConnection();
-$userId = (int)$_SESSION['user_id'];
+$userId = (int) $_SESSION['user_id'];
 $userRole = strtolower($_SESSION['role'] ?? '');
 $isGuruRole = ($userRole === 'guru');
 
-// Restriksi pilihan Mapel untuk Guru Pengampu
+// Restriksi pilihan Mapel & Kelas untuk Guru Pengampu
+$guruPlottingMap = []; // [ nama_mapel => [ ['id' => 1, 'nama_kelas' => 'VII-A', 'tingkat' => 'VII'], ... ] ]
+$assignedMapels = [];
+$allKelases = [];
+
 if ($isGuruRole) {
     $stmtPlot = $pdo->prepare("
-        SELECT DISTINCT m.nama_mapel
+        SELECT m.nama_mapel, k.id AS kelas_id, k.nama_kelas, k.tingkat
         FROM guru_mapel_kelas gmk
         JOIN mata_pelajaran m ON gmk.mapel_id = m.id
+        JOIN kelas k ON gmk.kelas_id = k.id
         WHERE gmk.user_id = :uid
+        ORDER BY m.nama_mapel ASC, k.tingkat ASC, k.nama_kelas ASC
     ");
     $stmtPlot->execute([':uid' => $userId]);
-    $mapelOptions = $stmtPlot->fetchAll(PDO::FETCH_COLUMN);
-    if (empty($mapelOptions) && !empty($_SESSION['mapel'])) {
-        $mapelOptions = [$_SESSION['mapel']];
+    $plotRows = $stmtPlot->fetchAll();
+
+    foreach ($plotRows as $pr) {
+        $mName = $pr['nama_mapel'];
+        if (!in_array($mName, $assignedMapels)) {
+            $assignedMapels[] = $mName;
+            $guruPlottingMap[$mName] = [];
+        }
+        $guruPlottingMap[$mName][] = [
+            'id' => (int) $pr['kelas_id'],
+            'nama_kelas' => $pr['nama_kelas'],
+            'tingkat' => $pr['tingkat']
+        ];
     }
+    $mapelOptions = $assignedMapels;
 } else {
     try {
         $mapelOptions = $pdo->query("SELECT nama_mapel FROM mata_pelajaran WHERE status = 'aktif' ORDER BY kelompok ASC, kode_mapel ASC")->fetchAll(PDO::FETCH_COLUMN);
     } catch (Exception $e) {
         $mapelOptions = [];
     }
+    $allKelases = $pdo->query("SELECT id, nama_kelas, tingkat FROM kelas ORDER BY tingkat ASC, nama_kelas ASC")->fetchAll();
 }
 
 $defaultNamaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
-$defaultTahun       = date('Y') . '/' . (date('Y') + 1);
+$defaultTahun = date('Y') . '/' . (date('Y') + 1);
 
 // Handle Simpan / Auto-Generate CP Baru
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_cp') {
-    $mapel    = trim($_POST['mapel'] ?? '');
-    $kelas    = trim($_POST['kelas'] ?? 'VII');
-    $fase     = trim($_POST['fase'] ?? 'D');
+    $mapel = trim($_POST['mapel'] ?? '');
+    $kelas = trim($_POST['kelas'] ?? 'VII');
+    $fase = trim($_POST['fase'] ?? 'D');
     $semester = $_POST['semester'] ?? 'Ganjil & Genap';
-    $tahun    = trim($_POST['tahun_ajaran'] ?? $defaultTahun);
-    $poinBab  = trim($_POST['poin_bab'] ?? '');
+    $tahun = trim($_POST['tahun_ajaran'] ?? $defaultTahun);
+    $poinBab = trim($_POST['poin_bab'] ?? '');
 
     if ($isGuruRole && !empty($mapelOptions) && !in_array($mapel, $mapelOptions)) {
         redirect('cp.php', 'danger', 'Anda hanya berhak menginput Perangkat Ajar untuk Mata Pelajaran yang Anda ampu.');
@@ -110,29 +128,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
 
             $modulData = [
-                'nama_sekolah'         => $defaultNamaSekolah,
-                'nama_guru'            => $_SESSION['nama_lengkap'],
-                'nip_guru'             => '',
-                'nama_kepsek'          => getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd'),
-                'nip_kepsek'           => getSetting('nip_kepsek', ''),
-                'model_pembelajaran'   => 'Problem-Based Learning (PBL) & Diskusi Kelompok Interaktif',
-                'profil_pancasila'     => ['Bernalar Kritis', 'Gotong Royong', 'Kreatif', 'Mandiri'],
-                'kompetensi_awal'      => $kompetensiAwal,
-                'sarana_prasarana'     => 'Buku Pegangan Guru & Siswa, Slide Presentasi/PPT, Proyektor, Kartu Kasus/LKPD.',
-                'target_siswa'         => 'Peserta didik reguler / tipikal (28-32 siswa dalam rombel campuran)',
-                'pemahaman_bermakna'   => $pemahamanBermakna,
-                'pertanyaan_pemantik'  => $pertanyaanPemantik,
+                'nama_sekolah' => $defaultNamaSekolah,
+                'nama_guru' => $_SESSION['nama_lengkap'],
+                'nip_guru' => '',
+                'nama_kepsek' => getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd'),
+                'nip_kepsek' => getSetting('nip_kepsek', ''),
+                'model_pembelajaran' => 'Problem-Based Learning (PBL) & Diskusi Kelompok Interaktif',
+                'profil_pancasila' => ['Bernalar Kritis', 'Gotong Royong', 'Kreatif', 'Mandiri'],
+                'kompetensi_awal' => $kompetensiAwal,
+                'sarana_prasarana' => 'Buku Pegangan Guru & Siswa, Slide Presentasi/PPT, Proyektor, Kartu Kasus/LKPD.',
+                'target_siswa' => 'Peserta didik reguler / tipikal (28-32 siswa dalam rombel campuran)',
+                'pemahaman_bermakna' => $pemahamanBermakna,
+                'pertanyaan_pemantik' => $pertanyaanPemantik,
                 'kegiatan_pendahuluan' => "1. Guru mengucap salam hangat, mengajak berdoa bersama, dan menyapa presensi siswa.\n2. Apersepsi: Guru mengaitkan materi $topikUtama dengan pengalaman nyata siswa.\n3. Guru menyampaikan tujuan pembelajaran dan gambaran aktivitas yang akan dilakukan.",
-                'kegiatan_inti'        => "1. Orientasi: Siswa mencermati tayangan visual / studi kasus terkait materi $topikUtama.\n2. Mengorganisasi: Siswa dibagi dalam kelompok heterogen (4-5 orang) untuk mendiskusikan lembar kerja.\n3. Membimbing: Guru berkeliling memberikan scafolding pada kelompok yang membutuhkan masukan.\n4. Mengembangkan: Setiap kelompok menyusun dan menyajikan hasil diskusinya di depan kelas.\n5. Evaluasi: Guru dan antar-siswa memberikan apresiasi serta klarifikasi pemahaman.",
-                'kegiatan_penutup'     => "1. Siswa merangkum poin-poin penting materi $topikUtama dibimbing oleh guru.\n2. Refleksi singkat: Siswa mengungkapkan apa yang sudah dipahami dan apa yang masih perlu diperdalam.\n3. Guru menyampaikan penugasan pembiasaan mandiri dan menutup kelas dengan doa.",
-                'asesmen_diagnostik'   => 'Tanya jawab lisan apersepsi di awal pertemuan untuk memetakan pemahaman awal siswa.',
-                'asesmen_formatif'     => 'Observasi keaktifan diskusi kelompok, penilaian kinerjanya pada LKPD, dan presentasi.',
-                'asesmen_sumatif'      => 'Tes tertulis pilihan ganda beralasan & soal uraian berbasis pemecahan masalah di akhir topik.',
-                'lkpd_content'         => $lkpdContent,
-                'bahan_bacaan'         => 'Buku Pegangan Siswa & Artikel Pendukung yang Relevan',
-                'glosarium'            => $glosarium,
-                'daftar_pustaka'       => "1. Kemendikbudristek. (2022). Buku Panduan Guru & Siswa $mapel Kelas $kelas. Jakarta.\n2. Referensi Pendukung Kurikulum Merdeka.",
-                'poin_bab_raw'         => $poinBab
+                'kegiatan_inti' => "1. Orientasi: Siswa mencermati tayangan visual / studi kasus terkait materi $topikUtama.\n2. Mengorganisasi: Siswa dibagi dalam kelompok heterogen (4-5 orang) untuk mendiskusikan lembar kerja.\n3. Membimbing: Guru berkeliling memberikan scafolding pada kelompok yang membutuhkan masukan.\n4. Mengembangkan: Setiap kelompok menyusun dan menyajikan hasil diskusinya di depan kelas.\n5. Evaluasi: Guru dan antar-siswa memberikan apresiasi serta klarifikasi pemahaman.",
+                'kegiatan_penutup' => "1. Siswa merangkum poin-poin penting materi $topikUtama dibimbing oleh guru.\n2. Refleksi singkat: Siswa mengungkapkan apa yang sudah dipahami dan apa yang masih perlu diperdalam.\n3. Guru menyampaikan penugasan pembiasaan mandiri dan menutup kelas dengan doa.",
+                'asesmen_diagnostik' => 'Tanya jawab lisan apersepsi di awal pertemuan untuk memetakan pemahaman awal siswa.',
+                'asesmen_formatif' => 'Observasi keaktifan diskusi kelompok, penilaian kinerjanya pada LKPD, dan presentasi.',
+                'asesmen_sumatif' => 'Tes tertulis pilihan ganda beralasan & soal uraian berbasis pemecahan masalah di akhir topik.',
+                'lkpd_content' => $lkpdContent,
+                'bahan_bacaan' => 'Buku Pegangan Siswa & Artikel Pendukung yang Relevan',
+                'glosarium' => $glosarium,
+                'daftar_pustaka' => "1. Kemendikbudristek. (2022). Buku Panduan Guru & Siswa $mapel Kelas $kelas. Jakarta.\n2. Referensi Pendukung Kurikulum Merdeka.",
+                'poin_bab_raw' => $poinBab
             ];
 
             $stmtInsert = $pdo->prepare("
@@ -142,19 +160,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 (:uid, :mapel, :kelas, :fase, :sem, :th, :topik, :elem, :alokasi, :cp, :tp, :atp, :json)
             ");
             $stmtInsert->execute([
-                ':uid'     => $userId,
-                ':mapel'   => $mapel,
-                ':kelas'   => $kelas,
-                ':fase'    => $fase,
-                ':sem'     => $semester,
-                ':th'      => $tahun,
-                ':topik'   => $topikUtama,
-                ':elem'    => 'Pemahaman & Penerapan ' . $mapel,
+                ':uid' => $userId,
+                ':mapel' => $mapel,
+                ':kelas' => $kelas,
+                ':fase' => $fase,
+                ':sem' => $semester,
+                ':th' => $tahun,
+                ':topik' => $topikUtama,
+                ':elem' => 'Pemahaman & Penerapan ' . $mapel,
                 ':alokasi' => '2 JP x 40 Menit',
-                ':cp'      => $cpTeks,
-                ':tp'      => $tpText,
-                ':atp'     => $atpText,
-                ':json'    => json_encode($modulData, JSON_UNESCAPED_UNICODE)
+                ':cp' => $cpTeks,
+                ':tp' => $tpText,
+                ':atp' => $atpText,
+                ':json' => json_encode($modulData, JSON_UNESCAPED_UNICODE)
             ]);
 
             redirect('cp.php', 'success', '✨ Berhasil! Dokumen CP, TP, ATP & Modul Ajar telah di-generate secara otomatis.');
@@ -198,16 +216,20 @@ require_once __DIR__ . '/subnav.php';
         position: relative;
         overflow: hidden;
     }
+
     .cp-hero::before {
         content: '';
         position: absolute;
-        top: -40%; right: -20%;
-        width: 350px; height: 350px;
-        background: rgba(255,255,255,0.12);
+        top: -40%;
+        right: -20%;
+        width: 350px;
+        height: 350px;
+        background: rgba(255, 255, 255, 0.12);
         border-radius: 50%;
         filter: blur(40px);
         pointer-events: none;
     }
+
     .preset-chip {
         cursor: pointer;
         transition: all 0.2s ease;
@@ -217,38 +239,45 @@ require_once __DIR__ . '/subnav.php';
         font-weight: 600;
         font-size: 0.8rem;
     }
+
     .preset-chip:hover {
         background: #10b981;
         color: #fff;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
     }
+
     .cp-card-preview {
         border-radius: 1rem;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+
     .cp-card-preview:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 28px rgba(0,0,0,0.08)!important;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
     }
 </style>
 
 <!-- HERO HEADER -->
-<div class="cp-hero p-4 p-md-5 mb-4 shadow-sm">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 position-relative" style="z-index: 2;">
+<div class="card border-0 shadow-sm rounded-4 mb-4"
+    style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%); color: white;">
+    <div class="card-body p-4 p-md-5 d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
-            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px);">
-                <i class="bi bi-journal-text fs-6"></i>
-                <span class="small fw-bold text-uppercase" style="letter-spacing: 1px;">MODUL CAPAIAN PEMBELAJARAN (CP)</span>
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
+                style="background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);">
+                <i class="bi bi-journal-text text-white fs-6"></i>
+                <span class="small fw-bold text-uppercase text-white" style="letter-spacing: 1px;">MODUL CAPAIAN
+                    PEMBELAJARAN (CP)</span>
             </div>
-            <h3 class="fw-extrabold mb-1">Capaian Pembelajaran (CP) Kurikulum Merdeka</h3>
-            <p class="opacity-90 small mb-0 fs-6">Guru cukup memasukkan poin-poin bab pembahasan. AI akan meng-generate CP, TP, ATP, dan Modul Ajar secara otomatis.</p>
+            <h3 class="fw-extrabold mb-1 text-white">Capaian Pembelajaran (CP) Kurikulum Merdeka</h3>
+            <p class="opacity-90 small mb-0 fs-6 text-white">Guru cukup memasukkan poin-poin bab pembahasan. AI akan
+                meng-generate CP, TP, ATP, dan Modul Ajar secara otomatis.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="identitas.php" class="btn btn-light fw-bold text-dark px-3 py-2.5 rounded-3 shadow-sm">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a href="identitas.php" class="btn btn-light fw-bold text-dark px-4 py-2.5 rounded-3 shadow-sm">
                 <i class="bi bi-person-badge me-1"></i> Identitas Modul
             </a>
-            <a href="tp.php" class="btn btn-outline-light fw-bold px-3 py-2.5 rounded-3">
+            <a href="tp.php" class="btn btn-outline-light fw-bold px-4 py-2.5 rounded-3 text-white">
                 <i class="bi bi-bullseye me-1"></i> Modul TP & ATP
             </a>
         </div>
@@ -259,21 +288,23 @@ require_once __DIR__ . '/subnav.php';
     <!-- FORM SUPER SIMPEL INPUT BAB -->
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header p-3.5 rounded-top-4 border-0" style="background: linear-gradient(135deg, #059669, #047857) !important; color: #ffffff !important;">
+            <div class="card-header p-3.5 rounded-top-4 border-0"
+                style="background: linear-gradient(135deg, #059669, #047857) !important; color: #ffffff !important;">
                 <h5 class="fw-bold m-0 text-white"><i class="bi bi-magic me-2"></i> Form Simpel Guru (Poin Bab)</h5>
-                <small class="text-white opacity-90 d-block mt-1">Ketikkan judul bab / poin pembahasan materi yang diampu.</small>
+                <small class="text-white opacity-90 d-block mt-1">Ketikkan judul bab / poin pembahasan materi yang
+                    diampu.</small>
             </div>
             <div class="card-body p-4">
                 <form method="POST" action="cp.php">
                     <input type="hidden" name="action" value="save_cp">
-                    
+
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-dark fs-7">Mata Pelajaran <span class="text-danger">*</span></label>
-                        <select name="mapel" id="selectMapel" class="form-select border-2" required>
+                        <label class="form-label fw-bold text-dark fs-7">Mata Pelajaran <span
+                                class="text-danger">*</span></label>
+                        <select name="mapel" id="selectMapel" class="form-select border-2" required
+                            onchange="updateKelasOptions()">
                             <?php if (empty($mapelOptions)): ?>
-                                <option value="Fiqih">Fiqih</option>
-                                <option value="Pendidikan Agama Islam">Pendidikan Agama Islam</option>
-                                <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                                <option value="">-- Belum Ada Mapel Diampu --</option>
                             <?php else: ?>
                                 <?php foreach ($mapelOptions as $mOpt): ?>
                                     <option value="<?= htmlspecialchars($mOpt) ?>"><?= htmlspecialchars($mOpt) ?></option>
@@ -281,22 +312,23 @@ require_once __DIR__ . '/subnav.php';
                             <?php endif; ?>
                         </select>
                         <?php if ($isGuruRole): ?>
-                            <small class="text-muted"><i class="bi bi-shield-lock me-1"></i>Mapel terkunci sesuai penugasan Anda.</small>
+                            <small class="text-muted"><i class="bi bi-shield-lock me-1"></i>Mapel terkunci sesuai penugasan
+                                Anda.</small>
                         <?php endif; ?>
                     </div>
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label fw-bold text-dark fs-7">Kelas <span class="text-danger">*</span></label>
-                            <select name="kelas" class="form-select border-2" required>
-                                <option value="VII">Kelas VII (Tujuh)</option>
-                                <option value="VIII">Kelas VIII (Delapan)</option>
-                                <option value="IX">Kelas IX (Sembilan)</option>
+                            <label class="form-label fw-bold text-dark fs-7">Kelas <span
+                                    class="text-danger">*</span></label>
+                            <select name="kelas" id="selectKelas" class="form-select border-2" required>
+                                <!-- Diisi dinamis via JS sesuai plotting guru -->
                             </select>
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold text-dark fs-7">Fase Kurikulum</label>
-                            <input type="text" name="fase" class="form-control border-2" value="D" readonly>
+                            <input type="text" name="fase" id="inputFase" class="form-control border-2" value="D"
+                                readonly>
                         </div>
                     </div>
 
@@ -311,32 +343,44 @@ require_once __DIR__ . '/subnav.php';
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold text-dark fs-7">Tahun Ajaran</label>
-                            <input type="text" name="tahun_ajaran" class="form-control border-2" value="<?= htmlspecialchars($defaultTahun) ?>">
+                            <input type="text" name="tahun_ajaran" class="form-control border-2"
+                                value="<?= htmlspecialchars($defaultTahun) ?>">
                         </div>
                     </div>
 
                     <!-- CHIP PRESET MATERI INTEGRATED -->
                     <div class="mb-2">
-                        <label class="form-label fw-bold text-dark fs-7 mb-1"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> Klik Contoh Preset Bab (Opsional):</label>
+                        <label class="form-label fw-bold text-dark fs-7 mb-1"><i
+                                class="bi bi-lightning-charge-fill text-warning me-1"></i> Klik Contoh Preset Bab
+                            (Opsional):</label>
                         <div class="d-flex flex-wrap gap-1.5 mb-2">
-                            <span class="badge rounded-pill preset-chip px-2.5 py-1.5" onclick="setPreset('Fiqih', 'Bab 1: Thoharoh (Bersuci dari Hadats dan Najasah)\nBab 2: Haidh dan Najasah\nBab 3: Sholat Fardhu dan Sunnah\nBab 4: Zakat dan Puasa')">
+                            <span class="badge rounded-pill preset-chip px-2.5 py-1.5"
+                                onclick="setPreset('Fiqih', 'Bab 1: Thoharoh (Bersuci dari Hadats dan Najasah)\nBab 2: Haidh dan Najasah\nBab 3: Sholat Fardhu dan Sunnah\nBab 4: Zakat dan Puasa')">
                                 🕌 Fiqih VII
                             </span>
-                            <span class="badge rounded-pill preset-chip px-2.5 py-1.5" onclick="setPreset('Pendidikan Agama Islam', 'Bab 1: Al-Qur\'an dan Sunah Pedoman Hidup\nBab 2: Meneladan Nama dan Sifat Allah\nBab 3: Menghadirkan Salat dan Zikir\nBab 4: Sujud Sahwi dan Tilawah')">
+                            <span class="badge rounded-pill preset-chip px-2.5 py-1.5"
+                                onclick="setPreset('Pendidikan Agama Islam', 'Bab 1: Al-Qur\'an dan Sunah Pedoman Hidup\nBab 2: Meneladan Nama dan Sifat Allah\nBab 3: Menghadirkan Salat dan Zikir\nBab 4: Sujud Sahwi dan Tilawah')">
                                 📖 PAI VII
                             </span>
-                            <span class="badge rounded-pill preset-chip px-2.5 py-1.5" onclick="setPreset('Bahasa Indonesia', 'Bab 1: Teks Laporan Hasil Observasi (LHO)\nBab 2: Menyajikan Puisi Rakyat & Pantun\nBab 3: Menggali Nilai Teks Prosedur\nBab 4: Mengulas Cerita Fantasi')">
+                            <span class="badge rounded-pill preset-chip px-2.5 py-1.5"
+                                onclick="setPreset('Bahasa Indonesia', 'Bab 1: Teks Laporan Hasil Observasi (LHO)\nBab 2: Menyajikan Puisi Rakyat & Pantun\nBab 3: Menggali Nilai Teks Prosedur\nBab 4: Mengulas Cerita Fantasi')">
                                 📚 Bahasa Indonesia VII
                             </span>
                         </div>
                     </div>
 
                     <div class="mb-3 p-3 rounded-3" style="background: #f8fafc; border: 1.5px dashed #10b981;">
-                        <label class="form-label fw-bold text-dark fs-7 mb-1"><i class="bi bi-pencil-square text-success me-1"></i> Poin-Poin Bab Pembahasan Materi <span class="text-danger">*</span></label>
-                        <textarea name="poin_bab" id="textareaBab" class="form-control border-2 font-monospace fs-7" rows="6" placeholder="Bab 1: Thoharoh (Bersuci)&#10;Bab 2: Haidh dan Najasah&#10;Bab 3: Sholat Fardhu dan Sunnah&#10;Bab 4: Zakat dan Puasa" required></textarea>
+                        <label class="form-label fw-bold text-dark fs-7 mb-1"><i
+                                class="bi bi-pencil-square text-success me-1"></i> Poin-Poin Bab Pembahasan Materi <span
+                                class="text-danger">*</span></label>
+                        <textarea name="poin_bab" id="textareaBab" class="form-control border-2 font-monospace fs-7"
+                            rows="6"
+                            placeholder="Bab 1: Thoharoh (Bersuci)&#10;Bab 2: Haidh dan Najasah&#10;Bab 3: Sholat Fardhu dan Sunnah&#10;Bab 4: Zakat dan Puasa"
+                            required></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-emerald w-100 py-3 fw-bold shadow-sm text-white" style="background: #10b981; border: none; font-size: 1rem;">
+                    <button type="submit" class="btn btn-emerald w-100 py-3 fw-bold shadow-sm text-white"
+                        style="background: #10b981; border: none; font-size: 1rem;">
                         <i class="bi bi-magic me-2"></i> ✨ Auto-Generate CP, TP, ATP & Modul Ajar
                     </button>
                 </form>
@@ -348,7 +392,8 @@ require_once __DIR__ . '/subnav.php';
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm rounded-4 h-100">
             <div class="card-header bg-white p-3.5 border-bottom d-flex align-items-center justify-content-between">
-                <h5 class="fw-bold m-0 text-dark"><i class="bi bi-collection-fill text-primary me-2"></i> Daftar Perangkat Capaian Pembelajaran (CP)</h5>
+                <h5 class="fw-bold m-0 text-dark"><i class="bi bi-collection-fill text-primary me-2"></i> Daftar
+                    Perangkat Capaian Pembelajaran (CP)</h5>
                 <span class="badge bg-primary rounded-pill px-3 py-2"><?= count($listCP) ?> Dokumen</span>
             </div>
             <div class="card-body p-3">
@@ -356,7 +401,8 @@ require_once __DIR__ . '/subnav.php';
                     <div class="text-center py-5 text-muted">
                         <i class="bi bi-journal-x display-4 d-block mb-3 opacity-50"></i>
                         <h6>Belum ada Dokumen Perangkat Ajar.</h6>
-                        <p class="small">Ketikkan daftar Bab di samping atau klik preset untuk meng-generate dokumen pertama Anda.</p>
+                        <p class="small">Ketikkan daftar Bab di samping atau klik preset untuk meng-generate dokumen pertama
+                            Anda.</p>
                     </div>
                 <?php else: ?>
                     <div class="d-flex flex-column gap-3">
@@ -364,36 +410,47 @@ require_once __DIR__ . '/subnav.php';
                             <div class="card cp-card-preview border border-light-subtle shadow-sm p-3">
                                 <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-2">
                                     <div>
-                                        <span class="badge bg-primary bg-opacity-10 text-primary fw-bold px-2.5 py-1 rounded-pill mb-1">
+                                        <span
+                                            class="badge bg-primary bg-opacity-10 text-primary fw-bold px-2.5 py-1 rounded-pill mb-1">
                                             <?= htmlspecialchars($cpItem['mapel']) ?>
                                         </span>
                                         <span class="badge bg-secondary bg-opacity-10 text-dark fw-bold px-2 py-1 rounded-pill">
-                                            Kelas <?= htmlspecialchars($cpItem['kelas']) ?> (Fase <?= htmlspecialchars($cpItem['fase']) ?>)
+                                            Kelas <?= htmlspecialchars($cpItem['kelas']) ?> (Fase
+                                            <?= htmlspecialchars($cpItem['fase']) ?>)
                                         </span>
                                         <h5 class="fw-bold text-dark mt-1 mb-0"><?= htmlspecialchars($cpItem['topik']) ?></h5>
                                     </div>
                                     <div class="btn-group">
-                                        <a href="print.php?doc_type=cp&id=<?= $cpItem['id'] ?>" target="_blank" class="btn btn-sm btn-danger fw-bold px-2.5">
+                                        <a href="print.php?doc_type=cp&id=<?= $cpItem['id'] ?>" target="_blank"
+                                            class="btn btn-sm btn-danger fw-bold px-2.5">
                                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
                                         </a>
-                                        <a href="tp.php?cp_id=<?= $cpItem['id'] ?>" class="btn btn-sm btn-outline-primary fw-bold px-2.5">
+                                        <a href="tp.php?cp_id=<?= $cpItem['id'] ?>"
+                                            class="btn btn-sm btn-outline-primary fw-bold px-2.5">
                                             <i class="bi bi-arrow-right-circle me-1"></i> TP & ATP
                                         </a>
-                                        <a href="edit.php?id=<?= $cpItem['id'] ?>" class="btn btn-sm btn-outline-warning text-dark" title="Edit">
+                                        <a href="edit.php?id=<?= $cpItem['id'] ?>"
+                                            class="btn btn-sm btn-outline-warning text-dark" title="Edit">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="delete.php?id=<?= $cpItem['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus dokumen Perangkat Ajar ini secara permanen?');" title="Hapus">
+                                        <a href="delete.php?id=<?= $cpItem['id'] ?>" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Apakah Anda yakin ingin menghapus dokumen Perangkat Ajar ini secara permanen?');"
+                                            title="Hapus">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     </div>
                                 </div>
-                                <div class="small text-muted p-2.5 rounded-3 bg-light border text-truncate" style="max-height: 70px;">
+                                <div class="small text-muted p-2.5 rounded-3 bg-light border text-truncate"
+                                    style="max-height: 70px;">
                                     <i class="bi bi-text-paragraph text-primary me-1"></i>
                                     <?= htmlspecialchars(mb_strimwidth(str_replace("\n", " • ", $cpItem['capaian_pembelajaran']), 0, 140, '...')) ?>
                                 </div>
-                                <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top fs-7 text-muted">
-                                    <span><i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($cpItem['nama_guru'] ?? '-') ?></span>
-                                    <span><i class="bi bi-clock-history me-1"></i><?= date('d M Y H:i', strtotime($cpItem['updated_at'])) ?></span>
+                                <div
+                                    class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top fs-7 text-muted">
+                                    <span><i
+                                            class="bi bi-person-fill me-1"></i><?= htmlspecialchars($cpItem['nama_guru'] ?? '-') ?></span>
+                                    <span><i
+                                            class="bi bi-clock-history me-1"></i><?= date('d M Y H:i', strtotime($cpItem['updated_at'])) ?></span>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -405,25 +462,83 @@ require_once __DIR__ . '/subnav.php';
 </div>
 
 <script>
-function setPreset(mapel, textBab) {
-    var selectMapel = document.getElementById('selectMapel');
-    var textareaBab = document.getElementById('textareaBab');
-    
-    // Set option mapel jika ada
-    for (var i = 0; i < selectMapel.options.length; i++) {
-        if (selectMapel.options[i].value.toLowerCase().includes(mapel.toLowerCase())) {
-            selectMapel.selectedIndex = i;
-            break;
+    const plottingData = <?= json_encode($guruPlottingMap) ?>;
+    const allKelases = <?= json_encode($allKelases) ?>;
+    const isGuruRole = <?= $isGuruRole ? 'true' : 'false' ?>;
+
+    function updateKelasOptions() {
+        const selectMapel = document.getElementById('selectMapel');
+        const selectKelas = document.getElementById('selectKelas');
+        const inputFase = document.getElementById('inputFase');
+
+        if (!selectMapel || !selectKelas) return;
+
+        const selectedMapel = selectMapel.value;
+        selectKelas.innerHTML = '';
+
+        let kelasesToShow = [];
+
+        if (isGuruRole) {
+            kelasesToShow = plottingData[selectedMapel] || [];
+        } else {
+            kelasesToShow = allKelases;
+        }
+
+        if (kelasesToShow.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = isGuruRole ? '-- Tidak ada kelas diampu untuk mapel ini --' : '-- Pilih Kelas --';
+            selectKelas.appendChild(opt);
+        } else {
+            kelasesToShow.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k.nama_kelas;
+                opt.textContent = 'Kelas ' + k.nama_kelas + (k.tingkat ? ' (Tingkat ' + k.tingkat + ')' : '');
+                selectKelas.appendChild(opt);
+            });
+        }
+
+        // Auto update Fase
+        if (inputFase) {
+            const firstTingkat = kelasesToShow[0] ? (kelasesToShow[0].tingkat || '7') : '7';
+            if (['10', '11', '12', 'X', 'XI', 'XII'].includes(firstTingkat.toString())) {
+                inputFase.value = 'E / F';
+            } else if (['1', '2', 'I', 'II'].includes(firstTingkat.toString())) {
+                inputFase.value = 'A';
+            } else if (['3', '4', 'III', 'IV'].includes(firstTingkat.toString())) {
+                inputFase.value = 'B';
+            } else if (['5', '6', 'V', 'VI'].includes(firstTingkat.toString())) {
+                inputFase.value = 'C';
+            } else {
+                inputFase.value = 'D'; // SMP / MTs Tingkat 7, 8, 9
+            }
         }
     }
-    textareaBab.value = textBab;
-}
 
-function confirmDelete(id) {
-    if (confirm('Apakah Anda yakin ingin menghapus dokumen Perangkat Ajar ini secara permanen? Seluruh data CP, TP, ATP, dan Modul Ajar terkait akan hilang.')) {
-        window.location.href = 'delete.php?id=' + id;
+    document.addEventListener('DOMContentLoaded', function () {
+        updateKelasOptions();
+    });
+
+    function setPreset(mapel, textBab) {
+        var selectMapel = document.getElementById('selectMapel');
+        var textareaBab = document.getElementById('textareaBab');
+
+        // Set option mapel jika ada
+        for (var i = 0; i < selectMapel.options.length; i++) {
+            if (selectMapel.options[i].value.toLowerCase().includes(mapel.toLowerCase())) {
+                selectMapel.selectedIndex = i;
+                updateKelasOptions();
+                break;
+            }
+        }
+        textareaBab.value = textBab;
     }
-}
+
+    function confirmDelete(id) {
+        if (confirm('Apakah Anda yakin ingin menghapus dokumen Perangkat Ajar ini secara permanen? Seluruh data CP, TP, ATP, dan Modul Ajar terkait akan hilang.')) {
+            window.location.href = 'delete.php?id=' + id;
+        }
+    }
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

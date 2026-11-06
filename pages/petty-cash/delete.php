@@ -4,17 +4,40 @@
  */
 require_once __DIR__ . '/../../config/auth.php';
 
-$pdo = getConnection();
-$id = (int)($_GET['id'] ?? 0);
+// Cek permission atau role yang diperbolehkan
+if (!hasPermission('petty_cash') && !in_array($_SESSION['role'] ?? '', ['admin', 'bendahara', 'operator'])) {
+    $_SESSION['flash'] = [
+        'type' => 'danger',
+        'message' => 'Anda tidak memiliki hak akses untuk menghapus data transaksi Buku Kas.'
+    ];
+    header('Location: ' . BASE_URL . '/pages/petty-cash/index.php');
+    exit;
+}
 
-if ($id) {
+$pdo = getConnection();
+$id = (int) ($_GET['id'] ?? 0);
+
+if ($id > 0) {
     try {
         $stmt = $pdo->prepare("DELETE FROM petty_cash WHERE id = :id");
         $stmt->execute([':id' => $id]);
-        redirect('index.php', 'success', 'Transaksi berhasil dihapus.');
+        $_SESSION['flash'] = [
+            'type' => 'success',
+            'message' => 'Transaksi Buku Kas berhasil dihapus.'
+        ];
     } catch (PDOException $e) {
-        redirect('index.php', 'danger', 'Gagal menghapus transaksi: ' . $e->getMessage());
+        $_SESSION['flash'] = [
+            'type' => 'danger',
+            'message' => 'Gagal menghapus transaksi: ' . $e->getMessage()
+        ];
     }
 } else {
-    redirect('index.php', 'danger', 'ID Transaksi tidak valid.');
+    $_SESSION['flash'] = [
+        'type' => 'danger',
+        'message' => 'ID Transaksi tidak valid.'
+    ];
 }
+
+header('Location: ' . BASE_URL . '/pages/petty-cash/index.php');
+exit;
+

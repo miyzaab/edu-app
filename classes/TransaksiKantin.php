@@ -6,10 +6,12 @@ require_once __DIR__ . '/Database.php';
  * Membungkus seluruh logika bisnis transaksi kasir, potong saldo atomic,
  * pencatatan mutasi_saldo, stok_log, dan top-up e-wallet santri.
  */
-class TransaksiKantin {
+class TransaksiKantin
+{
     private PDO $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = Database::getInstance();
     }
 
@@ -23,7 +25,8 @@ class TransaksiKantin {
      * @return array Array berisi info transaksi header & status
      * @throws Exception Jika validasi gagal atau stok/saldo tidak mencukupi
      */
-    public function prosesTransaksi(?int $siswaId, int $kasirUserId, array $cartItems, string $metodeBayar = 'saldo'): array {
+    public function prosesTransaksi(?int $siswaId, int $kasirUserId, array $cartItems, string $metodeBayar = 'saldo'): array
+    {
         if (empty($cartItems)) {
             throw new Exception("Keranjang belanja kasir kosong!");
         }
@@ -46,14 +49,14 @@ class TransaksiKantin {
             $saldoSebelum = 0.00;
             $saldoSesudah = 0.00;
 
-            // 2. Jika metode bayar Saldo, lakukan penguncian baris (FOR UPDATE) & validasi kecukupan saldo
+            // 2. Jika metode bayar Saldo, lakukan penguncian baris (FOR UPDATE) & validasi kecukupan saldo & pembatasan jajan
             if ($metodeBayar === 'saldo') {
                 if (!$siswaId) {
                     throw new Exception("Metode pembayaran Saldo memerlukan identitas santri (NIS).");
                 }
 
-                // Lock row saldo santri
-                $stmtCek = $this->db->prepare("SELECT saldo FROM saldo_siswa WHERE siswa_id = :sid FOR UPDATE");
+                // Lock row saldo santri & ambil konfigurasi pembatasan
+                $stmtCek = $this->db->prepare("SELECT saldo, limit_tipe, limit_nominal, limit_aktif FROM saldo_siswa WHERE siswa_id = :sid FOR UPDATE");
                 $stmtCek->execute([':sid' => $siswaId]);
                 $rowSaldo = $stmtCek->fetch();
 
@@ -62,12 +65,54 @@ class TransaksiKantin {
                     $stmtInit = $this->db->prepare("INSERT INTO saldo_siswa (siswa_id, saldo, updated_at) VALUES (:sid, 0.00, NOW())");
                     $stmtInit->execute([':sid' => $siswaId]);
                     $saldoSebelum = 0.00;
+                    $limitTipe = 'none';
+                    $limitNominal = 0.00;
+                    $limitAktif = 0;
                 } else {
-                    $saldoSebelum = (float)$rowSaldo['saldo'];
+                    $saldoSebelum = (float) $rowSaldo['saldo'];
+                    $limitTipe = $rowSaldo['limit_tipe'] ?? 'none';
+                    $limitNominal = (float) ($rowSaldo['limit_nominal'] ?? 0);
+                    $limitAktif = (int) ($rowSaldo['limit_aktif'] ?? 0);
                 }
 
                 if ($saldoSebelum < $totalHarga) {
                     throw new Exception("Saldo E-Wallet santri tidak mencukupi! Sisa Saldo: Rp " . number_format($saldoSebelum, 0, ',', '.') . ", Total Belanja: Rp " . number_format($totalHarga, 0, ',', '.'));
+                }
+
+                // VALIDASI PEMBATASAN UANG JAJAN OLEH ORANG TUA
+                if ($limitAktif && $limitNominal > 0 && $limitTipe !== 'none') {
+                    $spentTotal = 0.00;
+                    if ($limitTipe === 'harian') {
+                        $stmtSpent = $this->db->prepare("
+                            SELECT COALESCE(SUM(total_harga), 0) 
+                            FROM kantin_transaksi 
+                            WHERE siswa_id = :sid AND metode_bayar = 'saldo' AND DATE(created_at) = CURDATE()
+                        ");
+                        $stmtSpent->execute([':sid' => $siswaId]);
+                        $spentTotal = (float) $stmtSpent->fetchColumn();
+                    } elseif ($limitTipe === 'pekanan') {
+                        $stmtSpent = $this->db->prepare("
+                            SELECT COALESCE(SUM(total_harga), 0) 
+                            FROM kantin_transaksi 
+                            WHERE siswa_id = :sid AND metode_bayar = 'saldo' 
+                            AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
+                        ");
+                        $stmtSpent->execute([':sid' => $siswaId]);
+                        $spentTotal = (float) $stmtSpent->fetchColumn();
+                    } elseif ($limitTipe === 'bulanan') {
+                        $stmtSpent = $this->db->prepare("
+                            SELECT COALESCE(SUM(total_harga), 0) 
+                            FROM kantin_transaksi 
+                            WHERE siswa_id = :sid AND metode_bayar = 'saldo' 
+                            AND YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())
+                        ");
+                        $stmtSpent->execute([':sid' => $siswaId]);
+                        $spentTotal = (float) $stmtSpent->fetchColumn();
+                    }
+
+                    if (($spentTotal + $totalHarga) > $limitNominal) {
+                        throw new Exception("Maaf uang jajan sudah sampai maksimal pembatasan yang dibatasi oleh orang tua.");
+                    }
                 }
 
                 $saldoSesudah = $saldoSebelum - $totalHarga;
@@ -86,13 +131,13 @@ class TransaksiKantin {
                 VALUES (:no, :sid, :uid, :tot, :metode, NOW())
             ");
             $stmtTrx->execute([
-                ':no'     => $noTransaksi,
-                ':sid'    => $siswaId,
-                ':uid'    => $kasirUserId,
-                ':tot'    => $totalHarga,
+                ':no' => $noTransaksi,
+                ':sid' => $siswaId,
+                ':uid' => $kasirUserId,
+                ':tot' => $totalHarga,
                 ':metode' => $metodeBayar
             ]);
-            $trxId = (int)$this->db->lastInsertId();
+            $trxId = (int) $this->db->lastInsertId();
 
             // 5. Insert Mutasi Saldo jika bayar Saldo
             if ($metodeBayar === 'saldo' && $siswaId) {
@@ -101,13 +146,13 @@ class TransaksiKantin {
                     VALUES (:sid, 'pembelian', :jumlah, :sebelum, :sesudah, :ket, :ref, :uid)
                 ");
                 $stmtMutasi->execute([
-                    ':sid'     => $siswaId,
-                    ':jumlah'  => $totalHarga,
+                    ':sid' => $siswaId,
+                    ':jumlah' => $totalHarga,
                     ':sebelum' => $saldoSebelum,
                     ':sesudah' => $saldoSesudah,
-                    ':ket'     => "Pembelian Kantin (" . count($cartItems) . " item) - No: " . $noTransaksi,
-                    ':ref'     => $trxId,
-                    ':uid'     => $kasirUserId
+                    ':ket' => "Pembelian Kantin (" . count($cartItems) . " item) - No: " . $noTransaksi,
+                    ':ref' => $trxId,
+                    ':uid' => $kasirUserId
                 ]);
             }
 
@@ -126,9 +171,9 @@ class TransaksiKantin {
 
             $itemSummaryNames = [];
             foreach ($cartItems as $item) {
-                $mid = (int)$item['id'];
-                $qty = (int)$item['qty'];
-                $harga = (float)$item['harga'];
+                $mid = (int) $item['id'];
+                $qty = (int) $item['qty'];
+                $harga = (float) $item['harga'];
                 $subtotal = $harga * $qty;
 
                 // Lock & cek stok produk
@@ -138,17 +183,17 @@ class TransaksiKantin {
                     throw new Exception("Produk kantin dengan ID {$mid} tidak ditemukan.");
                 }
 
-                if ((int)$prod['stok'] < $qty) {
+                if ((int) $prod['stok'] < $qty) {
                     throw new Exception("Stok produk '" . $prod['nama_item'] . "' tidak mencukupi! Sisa stok: " . $prod['stok']);
                 }
 
                 // Insert detail
                 $stmtDetail->execute([
-                    ':tid'   => $trxId,
-                    ':mid'   => $mid,
-                    ':qty'   => $qty,
+                    ':tid' => $trxId,
+                    ':mid' => $mid,
+                    ':qty' => $qty,
                     ':harga' => $harga,
-                    ':sub'   => $subtotal
+                    ':sub' => $subtotal
                 ]);
 
                 // Potong stok
@@ -174,18 +219,19 @@ class TransaksiKantin {
                         ':j' => 'Transaksi Kantin Sekolah',
                         ':p' => 'Anak Anda telah berbelanja di Kantin sebesar Rp ' . number_format($totalHarga, 0, ',', '.') . ' (' . implode(', ', $itemSummaryNames) . '). Sisa Saldo: Rp ' . number_format($saldoSesudah, 0, ',', '.')
                     ]);
-                } catch (Exception $eNotif) {}
+                } catch (Exception $eNotif) {
+                }
             }
 
             $this->db->commit();
 
             return [
-                'success'      => true,
+                'success' => true,
                 'transaksi_id' => $trxId,
                 'no_transaksi' => $noTransaksi,
-                'total_harga'  => $totalHarga,
-                'saldo_sisa'   => $saldoSesudah,
-                'message'      => 'Transaksi kasir berhasil diproses! No: ' . $noTransaksi
+                'total_harga' => $totalHarga,
+                'saldo_sisa' => $saldoSesudah,
+                'message' => 'Transaksi kasir berhasil diproses! No: ' . $noTransaksi
             ];
 
         } catch (Exception $e) {
@@ -199,7 +245,8 @@ class TransaksiKantin {
     /**
      * Memproses Top-Up Saldo Santri (Atomic Transaction)
      */
-    public function topupSaldo(int $siswaId, float $nominal, int $userId, string $keterangan = 'Top-Up Saldo Manual Kasir/Bendahara'): float {
+    public function topupSaldo(int $siswaId, float $nominal, int $userId, string $keterangan = 'Top-Up Saldo Manual Kasir/Bendahara', string $metodeBayar = 'cash', ?string $buktiTransfer = null): float
+    {
         if ($nominal <= 0) {
             throw new Exception("Nominal top-up harus lebih dari 0!");
         }
@@ -212,7 +259,7 @@ class TransaksiKantin {
             $stmtCek->execute([':sid' => $siswaId]);
             $row = $stmtCek->fetch();
 
-            $saldoSebelum = $row ? (float)$row['saldo'] : 0.00;
+            $saldoSebelum = $row ? (float) $row['saldo'] : 0.00;
             $saldoSesudah = $saldoSebelum + $nominal;
 
             // Upsert saldo_siswa
@@ -238,10 +285,17 @@ class TransaksiKantin {
 
             // Record kantin_topup
             $stmtTopup = $this->db->prepare("
-                INSERT INTO kantin_topup (siswa_id, nominal, metode_bayar, user_id)
-                VALUES (:sid, :nom, 'cash', :uid)
+                INSERT INTO kantin_topup (siswa_id, nominal, metode_bayar, bukti_transfer, keterangan, user_id)
+                VALUES (:sid, :nom, :mb, :bt, :ket, :uid)
             ");
-            $stmtTopup->execute([':sid' => $siswaId, ':nom' => $nominal, ':uid' => $userId]);
+            $stmtTopup->execute([
+                ':sid' => $siswaId,
+                ':nom' => $nominal,
+                ':mb' => $metodeBayar,
+                ':bt' => $buktiTransfer,
+                ':ket' => $keterangan,
+                ':uid' => $userId
+            ]);
 
             // Notifikasi ortu
             try {
@@ -251,7 +305,8 @@ class TransaksiKantin {
                     ':j' => 'Top-Up Saldo E-Wallet',
                     ':p' => 'Saldo E-Wallet Kantin anak Anda berhasil di-topup sebesar Rp ' . number_format($nominal, 0, ',', '.') . '. Total Saldo Sekarang: Rp ' . number_format($saldoSesudah, 0, ',', '.')
                 ]);
-            } catch (Exception $eNotif) {}
+            } catch (Exception $eNotif) {
+            }
 
             $this->db->commit();
             return $saldoSesudah;
@@ -267,16 +322,18 @@ class TransaksiKantin {
     /**
      * Memperbarui stok produk secara manual + stok_log
      */
-    public function updateStokManual(int $menuId, string $jenis, int $jumlah, int $userId, string $keterangan = ''): int {
+    public function updateStokManual(int $menuId, string $jenis, int $jumlah, int $userId, string $keterangan = ''): int
+    {
         try {
             $this->db->beginTransaction();
 
             $stmtLock = $this->db->prepare("SELECT stok, nama_item FROM kantin_menu WHERE id = :mid FOR UPDATE");
             $stmtLock->execute([':mid' => $menuId]);
             $prod = $stmtLock->fetch();
-            if (!$prod) throw new Exception("Produk tidak ditemukan.");
+            if (!$prod)
+                throw new Exception("Produk tidak ditemukan.");
 
-            $stokLama = (int)$prod['stok'];
+            $stokLama = (int) $prod['stok'];
             if ($jenis === 'masuk') {
                 $stokBaru = $stokLama + $jumlah;
             } elseif ($jenis === 'keluar') {
@@ -293,18 +350,19 @@ class TransaksiKantin {
                 VALUES (:mid, :jenis, :jumlah, :ket, :uid)
             ");
             $stmtLog->execute([
-                ':mid'    => $menuId,
-                ':jenis'  => $jenis,
+                ':mid' => $menuId,
+                ':jenis' => $jenis,
                 ':jumlah' => $jumlah,
-                ':ket'    => $keterangan ?: "Update stok manual ({$jenis})",
-                ':uid'    => $userId
+                ':ket' => $keterangan ?: "Update stok manual ({$jenis})",
+                ':uid' => $userId
             ]);
 
             $this->db->commit();
             return $stokBaru;
 
         } catch (Exception $e) {
-            if ($this->db->inTransaction()) $this->db->rollBack();
+            if ($this->db->inTransaction())
+                $this->db->rollBack();
             throw $e;
         }
     }

@@ -2,13 +2,14 @@
 /**
  * DATA SISWA - Riwayat Pembayaran Siswa
  */
-$pageTitle  = 'Riwayat Pembayaran Siswa';
+$pageTitle = 'Riwayat Pembayaran Siswa';
 $activePage = 'siswa';
 require_once __DIR__ . '/../../config/auth.php';
+requirePermission('siswa');
 
 $pdo = getConnection();
 
-$id = (int)($_GET['id'] ?? 0);
+$id = (int) ($_GET['id'] ?? 0);
 if (!$id) {
     redirect('index.php', 'danger', 'Siswa tidak ditemukan.');
 }
@@ -48,7 +49,8 @@ require_once __DIR__ . '/../../includes/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="index.php" class="btn btn-light"><i class="bi bi-arrow-left"></i> Kembali</a>
-    <a href="../spp/create-massal.php?siswa_id=<?= $id ?>" class="btn-primary-custom"><i class="bi bi-plus-lg"></i> Input SPP Massal</a>
+    <a href="../spp/create-massal.php?siswa_id=<?= $id ?>" class="btn-primary-custom"><i class="bi bi-plus-lg"></i>
+        Input SPP Massal</a>
 </div>
 
 <div class="row">
@@ -56,16 +58,21 @@ require_once __DIR__ . '/../../includes/header.php';
     <div class="col-md-4 mb-4">
         <div class="form-card text-center">
             <div class="mb-3">
-                <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle" style="width: 80px; height: 80px; font-size: 2rem;">
+                <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle"
+                    style="width: 80px; height: 80px; font-size: 2rem;">
                     <i class="bi bi-person-fill"></i>
                 </div>
             </div>
             <h4 class="mb-1"><?= htmlspecialchars($siswa['nama']) ?></h4>
-            <p class="text-muted mb-3">NIS: <?= htmlspecialchars($siswa['nis']) ?> | Kelas: <?= htmlspecialchars($siswa['nama_kelas']) ?></p>
+            <p class="text-muted mb-3">NIS: <?= htmlspecialchars($siswa['nis']) ?> | Kelas:
+                <?= htmlspecialchars($siswa['nama_kelas']) ?>
+            </p>
             <div class="d-flex justify-content-center gap-2">
-                <span class="badge bg-light text-dark border"><?= $siswa['jenis_kelamin'] === 'L' ? 'Laki-laki' : 'Perempuan' ?></span>
+                <span
+                    class="badge bg-light text-dark border"><?= $siswa['jenis_kelamin'] === 'L' ? 'Laki-laki' : 'Perempuan' ?></span>
                 <span class="badge bg-light text-dark border">Masuk: <?= $siswa['tahun_masuk'] ?></span>
-                <span class="badge <?= $siswa['status'] === 'aktif' ? 'bg-success' : 'bg-danger' ?>"><?= ucfirst($siswa['status']) ?></span>
+                <span
+                    class="badge <?= $siswa['status'] === 'aktif' ? 'bg-success' : 'bg-danger' ?>"><?= ucfirst($siswa['status']) ?></span>
             </div>
         </div>
     </div>
@@ -75,25 +82,34 @@ require_once __DIR__ . '/../../includes/header.php';
         <!-- Tab Navigation -->
         <ul class="nav nav-tabs mb-3" id="historyTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold" id="spp-tab" data-bs-toggle="tab" data-bs-target="#spp" type="button" role="tab"><i class="bi bi-cash-stack"></i> SPP</button>
+                <button class="nav-link active fw-bold" id="spp-tab" data-bs-toggle="tab" data-bs-target="#spp"
+                    type="button" role="tab"><i class="bi bi-cash-stack"></i> SPP</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold" id="up-tab" data-bs-toggle="tab" data-bs-target="#up" type="button" role="tab"><i class="bi bi-wallet2"></i> Uang Pangkal</button>
+                <button class="nav-link fw-bold" id="up-tab" data-bs-toggle="tab" data-bs-target="#up" type="button"
+                    role="tab"><i class="bi bi-wallet2"></i> Uang Pangkal</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold" id="lain-tab" data-bs-toggle="tab" data-bs-target="#lain" type="button" role="tab"><i class="bi bi-receipt-cutoff"></i> Lainnya</button>
+                <button class="nav-link fw-bold" id="lain-tab" data-bs-toggle="tab" data-bs-target="#lain" type="button"
+                    role="tab"><i class="bi bi-receipt-cutoff"></i> Lainnya</button>
             </li>
         </ul>
 
         <!-- Tab Content -->
         <div class="tab-content bg-white border border-top-0 rounded-bottom p-3" id="historyTabContent">
-            
+
             <!-- SPP -->
             <div class="tab-pane fade show active" id="spp" role="tabpanel">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
-                            <tr><th>Bulan</th><th>Tahun</th><th>Tgl Bayar</th><th>Nominal</th><th>Kwitansi</th></tr>
+                            <tr>
+                                <th>Bulan</th>
+                                <th>Tahun</th>
+                                <th>Tgl Bayar</th>
+                                <th>Nominal</th>
+                                <th>Kwitansi</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($sppList as $d): ?>
@@ -102,10 +118,21 @@ require_once __DIR__ . '/../../includes/header.php';
                                     <td><?= $d['tahun'] ?></td>
                                     <td><?= formatTanggal($d['tanggal_bayar']) ?></td>
                                     <td><?= formatRupiah($d['nominal']) ?></td>
-                                    <td><a href="../spp/kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"><i class="bi bi-printer"></i></a></td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="../riwayat/edit.php?tipe=spp&id=<?= $d['id'] ?>&redirect=../siswa/history.php?id=<?= $id ?>"
+                                                class="btn-sm-action btn-edit" title="Edit"><i
+                                                    class="bi bi-pencil-square"></i></a>
+                                            <a href="../spp/kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print"
+                                                target="_blank" title="Cetak Kwitansi"><i class="bi bi-printer"></i></a>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
-                            <?php if (empty($sppList)): ?><tr><td colspan="5" class="text-center text-muted">Belum ada data pembayaran SPP.</td></tr><?php endif; ?>
+                            <?php if (empty($sppList)): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Belum ada data pembayaran SPP.</td>
+                                </tr><?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -116,7 +143,13 @@ require_once __DIR__ . '/../../includes/header.php';
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
-                            <tr><th>Tgl Bayar</th><th>Metode</th><th>Keterangan</th><th>Nominal</th><th>Kwitansi</th></tr>
+                            <tr>
+                                <th>Tgl Bayar</th>
+                                <th>Metode</th>
+                                <th>Keterangan</th>
+                                <th>Nominal</th>
+                                <th>Aksi</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($upList as $d): ?>
@@ -125,10 +158,23 @@ require_once __DIR__ . '/../../includes/header.php';
                                     <td><?= ucfirst($d['metode_bayar']) ?></td>
                                     <td><?= htmlspecialchars($d['keterangan'] ?: '-') ?></td>
                                     <td><?= formatRupiah($d['nominal']) ?></td>
-                                    <td><a href="../uang-pangkal/kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"><i class="bi bi-printer"></i></a></td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="../riwayat/edit.php?tipe=uang_pangkal&id=<?= $d['id'] ?>&redirect=../siswa/history.php?id=<?= $id ?>"
+                                                class="btn-sm-action btn-edit" title="Edit"><i
+                                                    class="bi bi-pencil-square"></i></a>
+                                            <a href="../uang-pangkal/kwitansi.php?id=<?= $d['id'] ?>"
+                                                class="btn-sm-action btn-print" target="_blank" title="Cetak Kwitansi"><i
+                                                    class="bi bi-printer"></i></a>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
-                            <?php if (empty($upList)): ?><tr><td colspan="5" class="text-center text-muted">Belum ada data pembayaran Uang Pangkal.</td></tr><?php endif; ?>
+                            <?php if (empty($upList)): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Belum ada data pembayaran Uang Pangkal.
+                                    </td>
+                                </tr><?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -139,19 +185,39 @@ require_once __DIR__ . '/../../includes/header.php';
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
-                            <tr><th>Jenis</th><th>Tgl Bayar</th><th>Metode</th><th>Nominal</th><th>Kwitansi</th></tr>
+                            <tr>
+                                <th>Jenis</th>
+                                <th>Tgl Bayar</th>
+                                <th>Metode</th>
+                                <th>Nominal</th>
+                                <th>Kwitansi</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($lainList as $d): ?>
                                 <tr>
-                                    <td><span class="badge bg-info text-dark"><?= htmlspecialchars($d['nama_pembayaran']) ?></span></td>
+                                    <td><span
+                                            class="badge bg-info text-dark"><?= htmlspecialchars($d['nama_pembayaran']) ?></span>
+                                    </td>
                                     <td><?= formatTanggal($d['tanggal_bayar']) ?></td>
                                     <td><?= ucfirst($d['metode_bayar']) ?></td>
                                     <td><?= formatRupiah($d['nominal']) ?></td>
-                                    <td><a href="../pembayaran-lain/kwitansi.php?id=<?= $d['id'] ?>" class="btn-sm-action btn-print" target="_blank"><i class="bi bi-printer"></i></a></td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="../riwayat/edit.php?tipe=lainnya&id=<?= $d['id'] ?>&redirect=../siswa/history.php?id=<?= $id ?>"
+                                                class="btn-sm-action btn-edit" title="Edit"><i
+                                                    class="bi bi-pencil-square"></i></a>
+                                            <a href="../pembayaran-lain/kwitansi.php?id=<?= $d['id'] ?>"
+                                                class="btn-sm-action btn-print" target="_blank" title="Cetak Kwitansi"><i
+                                                    class="bi bi-printer"></i></a>
+                                        </div>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
-                            <?php if (empty($lainList)): ?><tr><td colspan="5" class="text-center text-muted">Belum ada data pembayaran Lainnya.</td></tr><?php endif; ?>
+                            <?php if (empty($lainList)): ?>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">Belum ada data pembayaran Lainnya.</td>
+                                </tr><?php endif; ?>
                         </tbody>
                     </table>
                 </div>

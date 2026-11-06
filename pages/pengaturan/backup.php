@@ -37,7 +37,8 @@ foreach ($tables as $table) {
     $res = $pdo->query("SELECT * FROM `$table`");
     while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
         $keys = array_map(function ($k) {
-            return "`$k`"; }, array_keys($row));
+            return "`$k`";
+        }, array_keys($row));
         $values = array_values($row);
 
         $sql .= "INSERT INTO `$table` (" . implode(", ", $keys) . ") VALUES (";

@@ -4,43 +4,42 @@ require_once __DIR__ . '/../config/auth_functions.php';
 
 header('Content-Type: application/json');
 
-if (!isset(['user_id'])) {
+if (!isset($_GET['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'No user ID provided']);
     exit;
 }
 
- = (int)['user_id'];
- = getConnection();
+$userId = (int) $_GET['user_id'];
+$pdo = getConnection();
 
- = ->prepare('SELECT role FROM users WHERE id = :id');
-->execute([':id' => ]);
- = ->fetch();
+$stmt = $pdo->prepare('SELECT role, username, nama_lengkap FROM users WHERE id = :id');
+$stmt->execute([':id' => $userId]);
+$user = $stmt->fetch();
 
-if (!) {
+if (!$user) {
     echo json_encode(['success' => false, 'message' => 'User not found']);
     exit;
 }
 
- = ['role'];
- = loadUserPermissions();
- = getDefaultPermissions();
+$role = strtolower($user['role'] ?? '');
+$customPerms = loadUserPermissions($userId);
+$defaultPerms = getDefaultPermissions($role);
 
-// We need to merge them for the JS if the custom isn't set, default should be checked?
-// Actually, if customPerms doesn't have a key, it falls back to default.
-// Let's build the final effective permissions map so the UI can check the right boxes.
- = array_keys(getAllPermissions());
- = [];
-foreach ( as ) {
-    if (isset([])) {
-        [] = [];
+$allPermKeys = array_keys(getAllPermissions());
+$effectivePerms = [];
+$hasCustom = !empty($customPerms);
+
+foreach ($allPermKeys as $key) {
+    if ($hasCustom) {
+        $effectivePerms[$key] = !empty($customPerms[$key]);
     } else {
-        [] = in_array(, );
+        $effectivePerms[$key] = in_array($key, $defaultPerms);
     }
 }
 
 echo json_encode([
     'success' => true,
-    'role' => ,
-    'permissions' => ,
-    'defaults' => 
+    'role' => $role,
+    'permissions' => $effectivePerms,
+    'defaults' => $defaultPerms
 ]);

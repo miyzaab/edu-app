@@ -5,13 +5,14 @@
 $pageTitle = 'Pengaturan';
 $activePage = 'pengaturan';
 require_once __DIR__ . '/../../config/auth.php';
+requirePermission('pengaturan');
 
 $pdo = getConnection();
 
 // Proses simpan
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Update text settings
-    $fields = ['app_name', 'nama_sekolah', 'alamat_sekolah', 'telepon_sekolah', 'kota_sekolah', 'nama_kepala_sekolah', 'kwitansi_header', 'kwitansi_footer', 'pdf_judul', 'pdf_footer', 'wa_share_template', 'theme_color', 'login_bg_color'];
+    $fields = ['app_name', 'nama_sekolah', 'alamat_sekolah', 'telepon_sekolah', 'kota_sekolah', 'nama_kepala_sekolah', 'kwitansi_header', 'kwitansi_footer', 'pdf_judul', 'pdf_footer', 'wa_share_template', 'theme_color', 'login_bg_color', 'enable_kkm'];
     foreach ($fields as $f) {
         if (isset($_POST[$f])) {
             updateSetting($f, trim($_POST[$f]));
@@ -71,6 +72,7 @@ $pdfFooter = getSetting('pdf_footer', '');
 $waShareTemplate = getSetting('wa_share_template', "Halo Bapak/Ibu Wali Murid {nama},\n\nBerikut adalah rincian pembayaran Anda di {sekolah}:\n\n*{judul}*\nNo: {no}\nTotal: *{nominal}*\nStatus: *LUNAS*\n\nLink Kwitansi Digital: {link}\n\nTerima kasih.");
 $themeColor = getSetting('theme_color', '#0dcaf0');
 $loginBgColor = getSetting('login_bg_color', '#0f172a');
+$enableKkm = getSetting('enable_kkm', '1');
 
 require_once __DIR__ . '/../../includes/header.php';
 ?>
@@ -208,6 +210,28 @@ require_once __DIR__ . '/../../includes/header.php';
                     </div>
                 </div>
 
+                <!-- Opsi KKM (Kurikulum Merdeka) -->
+                <div class="p-3 mb-4 rounded-3 border bg-light">
+                    <label class="form-label fw-bold text-dark d-flex align-items-center justify-content-between mb-1">
+                        <span><i class="bi bi-shield-check text-primary me-1"></i> Opsi KKM (Kriteria Ketuntasan
+                            Minimal)</span>
+                        <span
+                            class="badge <?= $enableKkm === '1' ? 'bg-success' : 'bg-secondary' ?> rounded-pill font-monospace">
+                            <?= $enableKkm === '1' ? 'AKTIF' : 'NONAKTIF' ?>
+                        </span>
+                    </label>
+                    <small class="text-muted d-block mb-3" style="font-size:0.8rem;">
+                        Admin dapat menyalakan/mematikan standar KKM. Jika dinonaktifkan, kolom dan indikator KKM akan
+                        disembunyikan sesuai kurikulum merdeka.
+                    </small>
+                    <select name="enable_kkm" class="form-select form-select-sm fw-bold">
+                        <option value="1" <?= $enableKkm === '1' ? 'selected' : '' ?>>🟢 Aktifkan Opsi KKM (Tampilkan
+                            Standar KKM)</option>
+                        <option value="0" <?= $enableKkm === '0' ? 'selected' : '' ?>>⚪ Nonaktifkan Opsi KKM (Sembunyikan
+                            KKM)</option>
+                    </select>
+                </div>
+
                 <button type="submit" class="btn-primary-custom w-100 mb-3"><i class="bi bi-save"></i> Simpan
                     Pengaturan</button>
             </form>
@@ -262,13 +286,17 @@ require_once __DIR__ . '/../../includes/header.php';
         <!-- Card Backup & Restore Database (Tepat Di Bawah Preview Kwitansi) -->
         <div class="form-card mt-4" id="backup-section" style="border: 2px solid #3b82f6; background: #ffffff;">
             <h5 class="mb-2 text-primary fw-bold"><i class="bi bi-database-down"></i> Backup & Restore Database</h5>
-            <p class="text-muted small mb-3">Gunakan fitur ini untuk membuat cadangan data seluruh aplikasi (.sql) atau mengembalikan data dari file backup sebelumnya.</p>
-            
+            <p class="text-muted small mb-3">Assalamu'alaikum Gunakan fitur ini untuk membuat cadangan data seluruh
+                aplikasi (.sql) atau
+                mengembalikan data dari file backup sebelumnya.</p>
+
             <div class="d-flex flex-column gap-3">
                 <!-- 1. BACKUP -->
                 <div class="p-3 border rounded-3 bg-light">
-                    <strong class="d-block text-dark mb-1 small"><i class="bi bi-download text-success"></i> Backup Data (Export SQL)</strong>
-                    <small class="text-muted d-block mb-2.5">Unduh seluruh isi database aplikasi saat ini ke file `.sql`.</small>
+                    <strong class="d-block text-dark mb-1 small"><i class="bi bi-download text-success"></i> Backup Data
+                        (Export SQL)</strong>
+                    <small class="text-muted d-block mb-2.5">Unduh seluruh isi database aplikasi saat ini ke file
+                        `.sql`.</small>
                     <a href="backup.php" class="btn btn-sm btn-success fw-bold w-100 py-2">
                         <i class="bi bi-cloud-arrow-down-fill me-1"></i> Download Backup (.sql)
                     </a>
@@ -276,14 +304,18 @@ require_once __DIR__ . '/../../includes/header.php';
 
                 <!-- 2. RESTORE -->
                 <div class="p-3 border rounded-3 bg-light">
-                    <strong class="d-block text-dark mb-1 small"><i class="bi bi-upload text-primary"></i> Restore Data (Import SQL)</strong>
-                    <small class="text-muted d-block mb-2">Upload file `.sql` hasil backup untuk mengembalikan seluruh data ke sistem.</small>
-                    
+                    <strong class="d-block text-dark mb-1 small"><i class="bi bi-upload text-primary"></i> Restore Data
+                        (Import SQL)</strong>
+                    <small class="text-muted d-block mb-2">Upload file `.sql` hasil backup untuk mengembalikan seluruh
+                        data ke sistem.</small>
+
                     <div class="alert alert-warning py-1.5 px-2 small mb-2.5" style="font-size: 0.78rem;">
-                        <i class="bi bi-exclamation-triangle-fill"></i> <strong>Perhatian:</strong> Data lama di database akan diperbarui dengan isi file SQL ini.
+                        <i class="bi bi-exclamation-triangle-fill"></i> <strong>Perhatian:</strong> Data lama di
+                        database akan diperbarui dengan isi file SQL ini.
                     </div>
 
-                    <form action="restore.php" method="POST" enctype="multipart/form-data" onsubmit="return confirm('⚠️ APAKAH ANDA YAKIN?\n\nProses restore akan mengganti data saat ini dengan data dari file backup SQL yang dipilih. Lanjutkan?')">
+                    <form action="restore.php" method="POST" enctype="multipart/form-data"
+                        onsubmit="return confirm('⚠️ APAKAH ANDA YAKIN?\n\nProses restore akan mengganti data saat ini dengan data dari file backup SQL yang dipilih. Lanjutkan?')">
                         <div class="input-group input-group-sm">
                             <input type="file" name="backup_file" class="form-control" accept=".sql" required>
                             <button class="btn btn-primary fw-bold px-3" type="submit">

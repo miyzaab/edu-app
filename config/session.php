@@ -11,6 +11,11 @@
 // Durasi session: 30 hari (30 * 24 * 60 * 60 detik)
 $session_lifetime = 2592000;
 
+// Enable Gzip output compression for lightning fast loading on mobile networks
+if (!ob_get_level() && !headers_sent() && extension_loaded('zlib')) {
+    @ob_start('ob_gzhandler');
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     @ini_set('session.gc_maxlifetime', $session_lifetime);
     session_set_cookie_params([

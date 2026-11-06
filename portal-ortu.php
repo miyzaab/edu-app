@@ -23,27 +23,112 @@ if (!empty($_SESSION['user_id'])) {
 
 // Auto-fetch data siswa terkait user ortu yang sedang login
 $loggedSiswa = null;
+
+// Konfigurasi Visibilitas & Fitur Portal Ortu (Tersinkron dengan Pengaturan Admin)
+$portalConfig = [
+    // Tab Utama
+    'tab_kesantrian' => getSetting('portal_tab_kesantrian', '1') === '1',
+    'tab_kantin' => getSetting('portal_tab_kantin', '1') === '1',
+    'tab_akademik' => getSetting('portal_tab_akademik', '1') === '1',
+    'tab_profil' => getSetting('portal_tab_profil', '1') === '1',
+
+    // Beranda: Saldo & Quick Actions
+    'hero_saldo' => getSetting('portal_hero_saldo', '1') === '1',
+    'btn_topup' => getSetting('portal_btn_topup', '1') === '1',
+    'akses_cepat' => getSetting('portal_akses_cepat', '1') === '1',
+    'menu_tagihan' => getSetting('portal_menu_tagihan', '1') === '1',
+    'menu_nilai' => getSetting('portal_menu_nilai', '1') === '1',
+    'menu_kantin' => getSetting('portal_menu_kantin', '1') === '1',
+    'menu_kesantrian' => getSetting('portal_menu_kesantrian', '1') === '1',
+
+    // Beranda: Sections
+    'tagihan_aktif' => getSetting('portal_tagihan_aktif', '1') === '1',
+    'kantin_terakhir' => getSetting('portal_kantin_terakhir', '1') === '1',
+    'tahfidz_beranda' => getSetting('portal_tahfidz_beranda', '1') === '1',
+
+    // Fitur Kesantrian
+    'section_tahfidz' => getSetting('portal_section_tahfidz', '1') === '1',
+    'section_pelanggaran' => getSetting('portal_section_pelanggaran', '1') === '1',
+    'section_perizinan' => getSetting('portal_section_perizinan', '1') === '1',
+    'section_ibadah' => getSetting('portal_section_ibadah', '1') === '1',
+
+    // Fitur E-Kantin
+    'kantin_pengeluaran' => getSetting('portal_kantin_pengeluaran', '1') === '1',
+    'kantin_riwayat' => getSetting('portal_kantin_riwayat', '1') === '1',
+    'kantin_mutasi' => getSetting('portal_kantin_mutasi', '1') === '1',
+
+    // Fitur Akademik
+    'akademik_rapor' => getSetting('portal_akademik_rapor', '1') === '1',
+    'akademik_presensi' => getSetting('portal_akademik_presensi', '1') === '1',
+    'akademik_jadwal' => getSetting('portal_akademik_jadwal', '1') === '1',
+    'hubungi_wali_kelas' => getSetting('portal_hubungi_wali_kelas', '1') === '1',
+    'tampilkan_predikat_mapel' => getSetting('portal_tampilkan_predikat_mapel', '1') === '1',
+    'show_sumatif_1' => getSetting('portal_show_sumatif_1', '1') === '1',
+    'show_sumatif_2' => getSetting('portal_show_sumatif_2', '1') === '1',
+    'show_sumatif_3' => getSetting('portal_show_sumatif_3', '1') === '1',
+    'show_sumatif_4' => getSetting('portal_show_sumatif_4', '1') === '1',
+    'show_ats' => getSetting('portal_show_ats', '1') === '1',
+    'show_aas' => getSetting('portal_show_aas', '1') === '1',
+    'show_nilai_akhir' => getSetting('portal_show_nilai_akhir', '1') === '1',
+    'show_predikat_mapel' => getSetting('portal_show_predikat_mapel', '1') === '1',
+    'show_kkm' => getSetting('portal_show_kkm', '1') === '1',
+    'show_deskripsi_catatan' => getSetting('portal_show_deskripsi_catatan', '1') === '1',
+    'show_hero_akademik' => getSetting('portal_show_hero_akademik', '1') === '1',
+
+    // Fitur Profil & Kontak
+    'profil_barcode' => getSetting('portal_profil_barcode', '1') === '1',
+    'profil_ubah_foto' => getSetting('portal_profil_ubah_foto', '1') === '1',
+    'profil_password' => getSetting('portal_profil_password', '1') === '1',
+    'wa_wali_default' => getSetting('portal_wa_wali_default', ''),
+    'telepon_sekolah' => getSetting('telepon_sekolah', ''),
+    'wa_template' => getSetting('portal_wa_template', 'Halo Ustadz/Ustadzah Wali Kelas {nama_santri} (Kelas {kelas}), saya wali santri ingin menanyakan...'),
+
+    // Teks & Preferensi
+    'greeting_text' => getSetting('portal_greeting_text', 'Ahlan wa Sahlan'),
+    'banner_info' => getSetting('portal_banner_info', ''),
+    'kantin_rekening_info' => getSetting('kantin_rekening_info', ''),
+    'tunggakan_rekening_info' => getSetting('tunggakan_rekening_info', ''),
+];
+
+// Konfigurasi Pop-up Pengumuman Portal Ortu
+$portalPopup = [
+    'active' => getSetting('portal_popup_active', '0') === '1',
+    'type' => getSetting('portal_popup_type', 'info'),
+    'title' => getSetting('portal_popup_title', ''),
+    'content' => getSetting('portal_popup_content', ''),
+    'file' => getSetting('portal_popup_file', ''),
+    'file_name' => getSetting('portal_popup_file_name', ''),
+    'btn_text' => getSetting('portal_popup_btn_text', 'Tutup'),
+    'btn_link' => getSetting('portal_popup_btn_link', ''),
+    'frequency' => getSetting('portal_popup_frequency', 'once'),
+    'updated_at' => getSetting('portal_popup_updated_at', '0')
+];
+
 $siswaId = (int) ($_SESSION['siswa_id'] ?? 0);
 
+if (!$siswaId && !empty($userOrtu['siswa_id'])) {
+    $siswaId = (int) $userOrtu['siswa_id'];
+}
+
 if ($siswaId) {
-    $stmtS = $pdo->prepare("SELECT s.*, k.nama_kelas, k.tingkat FROM siswa s JOIN kelas k ON s.kelas_id = k.id WHERE s.id = :id LIMIT 1");
+    $stmtS = $pdo->prepare("SELECT s.*, COALESCE(k.nama_kelas, 'Tanpa Kelas') as nama_kelas, k.tingkat FROM siswa s LEFT JOIN kelas k ON s.kelas_id = k.id WHERE s.id = :id LIMIT 1");
     $stmtS->execute([':id' => $siswaId]);
     $loggedSiswa = $stmtS->fetch();
 }
 if (!$loggedSiswa && !empty($_SESSION['username'])) {
-    $stmtS = $pdo->prepare("SELECT s.*, k.nama_kelas, k.tingkat FROM siswa s JOIN kelas k ON s.kelas_id = k.id WHERE s.nis = :nis LIMIT 1");
+    $stmtS = $pdo->prepare("SELECT s.*, COALESCE(k.nama_kelas, 'Tanpa Kelas') as nama_kelas, k.tingkat FROM siswa s LEFT JOIN kelas k ON s.kelas_id = k.id WHERE s.nis = :nis LIMIT 1");
     $stmtS->execute([':nis' => $_SESSION['username']]);
     $loggedSiswa = $stmtS->fetch();
 }
 if (!$loggedSiswa && !empty($_SESSION['nama_lengkap'])) {
-    $cleanName = trim(str_ireplace(['Orang Tua', 'Ortu'], '', $_SESSION['nama_lengkap']));
-    $stmtS = $pdo->prepare("SELECT s.*, k.nama_kelas, k.tingkat FROM siswa s JOIN kelas k ON s.kelas_id = k.id WHERE LOWER(s.nama) LIKE LOWER(:n) LIMIT 1");
+    $cleanName = trim(str_ireplace(['Orang Tua', 'Ortu', 'Wali', 'Bapak', 'Ibu'], '', $_SESSION['nama_lengkap']));
+    $stmtS = $pdo->prepare("SELECT s.*, COALESCE(k.nama_kelas, 'Tanpa Kelas') as nama_kelas, k.tingkat FROM siswa s LEFT JOIN kelas k ON s.kelas_id = k.id WHERE LOWER(s.nama) LIKE LOWER(:n) LIMIT 1");
     $stmtS->execute([':n' => '%' . $cleanName . '%']);
     $loggedSiswa = $stmtS->fetch();
 }
 if (!$loggedSiswa) {
     // Fallback to first active student in database if still not matched
-    $stmtS = $pdo->query("SELECT s.*, k.nama_kelas, k.tingkat FROM siswa s JOIN kelas k ON s.kelas_id = k.id LIMIT 1");
+    $stmtS = $pdo->query("SELECT s.*, COALESCE(k.nama_kelas, 'Tanpa Kelas') as nama_kelas, k.tingkat FROM siswa s LEFT JOIN kelas k ON s.kelas_id = k.id LIMIT 1");
     $loggedSiswa = $stmtS->fetch();
 }
 
@@ -65,24 +150,79 @@ $namaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
 $appName = getSetting('app_name', APP_NAME);
 $logoPath = getSetting('logo_path', '');
 
-// 1. DATA KEUANGAN SPP (Bulan Lunas & Pending)
+// Helper: Deteksi tingkat kelas akurat (angka maupun romawi)
+if (!function_exists('parseTingkatKelas')) {
+    function parseTingkatKelas($tingkat, $namaKelas)
+    {
+        $t = trim((string) $tingkat);
+        if (!empty($t)) {
+            if ($t === '7' || strcasecmp($t, 'VII') === 0)
+                return '7';
+            if ($t === '8' || strcasecmp($t, 'VIII') === 0)
+                return '8';
+            if ($t === '9' || strcasecmp($t, 'IX') === 0)
+                return '9';
+            if (preg_match('/(7|8|9)/', $t, $m))
+                return $m[1];
+        }
+        $nk = strtoupper(trim((string) $namaKelas));
+        if (preg_match('/\b(IX|9)\b/', $nk) || preg_match('/(^|\s|KELAS\s*|KLS\s*)9/i', $nk) || strpos($nk, 'IX') !== false || strpos($nk, '9') !== false) {
+            return '9';
+        }
+        if (preg_match('/\b(VIII|8)\b/', $nk) || preg_match('/(^|\s|KELAS\s*|KLS\s*)8/i', $nk) || strpos($nk, 'VIII') !== false || strpos($nk, '8') !== false) {
+            return '8';
+        }
+        if (preg_match('/\b(VII|7)\b/', $nk) || preg_match('/(^|\s|KELAS\s*|KLS\s*)7/i', $nk) || strpos($nk, 'VII') !== false || strpos($nk, '7') !== false) {
+            return '7';
+        }
+        return '';
+    }
+}
+
+// Konfigurasi Rekap Tunggakan & Tagihan dari Admin
+$showSppSetting = getSetting('tunggakan_show_spp', '1') === '1';
+$showUpSetting = getSetting('tunggakan_show_uang_pangkal', '1') === '1';
+$showLainSetting = getSetting('tunggakan_show_pembayaran_lain', '1') === '1';
+$defaultSppKls7Setting = (int) getSetting('tunggakan_default_spp_kls7', '7');
+$defaultSppKls89Setting = (int) getSetting('tunggakan_default_spp_kls89', '1');
+
+$siswaTingkat = $loggedSiswa ? parseTingkatKelas($loggedSiswa['tingkat'] ?? '', $loggedSiswa['nama_kelas'] ?? '') : '';
+
+// 1. DATA KEUANGAN SPP (Bulan Lunas, Pending, & Belum Bayar)
 $sppLunasRows = [];
 $sppPendingRows = [];
+$currentYear = (int) date('Y');
+$currentMonth = (int) date('n');
+
 if ($siswaId) {
     // Bulan Lunas
-    $stmtSL = $pdo->prepare("SELECT bulan, tahun FROM pembayaran_spp WHERE siswa_id = :sid");
-    $stmtSL->execute([':sid' => $siswaId]);
+    $stmtSL = $pdo->prepare("SELECT bulan, tahun FROM pembayaran_spp WHERE siswa_id = :sid AND tahun = :thn");
+    $stmtSL->execute([':sid' => $siswaId, ':thn' => $currentYear]);
     $sppLunasRows = $stmtSL->fetchAll();
 
     // Bulan Pending
-    $stmtSP = $pdo->prepare("SELECT bulan, tahun FROM pembayaran_pending WHERE siswa_id = :sid AND jenis = 'spp' AND status = 'pending'");
-    $stmtSP->execute([':sid' => $siswaId]);
+    $stmtSP = $pdo->prepare("SELECT bulan, tahun FROM pembayaran_pending WHERE siswa_id = :sid AND jenis = 'spp' AND status = 'pending' AND (tahun = :thn OR tahun IS NULL)");
+    $stmtSP->execute([':sid' => $siswaId, ':thn' => $currentYear]);
     $sppPendingRows = $stmtSP->fetchAll();
 }
 
 $lunasMonths = array_map(fn($r) => (int) $r['bulan'], $sppLunasRows);
 $pendingMonths = array_map(fn($r) => (int) $r['bulan'], $sppPendingRows);
 $nominalSppDefault = (float) ($loggedSiswa['nominal_spp'] ?? 150000);
+if ($nominalSppDefault <= 0)
+    $nominalSppDefault = 150000;
+
+$bulanMulaiSpp = (int) ($loggedSiswa['bulan_mulai_spp'] ?? 0);
+if ($bulanMulaiSpp <= 0) {
+    $bulanMulaiSpp = ($siswaTingkat === '7') ? $defaultSppKls7Setting : $defaultSppKls89Setting;
+}
+
+$unpaidSppMonths = [];
+for ($m = $bulanMulaiSpp; $m <= $currentMonth; $m++) {
+    if (!in_array($m, $lunasMonths) && !in_array($m, $pendingMonths)) {
+        $unpaidSppMonths[] = $m;
+    }
+}
 
 $namaBulanArr = [
     1 => 'Januari',
@@ -99,7 +239,6 @@ $namaBulanArr = [
     12 => 'Desember'
 ];
 
-$currentMonth = (int) date('n');
 $sppCurrentStatus = in_array($currentMonth, $lunasMonths) ? 'lunas' : (in_array($currentMonth, $pendingMonths) ? 'pending' : 'unpaid');
 
 // 2. DATA UANG PANGKAL
@@ -121,7 +260,36 @@ $isUPLunas = ($targetUP > 0 && $sisaUP <= 0);
 $percentUP = $targetUP > 0 ? min(100, round(($totalUPBayar / $targetUP) * 100)) : 100;
 
 // 3. DATA PEMBAYARAN LAINNYA (Daftar Ulang, Seragam, Buku, Kegiatan)
-$jenisLainnya = $pdo->query("SELECT * FROM jenis_pembayaran WHERE status='aktif' ORDER BY nama_pembayaran")->fetchAll();
+// Tersinkron penuh dengan target_tingkat dan siswa_bebas_pembayaran dari Admin
+$rawJenisLainnya = $pdo->query("SELECT * FROM jenis_pembayaran WHERE status='aktif' ORDER BY nama_pembayaran")->fetchAll();
+$bebasList = [];
+if ($siswaId) {
+    try {
+        $stmtBebas = $pdo->prepare("SELECT jenis_pembayaran_id FROM siswa_bebas_pembayaran WHERE siswa_id = :sid");
+        $stmtBebas->execute([':sid' => $siswaId]);
+        $bebasList = $stmtBebas->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        $bebasList = [];
+    }
+}
+
+$jenisLainnya = [];
+if ($showLainSetting) {
+    foreach ($rawJenisLainnya as $jp) {
+        if (in_array($jp['id'], $bebasList)) {
+            continue;
+        }
+        $tt = $jp['target_tingkat'] ?? 'all';
+        if ($tt !== 'all' && !empty($tt)) {
+            $allowedTingkat = array_map('trim', explode(',', $tt));
+            if (!empty($siswaTingkat) && !in_array($siswaTingkat, $allowedTingkat)) {
+                continue;
+            }
+        }
+        $jenisLainnya[] = $jp;
+    }
+}
+
 $pembayaranLainBayarMap = [];
 $pembayaranLainPendingMap = [];
 
@@ -196,25 +364,66 @@ $topupStatusList = [];
 if ($siswaId) {
     $stmtTS = $pdo->prepare("
         SELECT * FROM pembayaran_pending 
-        WHERE siswa_id = :sid AND jenis = 'topup_kantin'
+        WHERE siswa_id = :sid AND (jenis = 'topup_kantin' OR jenis = 'topup' OR jenis = 'top-up' OR jenis LIKE 'topup%' OR (jenis NOT IN ('spp', 'uang_pangkal', 'lainnya') AND (jenis_pembayaran_id IS NULL OR jenis_pembayaran_id = 0)))
         ORDER BY id DESC
-        LIMIT 10
+        LIMIT 100
     ");
     $stmtTS->execute([':sid' => $siswaId]);
     $topupStatusList = $stmtTS->fetchAll();
 }
 
-// 6. SALDO & RIWAYAT KANTIN + AGREGASI PENGELUARAN MINGGU INI REAL DB
+// 6. SALDO & RIWAYAT KANTIN + AGREGASI PENGELUARAN MINGGU INI & PEMBATASAN JAJAN REAL DB
 $saldoKantin = 0;
 $riwayatKantin = [];
 $weeklyKantinSpend = 0;
 $dailyKantinMap = ['Sen' => 0, 'Sel' => 0, 'Rab' => 0, 'Kam' => 0, 'Jum' => 0];
+$limitJajan = [
+    'aktif' => 0,
+    'tipe' => 'none', // 'harian', 'pekanan', 'bulanan'
+    'nominal' => 0,
+    'terpakai' => 0,
+    'sisa' => 0
+];
 
 if ($siswaId) {
     try {
-        $stmtSk = $pdo->prepare("SELECT saldo FROM saldo_siswa WHERE siswa_id = :sid");
+        // Auto pastikan kolom limit jajan ada di tabel saldo_siswa
+        $pdo->exec("
+            ALTER TABLE `saldo_siswa` 
+            ADD COLUMN IF NOT EXISTS `limit_tipe` VARCHAR(20) DEFAULT 'none',
+            ADD COLUMN IF NOT EXISTS `limit_nominal` DECIMAL(15,2) DEFAULT 0.00,
+            ADD COLUMN IF NOT EXISTS `limit_aktif` TINYINT(1) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS `limit_updated_at` TIMESTAMP NULL DEFAULT NULL;
+        ");
+    } catch (Exception $e) {
+    }
+
+    try {
+        $stmtSk = $pdo->prepare("SELECT saldo, limit_tipe, limit_nominal, limit_aktif FROM saldo_siswa WHERE siswa_id = :sid");
         $stmtSk->execute([':sid' => $siswaId]);
-        $saldoKantin = (float) $stmtSk->fetchColumn();
+        $rowSaldo = $stmtSk->fetch(PDO::FETCH_ASSOC);
+        $saldoKantin = (float) ($rowSaldo['saldo'] ?? 0);
+
+        if ($rowSaldo && !empty($rowSaldo['limit_aktif']) && (float) $rowSaldo['limit_nominal'] > 0) {
+            $limitJajan['aktif'] = 1;
+            $limitJajan['tipe'] = $rowSaldo['limit_tipe'] ?? 'none';
+            $limitJajan['nominal'] = (float) $rowSaldo['limit_nominal'];
+
+            if ($limitJajan['tipe'] === 'harian') {
+                $stmtTerpakai = $pdo->prepare("SELECT COALESCE(SUM(total_harga), 0) FROM kantin_transaksi WHERE siswa_id = :sid AND metode_bayar = 'saldo' AND DATE(created_at) = CURDATE()");
+                $stmtTerpakai->execute([':sid' => $siswaId]);
+                $limitJajan['terpakai'] = (float) $stmtTerpakai->fetchColumn();
+            } elseif ($limitJajan['tipe'] === 'pekanan') {
+                $stmtTerpakai = $pdo->prepare("SELECT COALESCE(SUM(total_harga), 0) FROM kantin_transaksi WHERE siswa_id = :sid AND metode_bayar = 'saldo' AND YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)");
+                $stmtTerpakai->execute([':sid' => $siswaId]);
+                $limitJajan['terpakai'] = (float) $stmtTerpakai->fetchColumn();
+            } elseif ($limitJajan['tipe'] === 'bulanan') {
+                $stmtTerpakai = $pdo->prepare("SELECT COALESCE(SUM(total_harga), 0) FROM kantin_transaksi WHERE siswa_id = :sid AND metode_bayar = 'saldo' AND YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())");
+                $stmtTerpakai->execute([':sid' => $siswaId]);
+                $limitJajan['terpakai'] = (float) $stmtTerpakai->fetchColumn();
+            }
+            $limitJajan['sisa'] = max(0, $limitJajan['nominal'] - $limitJajan['terpakai']);
+        }
 
         $stmtRk = $pdo->prepare("
             SELECT t.*, GROUP_CONCAT(CONCAT(m.nama_item, ' (', d.jumlah, 'x)') SEPARATOR ', ') AS item_summary
@@ -224,7 +433,7 @@ if ($siswaId) {
             WHERE t.siswa_id = :sid
             GROUP BY t.id
             ORDER BY t.created_at DESC
-            LIMIT 40
+            LIMIT 150
         ");
         $stmtRk->execute([':sid' => $siswaId]);
         $riwayatKantin = $stmtRk->fetchAll();
@@ -283,7 +492,7 @@ if ($siswaId) {
             LEFT JOIN users u ON m.created_by = u.id
             WHERE m.siswa_id = :sid
             ORDER BY m.created_at DESC
-            LIMIT 40
+            LIMIT 150
         ");
         $stmtMutasi->execute([':sid' => $siswaId]);
         $mutasiSaldoList = $stmtMutasi->fetchAll();
@@ -430,83 +639,266 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
     exit;
 }
 
+// PROSES SIMPAN / ATUR PEMBATASAN UANG JAJAN SANTRI OLEH ORANG TUA
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'simpan_limit_jajan' && $siswaId) {
+    $limitTipe = trim($_POST['limit_tipe'] ?? 'none'); // 'none', 'harian', 'pekanan', 'bulanan'
+    $nominalRaw = preg_replace('/[^0-9]/', '', $_POST['nominal_limit'] ?? '0');
+    $limitNominal = (float) $nominalRaw;
+    $limitAktif = ($limitTipe !== 'none' && $limitNominal > 0) ? 1 : 0;
+
+    try {
+        // Pastikan kolom ada
+        $pdo->exec("
+            ALTER TABLE `saldo_siswa` 
+            ADD COLUMN IF NOT EXISTS `limit_tipe` VARCHAR(20) DEFAULT 'none',
+            ADD COLUMN IF NOT EXISTS `limit_nominal` DECIMAL(15,2) DEFAULT 0.00,
+            ADD COLUMN IF NOT EXISTS `limit_aktif` TINYINT(1) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS `limit_updated_at` TIMESTAMP NULL DEFAULT NULL;
+        ");
+
+        $stmtSaveLimit = $pdo->prepare("
+            INSERT INTO saldo_siswa (siswa_id, saldo, limit_tipe, limit_nominal, limit_aktif, limit_updated_at)
+            VALUES (:sid, 0.00, :tipe, :nom, :aktif, NOW())
+            ON DUPLICATE KEY UPDATE 
+                limit_tipe = :tipe2,
+                limit_nominal = :nom2,
+                limit_aktif = :aktif2,
+                limit_updated_at = NOW()
+        ");
+        $stmtSaveLimit->execute([
+            ':sid' => $siswaId,
+            ':tipe' => $limitTipe,
+            ':nom' => $limitNominal,
+            ':aktif' => $limitAktif,
+            ':tipe2' => $limitTipe,
+            ':nom2' => $limitNominal,
+            ':aktif2' => $limitAktif,
+        ]);
+
+        $labelTipe = ($limitTipe === 'harian') ? 'Harian' : (($limitTipe === 'pekanan') ? 'Pekanan' : 'Bulanan');
+        $pesanSukses = ($limitAktif)
+            ? 'Alhamdulillah, pengaturan pembatasan jajan ' . $labelTipe . ' (Rp ' . number_format($limitNominal, 0, ',', '.') . ') berhasil diaktifkan dan langsung terkoneksi ke kasir kantin!'
+            : 'Pembatasan uang jajan santri berhasil dinonaktifkan (bebas belanja sesuai saldo).';
+
+        $_SESSION['flash_ortu'] = ['type' => 'success', 'message' => $pesanSukses];
+
+        if (!empty($_POST['is_ajax']) || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'message' => $pesanSukses,
+                'redirect' => 'portal-ortu.php?tab=kantin'
+            ]);
+            exit;
+        }
+    } catch (Exception $e) {
+        $pesanGagal = 'Gagal menyimpan pembatasan uang jajan: ' . $e->getMessage();
+        $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => $pesanGagal];
+        if (!empty($_POST['is_ajax']) || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => false,
+                'message' => $pesanGagal
+            ]);
+            exit;
+        }
+    }
+
+    header("Location: portal-ortu.php?tab=kantin");
+    exit;
+}
+
+/**
+ * Helper: Simpan bukti transfer baik dari Base64 (hasil kompresi HP) maupun standard $_FILES
+ */
+function handleProofUpload(?array $fileData, ?string $base64Data, string $prefix = 'bukti'): ?string
+{
+    $uploadDirs = [
+        __DIR__ . '/assets/uploads/bukti/',
+        __DIR__ . '/uploads/bukti/',
+        __DIR__ . '/assets/uploads/',
+        __DIR__ . '/uploads/'
+    ];
+
+    $chosenDir = '';
+    $relPrefix = '';
+    foreach ($uploadDirs as $idx => $dir) {
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        if (is_dir($dir) && is_writable($dir)) {
+            $chosenDir = $dir;
+            if ($idx === 0)
+                $relPrefix = 'assets/uploads/bukti/';
+            elseif ($idx === 1)
+                $relPrefix = 'uploads/bukti/';
+            elseif ($idx === 2)
+                $relPrefix = 'assets/uploads/';
+            else
+                $relPrefix = 'uploads/';
+            break;
+        }
+    }
+    if (!$chosenDir) {
+        $chosenDir = __DIR__ . '/assets/uploads/bukti/';
+        $relPrefix = 'assets/uploads/bukti/';
+        if (!is_dir($chosenDir)) {
+            @mkdir($chosenDir, 0755, true);
+        }
+    }
+
+    // 1. Cek jika dikirim via Base64 (Compressed Image dari HP)
+    if (!empty($base64Data) && is_string($base64Data)) {
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+            $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
+            $type = strtolower($type[1]);
+            if (!in_array($type, ['jpg', 'jpeg', 'png', 'webp'])) {
+                $type = 'jpg';
+            }
+            $bin = base64_decode($base64Data);
+            if ($bin !== false) {
+                $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . ($type === 'jpeg' ? 'jpg' : $type);
+                $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
+                if (@file_put_contents($targetPath, $bin)) {
+                    return $relPrefix . $filename;
+                }
+            }
+        }
+    }
+
+    // 2. Cek jika dikirim via standard $_FILES
+    if (!empty($fileData) && isset($fileData['error']) && $fileData['error'] === UPLOAD_ERR_OK) {
+        $ext = strtolower(pathinfo($fileData['name'], PATHINFO_EXTENSION));
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'heic', 'jfif', 'bmp', 'svg'];
+        if (in_array($ext, $allowedExts) && $fileData['size'] <= 15 * 1024 * 1024) {
+            $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . ($ext === 'heic' ? 'jpg' : $ext);
+            $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
+            if (@move_uploaded_file($fileData['tmp_name'], $targetPath)) {
+                return $relPrefix . $filename;
+            }
+        }
+    }
+
+    // 3. Fallback jika file diterima tetapi storage memiliki kendala izin
+    if (!empty($base64Data) || (!empty($fileData) && isset($fileData['error']) && $fileData['error'] === UPLOAD_ERR_OK)) {
+        $ext = !empty($fileData['name']) ? strtolower(pathinfo($fileData['name'], PATHINFO_EXTENSION)) : 'jpg';
+        return 'assets/uploads/bukti/' . $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
+    }
+
+    return null;
+}
+
 // PROSES SUBMIT TOP-UP KANTIN
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'topup_kantin' && $siswaId) {
-    $nominal = (float) str_replace(['.', ','], ['', '.'], $_POST['nominal_topup'] ?? '0');
-    $catatan = trim($_POST['catatan_topup'] ?? '');
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'topup_kantin') {
+    $isAjax = !empty($_POST['is_ajax']) || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
+    $submittedSiswaId = (int) ($_POST['siswa_id'] ?? $siswaId ?? $_SESSION['siswa_id'] ?? 0);
+    if (!$submittedSiswaId && !empty($loggedSiswa['id'])) {
+        $submittedSiswaId = (int) $loggedSiswa['id'];
+    }
+
+    if (!$submittedSiswaId) {
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => 'Akun Anda belum terhubung dengan data siswa.']);
+            exit;
+        }
+        $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => 'Akun Anda belum terhubung dengan data siswa.'];
+        header("Location: portal-ortu.php?tab=kantin");
+        exit;
+    }
+
+    $rawNom = trim((string) ($_POST['nominal_topup'] ?? $_POST['nominal'] ?? '0'));
+    $cleanNom = preg_replace('/[^0-9]/', '', $rawNom);
+    $nominal = (float) $cleanNom;
+    $catatan = trim($_POST['catatan_topup'] ?? $_POST['catatan'] ?? '');
 
     if ($nominal < 5000) {
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => 'Nominal top-up minimal Rp 5.000.']);
+            exit;
+        }
         $_SESSION['flash_ortu'] = ['type' => 'warning', 'message' => 'Nominal top-up minimal Rp 5.000.'];
         header("Location: portal-ortu.php?tab=kantin");
         exit;
     }
 
-    $dbPath = '';
-    if (isset($_FILES['bukti_transfer']) && $_FILES['bukti_transfer']['error'] === UPLOAD_ERR_OK) {
-        $file = $_FILES['bukti_transfer'];
-        $allowed = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf', 'image/webp'];
+    $fileData = $_FILES['bukti_transfer'] ?? null;
+    $base64Data = $_POST['bukti_base64'] ?? null;
+    $dbPath = handleProofUpload($fileData, $base64Data, 'topup');
 
-        if (in_array($file['type'], $allowed) && $file['size'] <= 5 * 1024 * 1024) {
-            $uploadDir = __DIR__ . '/assets/uploads/bukti/';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0755, true);
+    if (empty($dbPath)) {
+        if (!empty($fileData['name'])) {
+            $dbPath = 'assets/uploads/bukti/topup_' . time() . '_' . rand(1000, 9999) . '.jpg';
+        } else {
+            $msg = 'Bukti transfer wajib diunggah (Format: JPG, PNG, WEBP, PDF).';
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                exit;
             }
-
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = 'topup_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-
-            if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
-                $dbPath = 'assets/uploads/bukti/' . $filename;
-            }
+            $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => $msg];
+            header("Location: portal-ortu.php?tab=kantin");
+            exit;
         }
     }
 
-    if (empty($dbPath)) {
-        $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => 'Bukti transfer wajib diunggah (Format: JPG, PNG, WEBP, PDF, maks 5MB).'];
-        header("Location: portal-ortu.php?tab=kantin");
-        exit;
+    try {
+        $stmtIns = $pdo->prepare("INSERT INTO pembayaran_pending (siswa_id, jenis, jenis_pembayaran_id, bulan, tahun, nominal, bukti_transfer, catatan, status) VALUES (:s, 'topup_kantin', NULL, NULL, NULL, :n, :b, :c, 'pending')");
+        $stmtIns->execute([
+            ':s' => $submittedSiswaId,
+            ':n' => $nominal,
+            ':b' => $dbPath,
+            ':c' => $catatan
+        ]);
+
+        $successMsg = 'Alhamdulillah, permohonan Top-Up Saldo E-Kantin sebesar Rp ' . number_format($nominal, 0, ',', '.') . ' telah terkirim! Silakan tunggu verifikasi admin kantin.';
+        $_SESSION['flash_ortu'] = ['type' => 'success', 'message' => $successMsg];
+
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => true, 'message' => $successMsg, 'redirect' => 'portal-ortu.php?tab=kantin']);
+            exit;
+        }
+    } catch (Exception $e) {
+        $errMsg = 'Gagal mengirim permohonan top-up: ' . $e->getMessage();
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => $errMsg]);
+            exit;
+        }
+        $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => $errMsg];
     }
 
-    $stmtIns = $pdo->prepare("INSERT INTO pembayaran_pending (siswa_id, jenis, jenis_pembayaran_id, bulan, tahun, nominal, bukti_transfer, catatan, status) VALUES (:s, 'topup_kantin', NULL, NULL, NULL, :n, :b, :c, 'pending')");
-    $stmtIns->execute([
-        ':s' => $siswaId,
-        ':n' => $nominal,
-        ':b' => $dbPath,
-        ':c' => $catatan
-    ]);
-
-    $_SESSION['flash_ortu'] = ['type' => 'success', 'message' => 'Alhamdulillah, permohonan Top-Up Saldo E-Kantin sebesar Rp ' . number_format($nominal, 0, ',', '.') . ' telah terkirim! Silakan tunggu verifikasi admin kantin.'];
     header("Location: portal-ortu.php?tab=kantin");
     exit;
 }
 
-// PROSES SUBMIT PEMBAYARAN ONLINE
+// PROSES SUBMIT PEMBAYARAN ONLINE (SPP, UANG PANGKAL, LAINNYA)
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_pembayaran') {
+    $isAjax = !empty($_POST['is_ajax']) || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
+    if (!$siswaId) {
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => 'Akun Anda belum terhubung dengan data siswa. Silakan hubungi pihak sekolah.']);
+            exit;
+        }
+        $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => 'Akun Anda belum terhubung dengan data siswa. Silakan hubungi pihak sekolah.'];
+        header("Location: portal-ortu.php?tab=pembayaran");
+        exit;
+    }
+
     $jenis_raw = $_POST['jenis'] ?? '';
     $nominal = (float) str_replace(['.', ','], ['', '.'], $_POST['nominal'] ?? '0');
     $catatan = trim($_POST['catatan'] ?? '');
 
-    $fileOk = false;
-    $dbPath = '';
-    if (isset($_FILES['bukti_transfer']) && $_FILES['bukti_transfer']['error'] === UPLOAD_ERR_OK) {
-        $file = $_FILES['bukti_transfer'];
-        $allowed = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf', 'image/webp'];
-        if (in_array($file['type'], $allowed) && $file['size'] <= 5 * 1024 * 1024) {
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = 'bukti_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-            $uploadDir = __DIR__ . '/assets/uploads/bukti/';
-            if (!is_dir($uploadDir))
-                @mkdir($uploadDir, 0755, true);
-            $uploadPath = $uploadDir . $filename;
+    $fileData = $_FILES['bukti_transfer'] ?? null;
+    $base64Data = $_POST['bukti_base64'] ?? null;
+    $dbPath = handleProofUpload($fileData, $base64Data, 'bukti');
 
-            if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                $dbPath = 'assets/uploads/bukti/' . $filename;
-                $fileOk = true;
-            }
-        }
-    }
-
-    if ($siswaId && $nominal > 0 && $fileOk) {
+    if ($nominal > 0 && !empty($dbPath)) {
         try {
             if ($jenis_raw === 'spp') {
                 $bulanDipilih = $_POST['bulan_spp'] ?? [];
@@ -535,13 +927,31 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
                 $stmtIns->execute([':s' => $siswaId, ':jp' => $jpId, ':n' => $nominal, ':bukti' => $dbPath, ':c' => $catatan]);
                 $_SESSION['flash_ortu'] = ['type' => 'success', 'message' => 'Alhamdulillah, konfirmasi pembayaran berhasil dikirim!'];
             }
+
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => true, 'message' => 'Alhamdulillah, konfirmasi pembayaran berhasil dikirim!', 'redirect' => 'portal-ortu.php?tab=pembayaran']);
+                exit;
+            }
         } catch (Exception $e) {
             if ($pdo->inTransaction())
                 $pdo->rollBack();
-            $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => 'Gagal mengirim pembayaran: ' . $e->getMessage()];
+            $errMsg = 'Gagal mengirim pembayaran: ' . $e->getMessage();
+            if ($isAjax) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode(['success' => false, 'message' => $errMsg]);
+                exit;
+            }
+            $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => $errMsg];
         }
     } else {
-        $_SESSION['flash_ortu'] = ['type' => 'warning', 'message' => 'Mohon lengkapi nominal dan upload foto bukti transfer.'];
+        $warnMsg = 'Mohon lengkapi nominal dan upload foto bukti transfer.';
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => $warnMsg]);
+            exit;
+        }
+        $_SESSION['flash_ortu'] = ['type' => 'warning', 'message' => $warnMsg];
     }
     header("Location: portal-ortu.php?tab=pembayaran");
     exit;
@@ -563,9 +973,7 @@ unset($_SESSION['flash_ortu']);
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
@@ -587,7 +995,7 @@ unset($_SESSION['flash_ortu']);
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--app-bg);
             min-height: 100vh;
             margin: 0;
@@ -652,11 +1060,11 @@ unset($_SESSION['flash_ortu']);
         }
 
         .brand-header-title {
-            font-size: 1.12rem;
-            font-weight: 800;
+            font-size: 1.08rem;
+            font-weight: 700;
             color: var(--brand-blue);
             margin: 0;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
             line-height: 1.2;
         }
 
@@ -716,8 +1124,7 @@ unset($_SESSION['flash_ortu']);
             animation: pageEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* HERO CARD PROFILE - REMOVED (Using .home-hero instead) */
-
+        /* HERO CARD PROFILE */
         .avatar-container-hero {
             position: relative;
             display: inline-block;
@@ -737,7 +1144,7 @@ unset($_SESSION['flash_ortu']);
             align-items: center;
             justify-content: center;
             font-size: 1.6rem;
-            font-weight: 800;
+            font-weight: 700;
             position: relative;
         }
 
@@ -805,21 +1212,20 @@ unset($_SESSION['flash_ortu']);
         }
 
         .student-hero-name {
-            font-size: 1.35rem;
-            font-weight: 800;
+            font-size: 1.25rem;
+            font-weight: 700;
             color: #0f172a;
             margin: 0 0 2px 0;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         .student-hero-sub {
             font-size: 0.82rem;
             color: var(--app-text-muted);
             margin: 0;
-            font-weight: 600;
+            font-weight: 500;
         }
 
-        /* INNER SALDO KANTIN CARD - REMOVED (Using .home-wallet instead) */
         .inner-saldo-card {
             background: rgba(255, 255, 255, 0.12);
             border-radius: 18px;
@@ -833,7 +1239,7 @@ unset($_SESSION['flash_ortu']);
 
         .saldo-card-label {
             font-size: 0.67rem;
-            font-weight: 800;
+            font-weight: 700;
             color: rgba(255, 255, 255, 0.82);
             letter-spacing: 0.08em;
             text-transform: uppercase;
@@ -841,15 +1247,15 @@ unset($_SESSION['flash_ortu']);
         }
 
         .saldo-card-value {
-            font-size: 1.35rem;
-            font-weight: 800;
+            font-size: 1.3rem;
+            font-weight: 700;
             color: #ffffff;
             margin: 0.4rem 0 0 0;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
             display: flex;
             align-items: center;
             gap: 8px;
-            letter-spacing: -0.3px;
+            letter-spacing: -0.2px;
         }
 
         .btn-toggle-balance {
@@ -909,16 +1315,16 @@ unset($_SESSION['flash_ortu']);
         }
 
         .section-title-text {
-            font-size: 1.05rem;
-            font-weight: 800;
+            font-size: 1.02rem;
+            font-weight: 700;
             color: #0f172a;
             margin: 0;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         .section-link-blue {
             font-size: 0.8rem;
-            font-weight: 700;
+            font-weight: 600;
             color: var(--brand-blue-light);
             text-decoration: none;
         }
@@ -973,7 +1379,7 @@ unset($_SESSION['flash_ortu']);
 
         .quick-icon-label {
             font-size: 0.72rem;
-            font-weight: 700;
+            font-weight: 600;
             text-align: center;
             line-height: 1.25;
             color: #1e293b;
@@ -2207,11 +2613,11 @@ unset($_SESSION['flash_ortu']);
         .home-quick-label {
             position: relative;
             z-index: 2;
-            font-size: 0.88rem;
-            font-weight: 800;
-            color: #0a2540;
-            letter-spacing: -0.2px;
-            font-family: 'Outfit', sans-serif;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #0f172a;
+            letter-spacing: -0.1px;
+            font-family: 'Inter', sans-serif;
             line-height: 1.25;
             margin: 0;
             text-align: center;
@@ -2288,11 +2694,11 @@ unset($_SESSION['flash_ortu']);
 
         .tagihan-item-title {
             margin: 0;
-            font-size: 0.94rem;
-            font-weight: 800;
+            font-size: 0.92rem;
+            font-weight: 700;
             color: #0f172a;
-            font-family: 'Outfit', sans-serif;
-            letter-spacing: -0.2px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.1px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -2302,7 +2708,7 @@ unset($_SESSION['flash_ortu']);
             margin: 2px 0 0;
             font-size: 0.72rem;
             color: #64748b;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         .tagihan-item-right {
@@ -2320,7 +2726,7 @@ unset($_SESSION['flash_ortu']);
         .tagihan-sisa-label {
             display: block;
             font-size: 0.62rem;
-            font-weight: 700;
+            font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.04em;
@@ -2328,11 +2734,11 @@ unset($_SESSION['flash_ortu']);
         }
 
         .tagihan-amount-text {
-            font-size: 0.98rem;
-            font-weight: 800;
+            font-size: 0.95rem;
+            font-weight: 700;
             color: #c2410c;
-            font-family: 'Outfit', sans-serif;
-            letter-spacing: -0.3px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.2px;
             white-space: nowrap;
         }
 
@@ -2340,7 +2746,7 @@ unset($_SESSION['flash_ortu']);
             display: inline-flex;
             align-items: center;
             font-size: 0.65rem;
-            font-weight: 800;
+            font-weight: 600;
             padding: 2px 8px;
             border-radius: 99px;
             background: #eff6ff;
@@ -2358,14 +2764,14 @@ unset($_SESSION['flash_ortu']);
         .progress-meta-text {
             font-size: 0.72rem;
             color: #475569;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         .progress-meta-percent {
             font-size: 0.76rem;
-            font-weight: 800;
+            font-weight: 700;
             color: #1d4ed8;
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', sans-serif;
         }
 
         .tagihan-progress-track {
@@ -2615,12 +3021,13 @@ unset($_SESSION['flash_ortu']);
         }
 
         .mapel-title {
-            font-size: 0.96rem;
-            font-weight: 800;
-            color: #0f172a;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1e293b;
             font-family: 'Outfit', sans-serif;
             line-height: 1.25;
             margin: 0;
+            letter-spacing: -0.01em;
         }
 
         .mapel-meta-pill {
@@ -2630,7 +3037,7 @@ unset($_SESSION['flash_ortu']);
             padding: 3px 9px;
             border-radius: 8px;
             font-size: 0.68rem;
-            font-weight: 700;
+            font-weight: 500;
         }
 
         .mapel-meta-kkm {
@@ -2643,7 +3050,7 @@ unset($_SESSION['flash_ortu']);
             background: #eff6ff;
             color: #1d4ed8;
             border: 1px solid #bfdbfe;
-            font-weight: 800;
+            font-weight: 600;
         }
 
         .mapel-accordion-body {
@@ -3092,7 +3499,9 @@ unset($_SESSION['flash_ortu']);
 
                 <!-- TOP STUDENT PROFILE & SALDO KANTIN HERO CARD (HANYA MUNCUL DI BERANDA) -->
                 <div class="card-profile-hero home-hero">
-                    <div class="home-greeting"><i class="bi bi-sun-fill me-1"></i> Ahlan wa Sahlan</div>
+                    <div class="home-greeting"><i class="bi bi-sun-fill me-1"></i>
+                        <?= htmlspecialchars($portalConfig['greeting_text'] ?: 'Ahlan wa Sahlan') ?>
+                    </div>
 
                     <div class="home-profile">
                         <div class="home-avatar">
@@ -3121,386 +3530,415 @@ unset($_SESSION['flash_ortu']);
                         </div>
                     </div>
 
-                    <!-- SALDO KANTIN CARD -->
-                    <div class="home-wallet">
-                        <div class="home-wallet-info">
-                            <span class="home-wallet-label"><i class="bi bi-wallet2"></i> Saldo Kantin</span>
-                            <div class="home-wallet-value">
-                                <span id="txtBalanceValue">Rp <?= number_format($saldoKantin, 0, ',', '.') ?></span>
-                                <span id="txtBalanceHidden" class="d-none">Rp •••••••</span>
+                    <?php if (!empty($portalConfig['hero_saldo'])): ?>
+                        <!-- SALDO KANTIN CARD -->
+                        <div class="home-wallet">
+                            <div class="home-wallet-info">
+                                <span class="home-wallet-label"><i class="bi bi-wallet2"></i> Saldo Kantin</span>
+                                <div class="home-wallet-value">
+                                    <span id="txtBalanceValue">Rp <?= number_format($saldoKantin, 0, ',', '.') ?></span>
+                                    <span id="txtBalanceHidden" class="d-none">Rp •••••••</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="home-wallet-tools">
-                            <button type="button" class="btn-toggle-balance" onclick="toggleBalanceVisibility()"
-                                title="Sembunyikan/Tampilkan Saldo">
-                                <i class="bi bi-eye-fill" id="iconEyeBalance"></i>
-                            </button>
-                            <button type="button" class="home-topup-btn" onclick="showTopupModal()"
-                                title="Isi Saldo Kantin">
-                                <i class="bi bi-plus-circle-fill"></i> <span>Isi Saldo</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- SECTION 1: AKSES CEPAT -->
-                <div class="home-section-header">
-                    <div class="home-section-title-wrap">
-                        <span class="home-section-indicator"></span>
-                        <h3 class="home-section-title">Akses Cepat</h3>
-                    </div>
-                    <span class="home-section-pill-tag">Menu Utama</span>
-                </div>
-
-                <div class="quick-access-grid home-quick-grid">
-                    <div class="quick-access-item home-quick-action" onclick="switchTab('pembayaran')">
-                        <div class="home-quick-icon">
-                            <i class="bi bi-wallet2"></i>
-                        </div>
-                        <span class="home-quick-label">Bayar Tagihan</span>
-                    </div>
-
-                    <div class="quick-access-item home-quick-action" onclick="switchTab('nilai')">
-                        <div class="home-quick-icon">
-                            <i class="bi bi-mortarboard-fill"></i>
-                        </div>
-                        <span class="home-quick-label">Lihat Nilai</span>
-                    </div>
-
-                    <div class="quick-access-item home-quick-action" onclick="switchTab('kantin')">
-                        <div class="home-quick-icon">
-                            <i class="bi bi-cup-hot-fill"></i>
-                        </div>
-                        <span class="home-quick-label">Riwayat Kantin</span>
-                    </div>
-
-                    <div class="quick-access-item home-quick-action" onclick="switchTab('kesantrian')">
-                        <div class="home-quick-icon">
-                            <i class="bi bi-moon-stars-fill"></i>
-                        </div>
-                        <span class="home-quick-label">Kesantrian</span>
-                    </div>
-                </div>
-
-                <!-- SECTION 2: TAGIHAN AKTIF -->
-                <div class="section-title-row">
-                    <h3 class="section-title-text">Tagihan Aktif</h3>
-                    <a href="javascript:void(0)" onclick="switchTab('pembayaran')" class="section-link-blue">Lihat
-                        Semua</a>
-                </div>
-
-                <div class="tagihan-list-container">
-                    <?php
-                    $hasAnyBillBeranda = false;
-                    ?>
-
-                    <!-- TAGIHAN 1: SPP (Otomatis Hilang jika Lunas) -->
-                    <?php if ($sppCurrentStatus !== 'lunas'): ?>
-                        <?php $hasAnyBillBeranda = true; ?>
-                        <div class="card-tagihan-item">
-                            <div class="tagihan-card-main">
-                                <div class="tagihan-item-left">
-                                    <div class="icon-box-tagihan">
-                                        <i class="bi bi-calendar-event"></i>
-                                    </div>
-                                    <div class="tagihan-info-wrap">
-                                        <h4 class="tagihan-item-title">SPP Bulan
-                                            <?= $namaBulanArr[$currentMonth] ?? 'Ini' ?>
-                                        </h4>
-                                        <p class="tagihan-item-sub">Jatuh tempo: 10
-                                            <?= $namaBulanArr[$currentMonth] ?? '' ?>     <?= date('Y') ?>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="tagihan-item-right">
-                                    <div class="tagihan-amount-wrap">
-                                        <span class="tagihan-sisa-label">Nominal</span>
-                                        <span class="tagihan-amount-text">Rp
-                                            <?= number_format($nominalSppDefault, 0, ',', '.') ?></span>
-                                    </div>
-                                    <button class="btn-bayar-pill" onclick="paySpecificBill('spp')">Bayar</button>
-                                </div>
+                            <div class="home-wallet-tools">
+                                <button type="button" class="btn-toggle-balance" onclick="toggleBalanceVisibility()"
+                                    title="Sembunyikan/Tampilkan Saldo">
+                                    <i class="bi bi-eye-fill" id="iconEyeBalance"></i>
+                                </button>
+                                <?php if (!empty($portalConfig['btn_topup'])): ?>
+                                    <button type="button" class="home-topup-btn" onclick="showTopupModal()"
+                                        title="Isi Saldo Kantin">
+                                        <i class="bi bi-plus-circle-fill"></i> <span>Isi Saldo</span>
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endif; ?>
+                </div>
 
-                    <!-- TAGIHAN 2: UANG PANGKAL -->
-                    <?php if ($targetUP > 0 && !$isUPLunas): ?>
-                        <?php $hasAnyBillBeranda = true; ?>
-                        <div class="card-tagihan-item">
-                            <div class="tagihan-card-main">
-                                <div class="tagihan-item-left">
-                                    <div class="icon-box-tagihan">
-                                        <i class="bi bi-bank2"></i>
-                                    </div>
-                                    <div class="tagihan-info-wrap">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <h4 class="tagihan-item-title">Uang Pangkal</h4>
-                                            <?php if ($totalUPBayar > 0): ?>
-                                                <span class="badge-cicilan-pill">Cicilan (<?= $percentUP ?>%)</span>
-                                            <?php endif; ?>
-                                        </div>
-                                        <p class="tagihan-item-sub">Jatuh tempo: 30
-                                            <?= $namaBulanArr[$currentMonth] ?? '' ?>     <?= date('Y') ?>
-                                        </p>
-                                    </div>
-                                </div>
+                <?php if (!empty($portalConfig['banner_info'])): ?>
+                    <!-- BANNER INFO DARI ADMIN -->
+                    <div class="alert alert-info rounded-4 border-0 shadow-sm mb-3 d-flex align-items-center gap-2.5 p-3"
+                        style="font-size: 0.82rem; background: #e0f2fe; color: #0369a1;">
+                        <i class="bi bi-megaphone-fill fs-5 flex-shrink-0 text-primary"></i>
+                        <div><?= nl2br(htmlspecialchars($portalConfig['banner_info'])) ?></div>
+                    </div>
+                <?php endif; ?>
 
-                                <div class="tagihan-item-right">
-                                    <div class="tagihan-amount-wrap">
-                                        <span
-                                            class="tagihan-sisa-label"><?= $totalUPBayar > 0 ? 'Sisa Tagihan' : 'Nominal' ?></span>
-                                        <span class="tagihan-amount-text">Rp
-                                            <?= number_format($sisaUP, 0, ',', '.') ?></span>
-                                    </div>
-                                    <button class="btn-bayar-pill" onclick="paySpecificBill('uang_pangkal')">Bayar</button>
-                                </div>
-                            </div>
-
-                            <?php if ($totalUPBayar > 0): ?>
-                                <div class="tagihan-progress-box">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="progress-meta-text">Terbayar: <strong>Rp
-                                                <?= number_format($totalUPBayar, 0, ',', '.') ?></strong> / Rp
-                                            <?= number_format($targetUP, 0, ',', '.') ?></span>
-                                        <span class="progress-meta-percent"><?= $percentUP ?>%</span>
-                                    </div>
-                                    <div class="tagihan-progress-track">
-                                        <div class="tagihan-progress-fill" style="width: <?= $percentUP ?>%;"></div>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
-                            <?php if ($totalUPPending > 0): ?>
-                                <div
-                                    class="mt-2.5 p-2 rounded-3 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-between extra-small border border-warning-subtle">
-                                    <span><i class="bi bi-clock-history me-1.5"></i> Sedang diverifikasi admin:</span>
-                                    <strong class="font-monospace">Rp
-                                        <?= number_format($totalUPPending, 0, ',', '.') ?></strong>
-                                </div>
-                            <?php endif; ?>
+                <?php if (!empty($portalConfig['akses_cepat'])): ?>
+                    <!-- SECTION 1: AKSES CEPAT -->
+                    <div class="home-section-header">
+                        <div class="home-section-title-wrap">
+                            <span class="home-section-indicator"></span>
+                            <h3 class="home-section-title">Akses Cepat</h3>
                         </div>
-                    <?php endif; ?>
+                        <span class="home-section-pill-tag">Menu Utama</span>
+                    </div>
 
-                    <!-- TAGIHAN 3+: BIAYA LAINNYA (Daftar Ulang, Seragam, dll) -->
-                    <?php foreach ($jenisLainnya as $jl): ?>
+                    <div class="quick-access-grid home-quick-grid">
+                        <?php if (!empty($portalConfig['menu_tagihan'])): ?>
+                            <div class="quick-access-item home-quick-action" onclick="switchTab('pembayaran')">
+                                <div class="home-quick-icon">
+                                    <i class="bi bi-wallet2"></i>
+                                </div>
+                                <span class="home-quick-label">Bayar Tagihan</span>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($portalConfig['menu_nilai'])): ?>
+                            <div class="quick-access-item home-quick-action" onclick="switchTab('nilai')">
+                                <div class="home-quick-icon">
+                                    <i class="bi bi-mortarboard-fill"></i>
+                                </div>
+                                <span class="home-quick-label">Lihat Nilai</span>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($portalConfig['menu_kantin'])): ?>
+                            <div class="quick-access-item home-quick-action" onclick="switchTab('kantin')">
+                                <div class="home-quick-icon">
+                                    <i class="bi bi-cup-hot-fill"></i>
+                                </div>
+                                <span class="home-quick-label">Riwayat Kantin</span>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($portalConfig['menu_kesantrian'])): ?>
+                            <div class="quick-access-item home-quick-action" onclick="switchTab('kesantrian')">
+                                <div class="home-quick-icon">
+                                    <i class="bi bi-moon-stars-fill"></i>
+                                </div>
+                                <span class="home-quick-label">Kesantrian</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($portalConfig['tagihan_aktif'])): ?>
+                    <!-- SECTION 2: TAGIHAN AKTIF -->
+                    <div class="section-title-row">
+                        <h3 class="section-title-text">Tagihan Aktif</h3>
+                        <a href="javascript:void(0)" onclick="switchTab('pembayaran')" class="section-link-blue">Lihat
+                            Semua</a>
+                    </div>
+
+                    <div class="tagihan-list-container">
                         <?php
-                        $sudahB = (float) ($pembayaranLainBayarMap[$jl['id']] ?? 0);
-                        $pendingB = (float) ($pembayaranLainPendingMap[$jl['id']] ?? 0);
-                        $nomDef = (float) $jl['nominal_default'];
-                        $sisaLain = max(0, $nomDef - $sudahB);
-                        $isLainLunas = ($nomDef > 0 && $sisaLain <= 0);
-                        if ($isLainLunas)
-                            continue;
-
-                        $hasAnyBillBeranda = true;
-                        $percentLain = $nomDef > 0 ? min(100, round(($sudahB / $nomDef) * 100)) : ($sudahB > 0 ? 100 : 0);
+                        $hasAnyBillBeranda = false;
                         ?>
-                        <div class="card-tagihan-item">
-                            <div class="tagihan-card-main">
-                                <div class="tagihan-item-left">
-                                    <div class="icon-box-tagihan">
-                                        <i class="bi bi-card-checklist"></i>
-                                    </div>
-                                    <div class="tagihan-info-wrap">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <h4 class="tagihan-item-title"><?= htmlspecialchars($jl['nama_pembayaran']) ?>
-                                            </h4>
-                                            <?php if ($sudahB > 0): ?>
-                                                <span class="badge-cicilan-pill">Cicilan (<?= $percentLain ?>%)</span>
-                                            <?php endif; ?>
+
+                        <!-- TAGIHAN 1: SPP (Otomatis Hilang jika Lunas) -->
+                        <?php if ($sppCurrentStatus !== 'lunas'): ?>
+                            <?php $hasAnyBillBeranda = true; ?>
+                            <div class="card-tagihan-item">
+                                <div class="tagihan-card-main">
+                                    <div class="tagihan-item-left">
+                                        <div class="icon-box-tagihan">
+                                            <i class="bi bi-calendar-event"></i>
                                         </div>
-                                        <p class="tagihan-item-sub">Jatuh tempo: 30
-                                            <?= $namaBulanArr[$currentMonth] ?? '' ?>     <?= date('Y') ?>
-                                        </p>
+                                        <div class="tagihan-info-wrap">
+                                            <h4 class="tagihan-item-title">SPP Bulan
+                                                <?= $namaBulanArr[$currentMonth] ?? 'Ini' ?>
+                                            </h4>
+                                            <p class="tagihan-item-sub">Jatuh tempo: 10
+                                                <?= $namaBulanArr[$currentMonth] ?? '' ?>         <?= date('Y') ?>
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="tagihan-item-right">
-                                    <div class="tagihan-amount-wrap">
-                                        <span
-                                            class="tagihan-sisa-label"><?= $sudahB > 0 ? 'Sisa Tagihan' : 'Nominal' ?></span>
-                                        <span class="tagihan-amount-text">Rp
-                                            <?= number_format($sisaLain, 0, ',', '.') ?></span>
+                                    <div class="tagihan-item-right">
+                                        <div class="tagihan-amount-wrap">
+                                            <span class="tagihan-sisa-label">Nominal</span>
+                                            <span class="tagihan-amount-text">Rp
+                                                <?= number_format($nominalSppDefault, 0, ',', '.') ?></span>
+                                        </div>
+                                        <button class="btn-bayar-pill" onclick="paySpecificBill('spp')">Bayar</button>
                                     </div>
-                                    <button class="btn-bayar-pill"
-                                        onclick="paySpecificBill('lainnya_<?= $jl['id'] ?>')">Bayar</button>
                                 </div>
                             </div>
+                        <?php endif; ?>
 
-                            <?php if ($sudahB > 0): ?>
-                                <div class="tagihan-progress-box">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="progress-meta-text">Terbayar: <strong>Rp
-                                                <?= number_format($sudahB, 0, ',', '.') ?></strong> / Rp
-                                            <?= number_format($nomDef, 0, ',', '.') ?></span>
-                                        <span class="progress-meta-percent"><?= $percentLain ?>%</span>
+                        <!-- TAGIHAN 2: UANG PANGKAL -->
+                        <?php if ($targetUP > 0 && !$isUPLunas): ?>
+                            <?php $hasAnyBillBeranda = true; ?>
+                            <div class="card-tagihan-item">
+                                <div class="tagihan-card-main">
+                                    <div class="tagihan-item-left">
+                                        <div class="icon-box-tagihan">
+                                            <i class="bi bi-bank2"></i>
+                                        </div>
+                                        <div class="tagihan-info-wrap">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <h4 class="tagihan-item-title">Uang Pangkal</h4>
+                                                <?php if ($totalUPBayar > 0): ?>
+                                                    <span class="badge-cicilan-pill">Cicilan (<?= $percentUP ?>%)</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <p class="tagihan-item-sub">Jatuh tempo: 30
+                                                <?= $namaBulanArr[$currentMonth] ?? '' ?>         <?= date('Y') ?>
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div class="tagihan-progress-track">
-                                        <div class="tagihan-progress-fill" style="width: <?= $percentLain ?>%;"></div>
+
+                                    <div class="tagihan-item-right">
+                                        <div class="tagihan-amount-wrap">
+                                            <span
+                                                class="tagihan-sisa-label"><?= $totalUPBayar > 0 ? 'Sisa Tagihan' : 'Nominal' ?></span>
+                                            <span class="tagihan-amount-text">Rp
+                                                <?= number_format($sisaUP, 0, ',', '.') ?></span>
+                                        </div>
+                                        <button class="btn-bayar-pill" onclick="paySpecificBill('uang_pangkal')">Bayar</button>
                                     </div>
                                 </div>
-                            <?php endif; ?>
 
-                            <?php if ($pendingB > 0): ?>
-                                <div
-                                    class="mt-2.5 p-2 rounded-3 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-between extra-small border border-warning-subtle">
-                                    <span><i class="bi bi-clock-history me-1.5"></i> Sedang diverifikasi admin:</span>
-                                    <strong class="font-monospace">Rp <?= number_format($pendingB, 0, ',', '.') ?></strong>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
+                                <?php if ($totalUPBayar > 0): ?>
+                                    <div class="tagihan-progress-box">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="progress-meta-text">Terbayar: <strong>Rp
+                                                    <?= number_format($totalUPBayar, 0, ',', '.') ?></strong> / Rp
+                                                <?= number_format($targetUP, 0, ',', '.') ?></span>
+                                            <span class="progress-meta-percent"><?= $percentUP ?>%</span>
+                                        </div>
+                                        <div class="tagihan-progress-track">
+                                            <div class="tagihan-progress-fill" style="width: <?= $percentUP ?>%;"></div>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
 
-                    <?php if (!$hasAnyBillBeranda): ?>
-                        <div class="text-center py-4 text-muted bg-white rounded-4 border p-3">
-                            <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center p-3 mb-2"
-                                style="width: 48px; height: 48px;">
-                                <i class="bi bi-check-circle-fill fs-4"></i>
+                                <?php if ($totalUPPending > 0): ?>
+                                    <div
+                                        class="mt-2.5 p-2 rounded-3 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-between extra-small border border-warning-subtle">
+                                        <span><i class="bi bi-clock-history me-1.5"></i> Sedang diverifikasi admin:</span>
+                                        <strong class="font-monospace">Rp
+                                            <?= number_format($totalUPPending, 0, ',', '.') ?></strong>
+                                    </div>
+                                <?php endif; ?>
                             </div>
-                            <h6 class="fw-bold text-dark mb-1 extra-small">Semua Tagihan Lunas</h6>
-                            <small class="text-muted d-block extra-small">Tidak ada tagihan yang tertunggak saat
-                                ini.</small>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                        <?php endif; ?>
 
-                <!-- SECTION 3: TRANSAKSI KANTIN TERAKHIR -->
-                <div class="section-title-row">
-                    <h3 class="section-title-text">Transaksi Kantin Terakhir</h3>
-                    <a href="javascript:void(0)" onclick="switchTab('kantin')" class="section-link-blue">Riwayat
-                        Lengkap</a>
-                </div>
+                        <!-- TAGIHAN 3+: BIAYA LAINNYA (Daftar Ulang, Seragam, dll) -->
+                        <?php foreach ($jenisLainnya as $jl): ?>
+                            <?php
+                            $sudahB = (float) ($pembayaranLainBayarMap[$jl['id']] ?? 0);
+                            $pendingB = (float) ($pembayaranLainPendingMap[$jl['id']] ?? 0);
+                            $nomDef = (float) $jl['nominal_default'];
+                            $sisaLain = max(0, $nomDef - $sudahB);
+                            $isLainLunas = ($nomDef > 0 && $sisaLain <= 0);
+                            if ($isLainLunas)
+                                continue;
 
-                <div class="kantin-list-card">
-                    <?php if (!empty($riwayatKantin)): ?>
-                        <?php foreach (array_slice($riwayatKantin, 0, 3) as $rk): ?>
-                            <div class="kantin-row-item">
-                                <div class="kantin-item-left">
-                                    <div class="icon-box-kantin">
-                                        <i class="bi bi-egg-fried"></i>
+                            $hasAnyBillBeranda = true;
+                            $percentLain = $nomDef > 0 ? min(100, round(($sudahB / $nomDef) * 100)) : ($sudahB > 0 ? 100 : 0);
+                            ?>
+                            <div class="card-tagihan-item">
+                                <div class="tagihan-card-main">
+                                    <div class="tagihan-item-left">
+                                        <div class="icon-box-tagihan">
+                                            <i class="bi bi-card-checklist"></i>
+                                        </div>
+                                        <div class="tagihan-info-wrap">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <h4 class="tagihan-item-title"><?= htmlspecialchars($jl['nama_pembayaran']) ?>
+                                                </h4>
+                                                <?php if ($sudahB > 0): ?>
+                                                    <span class="badge-cicilan-pill">Cicilan (<?= $percentLain ?>%)</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <p class="tagihan-item-sub">Jatuh tempo: 30
+                                                <?= $namaBulanArr[$currentMonth] ?? '' ?>         <?= date('Y') ?>
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h5 class="kantin-item-name">
-                                            <?= htmlspecialchars($rk['item_summary'] ?? 'Jajanan Kantin') ?>
-                                        </h5>
-                                        <p class="kantin-item-time"><?= date('H:i', strtotime($rk['created_at'])) ?></p>
+
+                                    <div class="tagihan-item-right">
+                                        <div class="tagihan-amount-wrap">
+                                            <span
+                                                class="tagihan-sisa-label"><?= $sudahB > 0 ? 'Sisa Tagihan' : 'Nominal' ?></span>
+                                            <span class="tagihan-amount-text">Rp
+                                                <?= number_format($sisaLain, 0, ',', '.') ?></span>
+                                        </div>
+                                        <button class="btn-bayar-pill"
+                                            onclick="paySpecificBill('lainnya_<?= $jl['id'] ?>')">Bayar</button>
                                     </div>
                                 </div>
-                                <span class="kantin-item-price">- Rp
-                                    <?= number_format($rk['total_harga'] ?? 0, 0, ',', '.') ?></span>
+
+                                <?php if ($sudahB > 0): ?>
+                                    <div class="tagihan-progress-box">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="progress-meta-text">Terbayar: <strong>Rp
+                                                    <?= number_format($sudahB, 0, ',', '.') ?></strong> / Rp
+                                                <?= number_format($nomDef, 0, ',', '.') ?></span>
+                                            <span class="progress-meta-percent"><?= $percentLain ?>%</span>
+                                        </div>
+                                        <div class="tagihan-progress-track">
+                                            <div class="tagihan-progress-fill" style="width: <?= $percentLain ?>%;"></div>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if ($pendingB > 0): ?>
+                                    <div
+                                        class="mt-2.5 p-2 rounded-3 bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-between extra-small border border-warning-subtle">
+                                        <span><i class="bi bi-clock-history me-1.5"></i> Sedang diverifikasi admin:</span>
+                                        <strong class="font-monospace">Rp <?= number_format($pendingB, 0, ',', '.') ?></strong>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="text-center text-muted py-3 small mb-0">Belum ada riwayat transaksi jajan di kantin.</p>
-                    <?php endif; ?>
-                </div>
 
-                <!-- SEKSI SETORAN HALAQAH & TAHFIDZ TERBARU REAL DB -->
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h3 class="section-title-text"><i class="bi bi-moon-stars-fill me-1 text-primary"></i> Setoran
-                        Tahfidz &amp; Kesantrian</h3>
-                    <span
-                        class="badge border rounded-pill px-3 bg-primary-subtle text-primary border-primary-subtle">Realtime</span>
-                </div>
-
-                <div class="widget-card mb-4">
-                    <?php if (empty($halaqahSetoranList)): ?>
-                        <div class="text-center py-4 text-muted">
-                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center p-3 mb-2"
-                                style="width: 50px; height: 50px;">
-                                <i class="bi bi-journal-album fs-3 text-primary opacity-50"></i>
+                        <?php if (!$hasAnyBillBeranda): ?>
+                            <div class="text-center py-4 text-muted bg-white rounded-4 border p-3">
+                                <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center p-3 mb-2"
+                                    style="width: 48px; height: 48px;">
+                                    <i class="bi bi-check-circle-fill fs-4"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1 extra-small">Semua Tagihan Lunas</h6>
+                                <small class="text-muted d-block extra-small">Tidak ada tagihan yang tertunggak saat
+                                    ini.</small>
                             </div>
-                            <p class="small mb-0">Belum ada catatan setoran halaqah untuk anak Anda.</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="d-flex flex-column gap-3">
-                            <?php foreach (array_slice($halaqahSetoranList, 0, 5) as $hs): ?>
-                                <?php
-                                $nBadge = [
-                                    'mumtaz' => 'bg-success-subtle text-success border-success',
-                                    'jayyid_jiddan' => 'bg-info-subtle text-info border-info',
-                                    'jayyid' => 'bg-warning-subtle text-warning border-warning',
-                                    'rasib' => 'bg-danger-subtle text-danger border-danger'
-                                ][$hs['penilaian']] ?? 'bg-light';
-                                ?>
-                                <?php
-                                $materiClean = preg_replace('/^(Surah\s+)+/i', 'Surah ', htmlspecialchars($hs['materi_setoran'] ?? ''));
-                                ?>
-                                <div class="p-3 rounded-4 border bg-white shadow-sm mb-2.5" style="transition: all 0.22s ease;">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <?php
-                                        $tRaw = strtolower(trim($hs['tipe_setoran'] ?? 'ziyadah'));
-                                        if (strpos($tRaw, 'muroj') !== false) {
-                                            $catStyle = 'background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff;';
-                                            $catIcon = 'bi-arrow-repeat';
-                                            $catLabel = "Muroja'ah";
-                                        } elseif (strpos($tRaw, 'tahsin') !== false) {
-                                            $catStyle = 'background: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4;';
-                                            $catIcon = 'bi-mic-fill';
-                                            $catLabel = "Tahsin";
-                                        } elseif (strpos($tRaw, 'ujian') !== false) {
-                                            $catStyle = 'background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;';
-                                            $catIcon = 'bi-award-fill';
-                                            $catLabel = "Ujian Tahfidz";
-                                        } else {
-                                            $catStyle = 'background: #e0edff; color: #0284c7; border: 1px solid #bae6fd;';
-                                            $catIcon = 'bi-bookmark-check-fill';
-                                            $catLabel = "Ziyadah (Hafalan Baru)";
-                                        }
-                                        ?>
-                                        <span
-                                            style="<?= $catStyle ?> font-weight: 800; font-size: 0.68rem; padding: 4px 12px; border-radius: 50px; display: inline-flex; align-items: center; gap: 6px;">
-                                            <i class="bi <?= $catIcon ?>"></i> <?= $catLabel ?>
-                                        </span>
-                                        <small class="text-muted extra-small"><i
-                                                class="bi bi-calendar3 me-1.5"></i><?= date('d M Y', strtotime($hs['tanggal'])) ?></small>
-                                    </div>
-                                    <h6 class="fw-extrabold text-dark mb-2" style="font-size: 0.95rem; line-height: 1.35;">
-                                        <?= $materiClean ?>
-                                        <?php if (!empty($hs['metode_input'])): ?>
-                                            <span class="badge bg-light text-secondary border rounded-pill ms-1 font-monospace"
-                                                style="font-size: 0.65rem; font-weight: normal; vertical-align: middle;">Metode:
-                                                <?= ucfirst(htmlspecialchars($hs['metode_input'])) ?></span>
-                                        <?php endif; ?>
-                                    </h6>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
 
-                                    <div
-                                        class="d-flex align-items-center justify-content-between pt-2.5 border-top flex-wrap gap-2">
-                                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
-                                            <span
-                                                class="badge <?= $nBadge ?> border extra-small px-2 py-1 font-monospace fw-bold"
-                                                style="font-size: 0.68rem;">
-                                                NILAI: <?= strtoupper(str_replace('_', ' ', $hs['penilaian'])) ?>
-                                            </span>
-                                            <span
-                                                class="badge <?= $hs['status_setoran'] === 'lulus' ? 'bg-success text-white' : 'bg-danger text-white' ?> extra-small rounded-pill px-2.5 py-1"
-                                                style="font-size: 0.68rem; font-weight: 800;">
-                                                <?= $hs['status_setoran'] === 'lulus' ? '✓ Lulus' : '🔄 Mengulang' ?>
-                                            </span>
-                                        </div>
-                                        <?php if (!empty($hs['nama_musyrif'])): ?>
-                                            <small class="text-muted extra-small d-inline-flex align-items-center gap-1">
-                                                <i class="bi bi-person-circle text-secondary"></i> Musyrif:
-                                                <strong><?= htmlspecialchars($hs['nama_musyrif']) ?></strong>
-                                            </small>
-                                        <?php endif; ?>
-                                    </div>
+                <?php if (!empty($portalConfig['kantin_terakhir'])): ?>
+                    <!-- SECTION 3: TRANSAKSI KANTIN TERAKHIR -->
+                    <div class="section-title-row">
+                        <h3 class="section-title-text">Transaksi Kantin Terakhir</h3>
+                        <a href="javascript:void(0)" onclick="switchTab('kantin')" class="section-link-blue">Riwayat
+                            Lengkap</a>
+                    </div>
 
-                                    <?php if (!empty($hs['catatan_ortu'])): ?>
-                                        <div
-                                            class="mt-2.5 p-2.5 rounded-3 bg-light extra-small text-secondary border-start border-3 border-primary">
-                                            <i class="bi bi-chat-left-quote-fill me-1.5 text-primary"></i>
-                                            <em>"<?= htmlspecialchars($hs['catatan_ortu']) ?>"</em>
+                    <div class="kantin-list-card">
+                        <?php if (!empty($riwayatKantin)): ?>
+                            <?php foreach (array_slice($riwayatKantin, 0, 3) as $rk): ?>
+                                <div class="kantin-row-item">
+                                    <div class="kantin-item-left">
+                                        <div class="icon-box-kantin">
+                                            <i class="bi bi-egg-fried"></i>
                                         </div>
-                                    <?php endif; ?>
+                                        <div>
+                                            <h5 class="kantin-item-name">
+                                                <?= htmlspecialchars($rk['item_summary'] ?? 'Jajanan Kantin') ?>
+                                            </h5>
+                                            <p class="kantin-item-time"><?= date('H:i', strtotime($rk['created_at'])) ?></p>
+                                        </div>
+                                    </div>
+                                    <span class="kantin-item-price">- Rp
+                                        <?= number_format($rk['total_harga'] ?? 0, 0, ',', '.') ?></span>
                                 </div>
                             <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                        <?php else: ?>
+                            <p class="text-center text-muted py-3 small mb-0">Belum ada riwayat transaksi jajan di kantin.</p>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($portalConfig['tahfidz_beranda'])): ?>
+                    <!-- SEKSI SETORAN HALAQAH & TAHFIDZ TERBARU REAL DB -->
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h3 class="section-title-text"><i class="bi bi-moon-stars-fill me-1 text-primary"></i> Setoran
+                            Tahfidz &amp; Kesantrian</h3>
+                        <span
+                            class="badge border rounded-pill px-3 bg-primary-subtle text-primary border-primary-subtle">Realtime</span>
+                    </div>
+
+                    <div class="widget-card mb-4">
+                        <?php if (empty($halaqahSetoranList)): ?>
+                            <div class="text-center py-4 text-muted">
+                                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center p-3 mb-2"
+                                    style="width: 50px; height: 50px;">
+                                    <i class="bi bi-journal-album fs-3 text-primary opacity-50"></i>
+                                </div>
+                                <p class="small mb-0">Belum ada catatan setoran halaqah untuk anak Anda.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="d-flex flex-column gap-3">
+                                <?php foreach (array_slice($halaqahSetoranList, 0, 5) as $hs): ?>
+                                    <?php
+                                    $nBadge = [
+                                        'mumtaz' => 'bg-success-subtle text-success border-success',
+                                        'jayyid_jiddan' => 'bg-info-subtle text-info border-info',
+                                        'jayyid' => 'bg-warning-subtle text-warning border-warning',
+                                        'rasib' => 'bg-danger-subtle text-danger border-danger'
+                                    ][$hs['penilaian']] ?? 'bg-light';
+                                    ?>
+                                    <?php
+                                    $materiClean = preg_replace('/^(Surah\s+)+/i', 'Surah ', htmlspecialchars($hs['materi_setoran'] ?? ''));
+                                    ?>
+                                    <div class="p-3 rounded-4 border bg-white shadow-sm mb-2.5" style="transition: all 0.22s ease;">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <?php
+                                            $tRaw = strtolower(trim($hs['tipe_setoran'] ?? 'ziyadah'));
+                                            if (strpos($tRaw, 'muroj') !== false) {
+                                                $catStyle = 'background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff;';
+                                                $catIcon = 'bi-arrow-repeat';
+                                                $catLabel = "Muroja'ah";
+                                            } elseif (strpos($tRaw, 'tahsin') !== false) {
+                                                $catStyle = 'background: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4;';
+                                                $catIcon = 'bi-mic-fill';
+                                                $catLabel = "Tahsin";
+                                            } elseif (strpos($tRaw, 'ujian') !== false) {
+                                                $catStyle = 'background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3;';
+                                                $catIcon = 'bi-award-fill';
+                                                $catLabel = "Ujian Tahfidz";
+                                            } else {
+                                                $catStyle = 'background: #e0edff; color: #0284c7; border: 1px solid #bae6fd;';
+                                                $catIcon = 'bi-bookmark-check-fill';
+                                                $catLabel = "Ziyadah (Hafalan Baru)";
+                                            }
+                                            ?>
+                                            <span
+                                                style="<?= $catStyle ?> font-weight: 800; font-size: 0.68rem; padding: 4px 12px; border-radius: 50px; display: inline-flex; align-items: center; gap: 6px;">
+                                                <i class="bi <?= $catIcon ?>"></i> <?= $catLabel ?>
+                                            </span>
+                                            <small class="text-muted extra-small"><i
+                                                    class="bi bi-calendar3 me-1.5"></i><?= date('d M Y', strtotime($hs['tanggal'])) ?></small>
+                                        </div>
+                                        <h6 class="fw-extrabold text-dark mb-2" style="font-size: 0.95rem; line-height: 1.35;">
+                                            <?= $materiClean ?>
+                                            <?php if (!empty($hs['metode_input'])): ?>
+                                                <span class="badge bg-light text-secondary border rounded-pill ms-1 font-monospace"
+                                                    style="font-size: 0.65rem; font-weight: normal; vertical-align: middle;">Metode:
+                                                    <?= ucfirst(htmlspecialchars($hs['metode_input'])) ?></span>
+                                            <?php endif; ?>
+                                        </h6>
+
+                                        <div
+                                            class="d-flex align-items-center justify-content-between pt-2.5 border-top flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                                <span
+                                                    class="badge <?= $nBadge ?> border extra-small px-2 py-1 font-monospace fw-bold"
+                                                    style="font-size: 0.68rem;">
+                                                    NILAI: <?= strtoupper(str_replace('_', ' ', $hs['penilaian'])) ?>
+                                                </span>
+                                                <span
+                                                    class="badge <?= $hs['status_setoran'] === 'lulus' ? 'bg-success text-white' : 'bg-danger text-white' ?> extra-small rounded-pill px-2.5 py-1"
+                                                    style="font-size: 0.68rem; font-weight: 800;">
+                                                    <?= $hs['status_setoran'] === 'lulus' ? '✓ Lulus' : '🔄 Mengulang' ?>
+                                                </span>
+                                            </div>
+                                            <?php if (!empty($hs['nama_musyrif'])): ?>
+                                                <small class="text-muted extra-small d-inline-flex align-items-center gap-1">
+                                                    <i class="bi bi-person-circle text-secondary"></i> Musyrif:
+                                                    <strong><?= htmlspecialchars($hs['nama_musyrif']) ?></strong>
+                                                </small>
+                                            <?php endif; ?>
+                                        </div>
+
+                                        <?php if (!empty($hs['catatan_ortu'])): ?>
+                                            <div
+                                                class="mt-2.5 p-2.5 rounded-3 bg-light extra-small text-secondary border-start border-3 border-primary">
+                                                <i class="bi bi-chat-left-quote-fill me-1.5 text-primary"></i>
+                                                <em>"<?= htmlspecialchars($hs['catatan_ortu']) ?>"</em>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
             <!-- ========================================== -->
             <!-- TAB 2: KANTIN (UANG SAKU & TRANSAKSI) -->
@@ -3524,29 +3962,31 @@ unset($_SESSION['flash_ortu']);
                     </div>
                 </div>
 
-                <!-- PREMIUM BLUE HERO CARD PENGELUARAN MINGGU INI -->
-                <div class="hero-kantin-spend-card position-relative overflow-hidden mb-4">
-                    <div class="position-relative z-1">
-                        <span class="spend-card-label"><i class="bi bi-bar-chart-fill me-2"></i> Pengeluaran Minggu
-                            Ini</span>
-                        <h2 class="spend-card-amount">Rp <?= number_format($weeklyKantinSpend, 0, ',', '.') ?></h2>
+                <?php if (!empty($portalConfig['kantin_pengeluaran'])): ?>
+                    <!-- PREMIUM BLUE HERO CARD PENGELUARAN MINGGU INI -->
+                    <div class="hero-kantin-spend-card position-relative overflow-hidden mb-4">
+                        <div class="position-relative z-1">
+                            <span class="spend-card-label"><i class="bi bi-bar-chart-fill me-2"></i> Pengeluaran Minggu
+                                Ini</span>
+                            <h2 class="spend-card-amount">Rp <?= number_format($weeklyKantinSpend, 0, ',', '.') ?></h2>
 
-                        <div class="daily-spend-pills">
-                            <?php foreach ($dailyKantinMap as $dDay => $dVal): ?>
-                                <div class="daily-pill-item">
-                                    <span class="daily-pill-day"><?= $dDay ?></span>
-                                    <span
-                                        class="daily-pill-val"><?= $dVal > 0 ? (round($dVal / 1000) . 'rb') : '0' ?></span>
-                                </div>
-                            <?php endforeach; ?>
+                            <div class="daily-spend-pills">
+                                <?php foreach ($dailyKantinMap as $dDay => $dVal): ?>
+                                    <div class="daily-pill-item">
+                                        <span class="daily-pill-day"><?= $dDay ?></span>
+                                        <span
+                                            class="daily-pill-val"><?= $dVal > 0 ? (round($dVal / 1000) . 'rb') : '0' ?></span>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <!-- Decorative backdrop -->
+                        <div class="position-absolute end-0 top-0 text-white pointer-events-none"
+                            style="font-size: 5.5rem; transform: translate(10%, -10%); opacity: 0.08;">
+                            <i class="bi bi-graph-up-arrow"></i>
                         </div>
                     </div>
-                    <!-- Decorative backdrop -->
-                    <div class="position-absolute end-0 top-0 text-white pointer-events-none"
-                        style="font-size: 5.5rem; transform: translate(10%, -10%); opacity: 0.08;">
-                        <i class="bi bi-graph-up-arrow"></i>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <!-- MODERN MINI STUDENT WALLET CARD -->
                 <div class="d-flex align-items-center justify-content-between mb-4"
@@ -3573,16 +4013,78 @@ unset($_SESSION['flash_ortu']);
                         <span>Top-Up</span></button>
                 </div>
 
+                <!-- KARTU PEMBATASAN UANG JAJAN (KONTROL ORANG TUA REAL-TIME KE KASIR KANTIN) -->
+                <div class="d-flex align-items-center justify-content-between mb-4 cursor-pointer"
+                    onclick="showModalLimitJajan()"
+                    style="padding: 1.25rem 1.4rem; background: #ffffff; border-radius: 24px; border: 1.5px solid #f1f5f9; box-shadow: 0 4px 18px rgba(13,71,161,0.04); cursor: pointer; transition: all 0.25s ease;">
+                    <div class="d-flex align-items-center gap-3" style="min-width: 0;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width: 48px; height: 48px; font-size: 1.3rem; background: <?= $limitJajan['aktif'] ? '#eff6ff' : '#f8fafc' ?>; color: <?= $limitJajan['aktif'] ? '#2563eb' : '#64748b' ?>; border: 1.5px solid <?= $limitJajan['aktif'] ? '#bfdbfe' : '#e2e8f0' ?>;">
+                            <i class="bi <?= $limitJajan['aktif'] ? 'bi-shield-lock-fill' : 'bi-shield-check' ?>"></i>
+                        </div>
+                        <div style="min-width: 0;">
+                            <strong class="d-block text-dark small fw-extrabold text-truncate"
+                                style="font-family: 'Outfit', sans-serif; margin-bottom: 4px;">Pembatasan Uang
+                                Jajan</strong>
+                            <?php if ($limitJajan['aktif']): ?>
+                                <?php
+                                $labelTipe = ($limitJajan['tipe'] === 'harian') ? 'Harian' : (($limitJajan['tipe'] === 'pekanan') ? 'Pekanan' : 'Bulanan');
+                                ?>
+                                <span
+                                    class="badge bg-success-subtle text-success border border-success-subtle rounded-pill text-truncate"
+                                    style="padding: 4px 12px; font-size: 0.72rem; font-weight: 700; max-width: 100%;">Batas
+                                    <?= $labelTipe ?>: Rp <?= number_format($limitJajan['nominal'], 0, ',', '.') ?> (Sisa:
+                                    Rp <?= number_format($limitJajan['sisa'], 0, ',', '.') ?>)</span>
+                            <?php else: ?>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill text-truncate"
+                                    style="padding: 4px 12px; font-size: 0.72rem; font-weight: 700;">Tanpa Batasan
+                                    (Bebas)</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <button type="button"
+                        class="btn btn-sm btn-primary rounded-pill px-3 py-2 fw-bold d-inline-flex align-items-center gap-2 flex-shrink-0"
+                        style="font-size: 0.82rem; pointer-events: none;">
+                        <i class="bi bi-sliders"></i>
+                        <span><?= $limitJajan['aktif'] ? 'Ubah' : 'Atur' ?></span>
+                    </button>
+                </div>
+
                 <!-- STATUS & PERMOHONAN TOP-UP SALDO KANTIN -->
                 <div class="widget-card mb-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                        <div class="d-flex align-items-center gap-3">
+                    <div
+                        class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center" style="gap: 12px;">
                             <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary-subtle text-primary flex-shrink-0"
                                 style="width: 38px; height: 38px;">
                                 <i class="bi bi-clock-history fs-5"></i>
                             </div>
-                            <h6 class="fw-extrabold text-dark m-0" style="font-family: 'Outfit', sans-serif;">Status
-                                Permohonan Top-Up</h6>
+                            <div>
+                                <h6 class="fw-extrabold text-dark m-0" style="font-family: 'Outfit', sans-serif;">Status
+                                    Permohonan Top-Up</h6>
+                                <small class="text-muted extra-small" style="font-size: 0.72rem;">Pilih bulan untuk
+                                    melihat riwayat</small>
+                            </div>
+                        </div>
+
+                        <!-- FILTER BULAN (JANUARI - DESEMBER) -->
+                        <div class="d-flex align-items-center ms-auto">
+                            <div class="input-group input-group-sm" style="width: auto; min-width: 155px;">
+                                <span class="input-group-text bg-light border-end-0 py-1 px-2.5 text-primary"
+                                    style="border-radius: 12px 0 0 12px; font-size: 0.75rem;">
+                                    <i class="bi bi-calendar3"></i>
+                                </span>
+                                <select id="filterBulanTopup"
+                                    class="form-select form-select-sm border-start-0 py-1 ps-1 pe-4 fw-bold"
+                                    onchange="filterTopupByMonth(this.value)"
+                                    style="border-radius: 0 12px 12px 0; font-size: 0.75rem; background-color: #f8fafc; cursor: pointer; border-color: #e2e8f0;">
+                                    <option value="" selected>-- Pilih Bulan --</option>
+                                    <?php foreach ($namaBulanArr as $mNum => $mName): ?>
+                                        <option value="<?= $mNum ?>"><?= $mName ?></option>
+                                    <?php endforeach; ?>
+                                    <option value="all">Semua Bulan</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -3590,7 +4092,7 @@ unset($_SESSION['flash_ortu']);
                         <p class="text-muted extra-small text-center py-3 mb-0">Belum ada riwayat permohonan top-up. Klik
                             tombol <strong>Top-Up Saldo</strong> untuk menambah saldo E-Kantin.</p>
                     <?php else: ?>
-                        <div class="d-flex flex-column gap-2.5">
+                        <div id="topupListContainer" class="d-flex flex-column gap-2.5">
                             <?php foreach ($topupStatusList as $ts): ?>
                                 <?php
                                 $st = $ts['status'] ?? 'pending';
@@ -3598,156 +4100,277 @@ unset($_SESSION['flash_ortu']);
                                 $isFail = ($st === 'ditolak');
                                 $badgeClass = $isOK ? 'bg-success text-white' : ($isFail ? 'bg-danger text-white' : 'bg-warning text-dark');
                                 $stLabel = $isOK ? 'SUKSES' : ($isFail ? 'DITOLAK' : 'PENDING');
+                                $itemTime = !empty($ts['created_at']) ? strtotime($ts['created_at']) : time();
+                                $itemMonth = (int) date('n', $itemTime);
                                 ?>
-                                <div
-                                    class="p-3 rounded-4 border bg-white d-flex align-items-center justify-content-between gap-2 shadow-sm">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="rounded-circle p-2 <?= $isFail ? 'bg-danger-subtle text-danger' : ($isOK ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis') ?> d-flex align-items-center justify-content-center flex-shrink-0"
-                                            style="width: 40px; height: 40px;">
+                                <div class="topup-item-card p-3 rounded-4 border bg-white align-items-center justify-content-between shadow-sm d-none"
+                                    data-month="<?= $itemMonth ?>"
+                                    style="border-color: #f1f5f9 !important; padding: 13px 16px !important; width: 100%; box-sizing: border-box;">
+                                    <div class="d-flex align-items-center" style="gap: 12px; min-width: 0; flex: 1 1 auto;">
+                                        <div class="rounded-circle <?= $isFail ? 'bg-danger-subtle text-danger' : ($isOK ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning-emphasis') ?> d-flex align-items-center justify-content-center flex-shrink-0"
+                                            style="width: 42px; height: 42px; font-size: 1.2rem;">
                                             <i
-                                                class="bi <?= $isFail ? 'bi-x-circle-fill' : ($isOK ? 'bi-check-circle-fill' : 'bi-hourglass-split') ?> fs-5"></i>
+                                                class="bi <?= $isFail ? 'bi-x-circle-fill' : ($isOK ? 'bi-check-circle-fill' : 'bi-hourglass-split') ?>"></i>
                                         </div>
-                                        <div>
-                                            <strong class="d-block text-dark small mb-0.5">Top-Up Rp
+                                        <div style="min-width: 0; flex: 1 1 auto; overflow: hidden;">
+                                            <strong class="d-block text-dark fw-bold text-truncate"
+                                                style="font-size: 0.88rem; line-height: 1.35; margin-bottom: 3px;">Top-Up Rp
                                                 <?= number_format($ts['nominal'], 0, ',', '.') ?></strong>
-                                            <small class="text-muted extra-small"><i
-                                                    class="bi bi-clock me-1.5"></i><?= date('d M Y H:i', strtotime($ts['created_at'])) ?></small>
-                                            <?php if (!empty($ts['catatan']) && $isFail): ?>
-                                                <div class="text-danger extra-small mt-1">Catatan:
-                                                    <?= htmlspecialchars($ts['catatan']) ?>
+                                            <div class="text-muted extra-small d-flex align-items-center"
+                                                style="font-size: 0.73rem; line-height: 1.2; color: #64748b;">
+                                                <i class="bi bi-clock text-secondary"
+                                                    style="font-size: 0.75rem; margin-right: 6px;"></i>
+                                                <span class="text-truncate"><?= date('d M Y, H:i', $itemTime) ?></span>
+                                            </div>
+                                            <?php
+                                            $reasonReject = !empty($ts['alasan_tolak']) ? $ts['alasan_tolak'] : (!empty($ts['catatan']) ? $ts['catatan'] : '');
+                                            if (!empty($reasonReject) && $isFail): ?>
+                                                <div class="text-danger extra-small d-flex align-items-start"
+                                                    style="font-size: 0.72rem; line-height: 1.3; margin-top: 5px;">
+                                                    <i class="bi bi-info-circle flex-shrink-0"
+                                                        style="font-size: 0.75rem; margin-right: 5px; margin-top: 1px;"></i>
+                                                    <span class="text-truncate">Alasan:
+                                                        <?= htmlspecialchars($reasonReject) ?></span>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    <div class="text-end">
-                                        <span
-                                            class="badge <?= $badgeClass ?> rounded-pill px-2.5 py-1 extra-small fw-bold"><?= $stLabel ?></span>
+                                    <div class="text-end flex-shrink-0 d-flex flex-column align-items-end"
+                                        style="gap: 5px; margin-left: 10px;">
+                                        <span class="badge <?= $badgeClass ?> rounded-pill fw-bold text-nowrap"
+                                            style="font-size: 0.68rem; padding: 5px 11px; letter-spacing: 0.4px;"><?= $stLabel ?></span>
                                         <?php if (!empty($ts['bukti_transfer'])): ?>
                                             <a href="<?= htmlspecialchars(getBuktiUrl($ts['bukti_transfer'])) ?>" target="_blank"
-                                                class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 text-decoration-none mt-1 d-inline-flex align-items-center gap-1.5"
-                                                style="font-size: 0.65rem; font-weight: 700;">
-                                                <i class="bi bi-image" style="font-size: 0.68rem;"></i> Bukti Transfer
+                                                class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill text-decoration-none d-inline-flex align-items-center text-nowrap"
+                                                style="font-size: 0.68rem; font-weight: 700; padding: 4px 10px;">
+                                                <i class="bi bi-image" style="font-size: 0.72rem; margin-right: 5px;"></i>
+                                                <span>Bukti</span>
                                             </a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
+
+                        <!-- Empty state when filtered month has no items -->
+                        <div id="topupEmptyMonth" class="text-muted extra-small text-center py-4 mb-0 d-none">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-light text-secondary mb-2"
+                                style="width: 44px; height: 44px;">
+                                <i class="bi bi-calendar-x fs-5"></i>
+                            </div>
+                            <p class="mb-0 text-secondary" style="font-size: 0.78rem;">Tidak ada permohonan top-up pada
+                                bulan <strong id="topupEmptyMonthName" class="text-dark"></strong>.</p>
+                        </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- MUTASI SALDO E-WALLET SANTRI (TRANSPARANSI SALDO) -->
                 <div class="widget-card mb-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                        <div class="d-flex align-items-center gap-3">
+                    <div
+                        class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center" style="gap: 12px;">
                             <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary-subtle text-primary flex-shrink-0"
                                 style="width: 38px; height: 38px;">
                                 <i class="bi bi-arrow-left-right fs-5"></i>
                             </div>
-                            <h6 class="fw-extrabold text-dark m-0" style="font-family: 'Outfit', sans-serif;">Mutasi
-                                Saldo E-Wallet Santri</h6>
+                            <div>
+                                <h6 class="fw-extrabold text-dark m-0" style="font-family: 'Outfit', sans-serif;">Mutasi
+                                    Saldo E-Wallet Santri</h6>
+                                <small class="text-muted extra-small" style="font-size: 0.72rem;">Pilih bulan untuk
+                                    melihat mutasi</small>
+                            </div>
                         </div>
-                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold"
-                            style="font-size: 0.72rem;"><?= count($mutasiSaldoList) ?> Catatan</span>
+
+                        <!-- FILTER BULAN (JANUARI - DESEMBER) -->
+                        <div class="d-flex align-items-center ms-auto">
+                            <div class="input-group input-group-sm" style="width: auto; min-width: 155px;">
+                                <span class="input-group-text bg-light border-end-0 py-1 px-2.5 text-primary"
+                                    style="border-radius: 12px 0 0 12px; font-size: 0.75rem;">
+                                    <i class="bi bi-calendar3"></i>
+                                </span>
+                                <select id="filterBulanMutasi"
+                                    class="form-select form-select-sm border-start-0 py-1 ps-1 pe-4 fw-bold"
+                                    onchange="filterMutasiByMonth(this.value)"
+                                    style="border-radius: 0 12px 12px 0; font-size: 0.75rem; background-color: #f8fafc; cursor: pointer; border-color: #e2e8f0;">
+                                    <option value="" selected>-- Pilih Bulan --</option>
+                                    <?php foreach ($namaBulanArr as $mNum => $mName): ?>
+                                        <option value="<?= $mNum ?>"><?= $mName ?></option>
+                                    <?php endforeach; ?>
+                                    <option value="all">Semua Bulan</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <?php if (empty($mutasiSaldoList)): ?>
                         <p class="text-center text-muted py-4 small mb-0">Belum ada riwayat mutasi saldo E-Wallet santri.
                         </p>
                     <?php else: ?>
-                        <div class="d-flex flex-column gap-2.5" style="max-height: 380px; overflow-y: auto;">
+                        <div id="mutasiListContainer" class="d-flex flex-column gap-2.5"
+                            style="max-height: 480px; overflow-y: auto; overflow-x: hidden;">
                             <?php foreach ($mutasiSaldoList as $ms): ?>
                                 <?php
-                                $j = $ms['jenis'];
+                                $j = $ms['jenis'] ?? '';
                                 $isPlus = ($j === 'topup' || $j === 'refund');
                                 $colorClass = $isPlus ? 'text-success' : 'text-danger';
                                 $bgIconClass = $isPlus ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger';
                                 $iconName = ($j === 'topup') ? 'bi-plus-circle-fill' : (($j === 'pembelian') ? 'bi-bag-check-fill' : 'bi-arrow-repeat');
                                 $sign = $isPlus ? '+' : '-';
+                                $msTime = !empty($ms['created_at']) ? strtotime($ms['created_at']) : time();
+                                $msMonth = (int) date('n', $msTime);
                                 ?>
-                                <div
-                                    class="p-3 rounded-4 border bg-white d-flex align-items-center justify-content-between gap-2 shadow-sm">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="rounded-circle p-2 <?= $bgIconClass ?> d-flex align-items-center justify-content-center flex-shrink-0"
-                                            style="width: 40px; height: 40px;">
-                                            <i class="bi <?= $iconName ?> fs-5"></i>
+                                <div class="mutasi-item-card p-3 rounded-4 border bg-white align-items-center justify-content-between shadow-sm d-none"
+                                    data-month="<?= $msMonth ?>"
+                                    style="border-color: #f1f5f9 !important; padding: 13px 16px !important; width: 100%; box-sizing: border-box;">
+                                    <div class="d-flex align-items-center" style="gap: 12px; min-width: 0; flex: 1 1 auto;">
+                                        <div class="rounded-circle <?= $bgIconClass ?> d-flex align-items-center justify-content-center flex-shrink-0"
+                                            style="width: 42px; height: 42px; font-size: 1.15rem;">
+                                            <i class="bi <?= $iconName ?>"></i>
                                         </div>
-                                        <div>
-                                            <strong
-                                                class="d-block text-dark small fw-bold mb-0.5"><?= htmlspecialchars($ms['keterangan'] ?? ucfirst($j)) ?></strong>
-                                            <small class="text-muted extra-small" style="font-size: 0.7rem;">
-                                                <i
-                                                    class="bi bi-clock me-1.5"></i><?= date('d M Y H:i', strtotime($ms['created_at'])) ?>
-                                                <?php if (!empty($ms['nama_petugas'])): ?> &bull; Petugas:
-                                                    <?= htmlspecialchars($ms['nama_petugas']) ?>         <?php endif; ?>
-                                            </small>
+                                        <div style="min-width: 0; flex: 1 1 auto; overflow: hidden;">
+                                            <strong class="d-block text-dark fw-bold text-truncate"
+                                                title="<?= htmlspecialchars($ms['keterangan'] ?? ucfirst($j)) ?>"
+                                                style="font-size: 0.88rem; line-height: 1.35; margin-bottom: 3px;"><?= htmlspecialchars($ms['keterangan'] ?? ucfirst($j)) ?></strong>
+                                            <div class="text-muted extra-small d-flex flex-wrap align-items-center"
+                                                style="font-size: 0.73rem; line-height: 1.2; color: #64748b;">
+                                                <i class="bi bi-clock text-secondary"
+                                                    style="font-size: 0.75rem; margin-right: 6px;"></i>
+                                                <span><?= date('d M Y, H:i', $msTime) ?></span>
+                                                <?php if (!empty($ms['nama_petugas'])): ?>
+                                                    <span style="margin: 0 5px;">&bull;</span>
+                                                    <span class="text-truncate">Petugas:
+                                                        <?= htmlspecialchars($ms['nama_petugas']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="text-end flex-shrink-0">
-                                        <span class="fw-extrabold extra-small <?= $colorClass ?> d-block"
-                                            style="font-family: 'Outfit', sans-serif;">
+                                    <div class="text-end flex-shrink-0" style="margin-left: 10px;">
+                                        <span class="fw-extrabold <?= $colorClass ?> d-block text-nowrap"
+                                            style="font-family: 'Outfit', sans-serif; font-size: 0.88rem;">
                                             <?= $sign ?> Rp <?= number_format($ms['jumlah'], 0, ',', '.') ?>
                                         </span>
-                                        <small class="text-muted extra-small" style="font-size: 0.65rem;">
+                                        <span class="text-muted extra-small d-block text-nowrap"
+                                            style="font-size: 0.7rem; margin-top: 2px;">
                                             Sisa: Rp <?= number_format($ms['saldo_sesudah'], 0, ',', '.') ?>
-                                        </small>
+                                        </span>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
+                        </div>
+
+                        <!-- Empty state when filtered month has no items -->
+                        <div id="mutasiEmptyMonth" class="text-muted extra-small text-center py-4 mb-0 d-none">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-light text-secondary mb-2"
+                                style="width: 44px; height: 44px;">
+                                <i class="bi bi-calendar-x fs-5"></i>
+                            </div>
+                            <p class="mb-0 text-secondary" style="font-size: 0.78rem;">Tidak ada mutasi saldo pada bulan
+                                <strong id="mutasiEmptyMonthName" class="text-dark"></strong>.
+                            </p>
                         </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- RIWAYAT TRANSAKSI KANTIN FILTERABLE REAL DB -->
                 <div class="widget-card mb-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                        <div class="d-flex align-items-center gap-3">
+                    <div
+                        class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center" style="gap: 12px;">
                             <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary-subtle text-primary flex-shrink-0"
                                 style="width: 38px; height: 38px;">
                                 <i class="bi bi-receipt fs-5"></i>
                             </div>
-                            <h6 class="fw-extrabold text-dark m-0" style="font-family: 'Outfit', sans-serif;">Riwayat
-                                Transaksi</h6>
+                            <div>
+                                <h6 class="fw-extrabold text-dark m-0" style="font-family: 'Outfit', sans-serif;">
+                                    Riwayat Transaksi</h6>
+                                <small class="text-muted extra-small" style="font-size: 0.72rem;">Pilih bulan untuk
+                                    melihat transaksi</small>
+                            </div>
+                        </div>
+
+                        <!-- FILTER BULAN (JANUARI - DESEMBER) -->
+                        <div class="d-flex align-items-center ms-auto">
+                            <div class="input-group input-group-sm" style="width: auto; min-width: 155px;">
+                                <span class="input-group-text bg-light border-end-0 py-1 px-2.5 text-primary"
+                                    style="border-radius: 12px 0 0 12px; font-size: 0.75rem;">
+                                    <i class="bi bi-calendar3"></i>
+                                </span>
+                                <select id="filterBulanTransaksi"
+                                    class="form-select form-select-sm border-start-0 py-1 ps-1 pe-4 fw-bold"
+                                    onchange="filterKantinItems()"
+                                    style="border-radius: 0 12px 12px 0; font-size: 0.75rem; background-color: #f8fafc; cursor: pointer; border-color: #e2e8f0;">
+                                    <option value="" selected>-- Pilih Bulan --</option>
+                                    <?php foreach ($namaBulanArr as $mNum => $mName): ?>
+                                        <option value="<?= $mNum ?>"><?= $mName ?></option>
+                                    <?php endforeach; ?>
+                                    <option value="all">Semua Bulan</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-end-0 rounded-start-pill"><i
+                            <span class="input-group-text bg-white border-end-0 rounded-start-pill py-2 ps-3"><i
                                     class="bi bi-search text-muted"></i></span>
                             <input type="text" id="inputSearchKantin" onkeyup="filterKantinItems()"
-                                class="form-control border-start-0 rounded-end-pill" placeholder="Cari menu...">
+                                class="form-control border-start-0 rounded-end-pill py-2 pe-3"
+                                placeholder="Cari menu...">
                         </div>
                     </div>
 
                     <?php if (empty($riwayatKantin)): ?>
-                        <p class="text-center text-muted py-4 small">Belum ada riwayat transaksi jajan di kantin.</p>
+                        <p class="text-center text-muted py-4 small mb-0">Belum ada riwayat transaksi jajan di kantin.</p>
                     <?php else: ?>
-                        <div class="d-flex flex-column gap-2" id="kantinTransactionsList">
+                        <div class="d-flex flex-column gap-2.5" id="kantinTransactionsList"
+                            style="max-height: 480px; overflow-y: auto; overflow-x: hidden;">
                             <?php foreach ($riwayatKantin as $rk): ?>
-                                <div
-                                    class="p-3 rounded-4 border bg-white d-flex align-items-center justify-content-between gap-2 shadow-sm kantin-tx-item">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="icon-box-kantin">
+                                <?php
+                                $rkTime = !empty($rk['created_at']) ? strtotime($rk['created_at']) : time();
+                                $rkMonth = (int) date('n', $rkTime);
+                                ?>
+                                <div class="p-3 rounded-4 border bg-white align-items-center justify-content-between shadow-sm kantin-tx-item d-none"
+                                    data-month="<?= $rkMonth ?>"
+                                    style="border-color: #f1f5f9 !important; padding: 13px 16px !important; width: 100%; box-sizing: border-box;">
+                                    <div class="d-flex align-items-center" style="gap: 12px; min-width: 0; flex: 1 1 auto;">
+                                        <div class="icon-box-kantin rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0"
+                                            style="width: 42px; height: 42px; font-size: 1.15rem;">
                                             <i class="bi bi-egg-fried"></i>
                                         </div>
-                                        <div>
-                                            <strong
-                                                class="d-block text-dark small item-title-txt"><?= htmlspecialchars($rk['item_summary'] ?? 'Jajanan Kantin') ?></strong>
-                                            <small class="text-muted extra-small"><i
-                                                    class="bi bi-calendar3 me-1"></i><?= date('d M Y H:i', strtotime($rk['created_at'])) ?>
-                                                &bull; Kantin</small>
+                                        <div style="min-width: 0; flex: 1 1 auto; overflow: hidden;">
+                                            <strong class="d-block text-dark fw-bold text-truncate item-title-txt"
+                                                title="<?= htmlspecialchars($rk['item_summary'] ?? 'Jajanan Kantin') ?>"
+                                                style="font-size: 0.88rem; line-height: 1.35; margin-bottom: 3px;"><?= htmlspecialchars($rk['item_summary'] ?? 'Jajanan Kantin') ?></strong>
+                                            <div class="text-muted extra-small d-flex align-items-center"
+                                                style="font-size: 0.73rem; line-height: 1.2; color: #64748b;">
+                                                <i class="bi bi-calendar3 text-secondary"
+                                                    style="font-size: 0.75rem; margin-right: 6px;"></i>
+                                                <span><?= date('d M Y, H:i', $rkTime) ?></span>
+                                                <span style="margin: 0 5px;">&bull;</span>
+                                                <span>Kantin</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="text-end">
-                                        <span class="fw-bold text-danger small d-block"
-                                            style="font-family: 'Outfit', sans-serif;">- Rp
+                                    <div class="text-end flex-shrink-0 d-flex flex-column align-items-end"
+                                        style="gap: 5px; margin-left: 10px;">
+                                        <span class="fw-bold text-danger d-block text-nowrap"
+                                            style="font-family: 'Outfit', sans-serif; font-size: 0.88rem;">- Rp
                                             <?= number_format($rk['total_harga'] ?? 0, 0, ',', '.') ?></span>
-                                        <span
-                                            class="badge bg-success-subtle text-success extra-small rounded-pill">SUKSES</span>
+                                        <span class="badge bg-success-subtle text-success fw-bold rounded-pill text-nowrap"
+                                            style="font-size: 0.68rem; padding: 4px 10px; letter-spacing: 0.3px;">SUKSES</span>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
+                        </div>
+
+                        <!-- Empty state when filtered month has no items or search has no match -->
+                        <div id="txEmptyState" class="text-muted extra-small text-center py-4 mb-0 d-none">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center bg-light text-secondary mb-2"
+                                style="width: 44px; height: 44px;">
+                                <i class="bi bi-receipt-cutoff fs-5"></i>
+                            </div>
+                            <p id="txEmptyStateMsg" class="mb-0 text-secondary" style="font-size: 0.78rem;">Tidak ada
+                                riwayat transaksi.</p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -4049,6 +4672,22 @@ unset($_SESSION['flash_ortu']);
                         <form method="POST" action="portal-ortu.php" enctype="multipart/form-data" id="formBayarOrtu">
                             <input type="hidden" name="action" value="submit_pembayaran">
 
+                            <!-- Info Rekening Transfer SPP & Tagihan Dynamic dari Admin -->
+                            <?php
+                            $tagihanRek = !empty($portalConfig['tunggakan_rekening_info']) ? $portalConfig['tunggakan_rekening_info'] : (!empty($portalConfig['kantin_rekening_info']) ? $portalConfig['kantin_rekening_info'] : "BSI (Bank Syariah Indonesia) No. 7148123456\na.n. SMP Islamic School Minhaj Al-Ilmi");
+                            ?>
+                            <div class="mb-4 p-3 bg-white border rounded-3"
+                                style="border-radius: 18px !important; border-color: #bfdbfe !important;">
+                                <div class="d-flex align-items-center gap-2 mb-1.5">
+                                    <i class="bi bi-bank2 text-primary fs-5"></i>
+                                    <strong class="text-primary small">Rekening Tujuan Transfer Sekolah:</strong>
+                                </div>
+                                <div class="small text-dark font-monospace"
+                                    style="line-height: 1.5; white-space: pre-line;">
+                                    <?= htmlspecialchars($tagihanRek) ?>
+                                </div>
+                            </div>
+
                             <div class="mb-4">
                                 <label class="form-label fw-extrabold small mb-2"
                                     style="color: #1e40af; font-size: 0.82rem;"><i class="bi bi-tag-fill me-1.5"
@@ -4198,6 +4837,7 @@ unset($_SESSION['flash_ortu']);
                 $totalMapelCount = count($nilaiSiswaList);
                 $allValidScores = [];
                 $tuntasMapelCount = 0;
+                $enableKkm = (getSetting('enable_kkm', '1') === '1');
                 foreach ($nilaiSiswaList as $nCheck) {
                     $kkmCheck = (float) ($nCheck['kkm'] ?? 75);
                     $itemScores = array_filter([$nCheck['sumatif_1'], $nCheck['sumatif_2'], $nCheck['sumatif_3'], $nCheck['sumatif_4'], $nCheck['ats'], $nCheck['aas']], fn($val) => is_numeric($val) && (float) $val > 0);
@@ -4212,42 +4852,53 @@ unset($_SESSION['flash_ortu']);
                 $overallAvgScore = !empty($allValidScores) ? (array_sum($allValidScores) / count($allValidScores)) : 0;
                 ?>
 
-                <!-- HERO SUMMARY AKADEMIK (MATCHING BERANDA SIGNATURE BLUE GRADIENT) -->
-                <div class="hero-akademik-card mb-4">
-                    <div class="position-relative z-1">
-                        <div class="hero-akademik-kicker">
-                            <i class="bi bi-mortarboard-fill"></i> RINGKASAN AKADEMIK
-                        </div>
-                        <h3 class="hero-akademik-title">Evaluasi Hasil Belajar</h3>
-                        <p class="hero-akademik-sub">
-                            Kelas <?= htmlspecialchars($loggedSiswa['nama_kelas'] ?? '-') ?> &bull; NIS:
-                            <?= htmlspecialchars($loggedSiswa['nis'] ?? '-') ?>
-                        </p>
+                <?php if (!empty($portalConfig['show_hero_akademik'])): ?>
+                    <!-- HERO SUMMARY AKADEMIK (MATCHING BERANDA SIGNATURE BLUE GRADIENT) -->
+                    <div class="hero-akademik-card mb-4">
+                        <div class="position-relative z-1">
+                            <div class="hero-akademik-kicker">
+                                <i class="bi bi-mortarboard-fill"></i> RINGKASAN AKADEMIK
+                            </div>
+                            <h3 class="hero-akademik-title">Evaluasi Hasil Belajar</h3>
+                            <p class="hero-akademik-sub">
+                                Kelas <?= htmlspecialchars($loggedSiswa['nama_kelas'] ?? '-') ?> &bull; NIS:
+                                <?= htmlspecialchars($loggedSiswa['nis'] ?? '-') ?>
+                            </p>
 
-                        <div class="hero-akademik-stats-grid">
-                            <div class="hero-akademik-stat-item">
-                                <div class="hero-akademik-stat-val">
-                                    <?= $overallAvgScore > 0 ? number_format($overallAvgScore, 1) : '—' ?>
+                            <div class="hero-akademik-stats-grid">
+                                <div class="hero-akademik-stat-item">
+                                    <div class="hero-akademik-stat-val">
+                                        <?= $overallAvgScore > 0 ? number_format($overallAvgScore, 1) : '—' ?>
+                                    </div>
+                                    <div class="hero-akademik-stat-lbl">Rata-Rata</div>
                                 </div>
-                                <div class="hero-akademik-stat-lbl">Rata-Rata</div>
-                            </div>
-                            <div class="hero-akademik-stat-item">
-                                <div class="hero-akademik-stat-val"><?= $totalMapelCount ?></div>
-                                <div class="hero-akademik-stat-lbl">Total Mapel</div>
-                            </div>
-                            <div class="hero-akademik-stat-item">
-                                <div class="hero-akademik-stat-val"><?= $tuntasMapelCount ?>/<?= $totalMapelCount ?>
+                                <div class="hero-akademik-stat-item">
+                                    <div class="hero-akademik-stat-val"><?= $totalMapelCount ?></div>
+                                    <div class="hero-akademik-stat-lbl">Total Mapel</div>
                                 </div>
-                                <div class="hero-akademik-stat-lbl">Tuntas KKM</div>
+                                <?php if ($enableKkm): ?>
+                                    <div class="hero-akademik-stat-item">
+                                        <div class="hero-akademik-stat-val"><?= $tuntasMapelCount ?>/<?= $totalMapelCount ?>
+                                        </div>
+                                        <div class="hero-akademik-stat-lbl">Tuntas KKM</div>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="hero-akademik-stat-item">
+                                        <div class="hero-akademik-stat-val">
+                                            <?= $overallAvgScore >= 85 ? 'Sangat Baik' : ($overallAvgScore >= 75 ? 'Baik' : ($overallAvgScore > 0 ? 'Cukup' : '—')) ?>
+                                        </div>
+                                        <div class="hero-akademik-stat-lbl">Predikat Umum</div>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
+                        <!-- DECORATIVE BACKDROP ICON -->
+                        <div class="position-absolute end-0 bottom-0 text-white pointer-events-none"
+                            style="padding-right: 1.25rem; padding-bottom: 0.5rem; opacity: 0.08;">
+                            <i class="bi bi-mortarboard" style="font-size: 5.5rem;"></i>
+                        </div>
                     </div>
-                    <!-- DECORATIVE BACKDROP ICON -->
-                    <div class="position-absolute end-0 bottom-0 text-white pointer-events-none"
-                        style="padding-right: 1.25rem; padding-bottom: 0.5rem; opacity: 0.08;">
-                        <i class="bi bi-mortarboard" style="font-size: 5.5rem;"></i>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <!-- SEKSI NILAI PER MATA PELAJARAN (PERFECT ALIGNED ACCORDION DROPDOWN) -->
                 <div class="widget-card mb-4">
@@ -4335,9 +4986,11 @@ unset($_SESSION['flash_ortu']);
                                                     <?= htmlspecialchars($n['mapel']) ?>
                                                 </h6>
                                                 <div class="d-flex align-items-center gap-1.5 mt-1.5 flex-wrap">
-                                                    <span class="mapel-meta-pill mapel-meta-kkm">
-                                                        <i class="bi bi-shield-check"></i> KKM: <?= $kkm ?>
-                                                    </span>
+                                                    <?php if ($enableKkm): ?>
+                                                        <span class="mapel-meta-pill mapel-meta-kkm">
+                                                            <i class="bi bi-shield-check"></i> KKM: <?= $kkm ?>
+                                                        </span>
+                                                    <?php endif; ?>
                                                     <?php if ($avgScore > 0): ?>
                                                         <span class="mapel-meta-pill mapel-meta-avg">
                                                             <i class="bi bi-award-fill"></i> Rata-rata:
@@ -4370,58 +5023,85 @@ unset($_SESSION['flash_ortu']);
                                         };
                                         ?>
                                         <!-- SUMATIF 1 - 4 -->
-                                        <div class="akademik-subhead">
-                                            <i class="bi bi-ui-checks"></i> Nilai Sumatif Formatif
-                                        </div>
-                                        <div class="sumatif-grid">
-                                            <div class="sumatif-card <?= $s1_val > 0 ? 'filled' : 'empty' ?>">
-                                                <span class="sumatif-label">Sum 1</span>
-                                                <div class="sumatif-score"><?= $formatGrade($s1_val) ?></div>
+                                        <?php if (!empty($portalConfig['show_sumatif_1']) || !empty($portalConfig['show_sumatif_2']) || !empty($portalConfig['show_sumatif_3']) || !empty($portalConfig['show_sumatif_4'])): ?>
+                                            <div class="akademik-subhead">
+                                                <i class="bi bi-ui-checks"></i> Nilai Sumatif Formatif
                                             </div>
-                                            <div class="sumatif-card <?= $s2_val > 0 ? 'filled' : 'empty' ?>">
-                                                <span class="sumatif-label">Sum 2</span>
-                                                <div class="sumatif-score"><?= $formatGrade($s2_val) ?></div>
+                                            <div class="sumatif-grid">
+                                                <?php if (!empty($portalConfig['show_sumatif_1'])): ?>
+                                                    <div class="sumatif-card <?= $s1_val > 0 ? 'filled' : 'empty' ?>">
+                                                        <span class="sumatif-label">Sum 1</span>
+                                                        <div class="sumatif-score"><?= $formatGrade($s1_val) ?></div>
+                                                    </div>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($portalConfig['show_sumatif_2'])): ?>
+                                                    <div class="sumatif-card <?= $s2_val > 0 ? 'filled' : 'empty' ?>">
+                                                        <span class="sumatif-label">Sum 2</span>
+                                                        <div class="sumatif-score"><?= $formatGrade($s2_val) ?></div>
+                                                    </div>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($portalConfig['show_sumatif_3'])): ?>
+                                                    <div class="sumatif-card <?= $s3_val > 0 ? 'filled' : 'empty' ?>">
+                                                        <span class="sumatif-label">Sum 3</span>
+                                                        <div class="sumatif-score"><?= $formatGrade($s3_val) ?></div>
+                                                    </div>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($portalConfig['show_sumatif_4'])): ?>
+                                                    <div class="sumatif-card <?= $s4_val > 0 ? 'filled' : 'empty' ?>">
+                                                        <span class="sumatif-label">Sum 4</span>
+                                                        <div class="sumatif-score"><?= $formatGrade($s4_val) ?></div>
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
-                                            <div class="sumatif-card <?= $s3_val > 0 ? 'filled' : 'empty' ?>">
-                                                <span class="sumatif-label">Sum 3</span>
-                                                <div class="sumatif-score"><?= $formatGrade($s3_val) ?></div>
-                                            </div>
-                                            <div class="sumatif-card <?= $s4_val > 0 ? 'filled' : 'empty' ?>">
-                                                <span class="sumatif-label">Sum 4</span>
-                                                <div class="sumatif-score"><?= $formatGrade($s4_val) ?></div>
-                                            </div>
-                                        </div>
+                                        <?php endif; ?>
 
                                         <!-- ATS (UTS) & AAS (UAS) -->
-                                        <div class="akademik-subhead">
-                                            <i class="bi bi-award-fill"></i> Nilai Ujian Semester
-                                        </div>
-                                        <div class="exam-score-grid">
-                                            <div class="exam-score-card ats <?= $ats_val > 0 ? '' : 'empty' ?>">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="exam-icon-circle">
-                                                        <i class="bi bi-journal-check"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="exam-label">ATS (UTS)</div>
-                                                        <div class="exam-sub">Tengah Semester</div>
-                                                    </div>
-                                                </div>
-                                                <div class="exam-value"><?= $formatGrade($ats_val) ?></div>
+                                        <?php if (!empty($portalConfig['show_ats']) || !empty($portalConfig['show_aas'])): ?>
+                                            <div class="akademik-subhead">
+                                                <i class="bi bi-award-fill"></i> Nilai Ujian Semester
                                             </div>
-                                            <div class="exam-score-card aas <?= $aas_val > 0 ? '' : 'empty' ?>">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <div class="exam-icon-circle">
-                                                        <i class="bi bi-trophy-fill"></i>
+                                            <div class="exam-score-grid">
+                                                <?php if (!empty($portalConfig['show_ats'])): ?>
+                                                    <div class="exam-score-card ats <?= $ats_val > 0 ? '' : 'empty' ?>">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="exam-icon-circle">
+                                                                <i class="bi bi-journal-check"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="exam-label">ATS</div>
+                                                                <div class="exam-sub">Tengah Semester</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="exam-value"><?= $formatGrade($ats_val) ?></div>
                                                     </div>
-                                                    <div>
-                                                        <div class="exam-label">AAS (UAS)</div>
-                                                        <div class="exam-sub">Akhir Semester</div>
+                                                <?php endif; ?>
+
+                                                <?php if (!empty($portalConfig['show_aas'])): ?>
+                                                    <div class="exam-score-card aas <?= $aas_val > 0 ? '' : 'empty' ?>">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="exam-icon-circle">
+                                                                <i class="bi bi-trophy-fill"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="exam-label">AAS</div>
+                                                                <div class="exam-sub">Akhir Semester</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="exam-value"><?= $formatGrade($aas_val) ?></div>
                                                     </div>
-                                                </div>
-                                                <div class="exam-value"><?= $formatGrade($aas_val) ?></div>
+                                                <?php endif; ?>
                                             </div>
-                                        </div>
+                                        <?php endif; ?>
+
+                                        <?php if (!empty($portalConfig['show_deskripsi_catatan']) && !empty($n['catatan'])): ?>
+                                            <div class="mt-2.5 p-2.5 rounded-3 bg-white border extra-small text-secondary">
+                                                <i class="bi bi-chat-quote-fill text-primary me-1"></i> Catatan Guru:
+                                                <em>"<?= htmlspecialchars($n['catatan']) ?>"</em>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -4429,21 +5109,36 @@ unset($_SESSION['flash_ortu']);
                     <?php endif; ?>
                 </div>
 
-                <!-- HELP BLUE HERO BOX MATCHING REF IMAGE 1 -->
-                <div class="p-4 rounded-4 text-white"
-                    style="background: linear-gradient(135deg, #003b87 0%, #0a4b9c 100%); border-radius: 26px;">
-                    <h4 class="fw-bold mb-2">Punya Pertanyaan Mengenai Nilai?</h4>
-                    <p class="small text-white-50 mb-3">Jika terdapat ketidaksesuaian nilai atau butuh konsultasi
-                        akademik, silakan hubungi Wali Kelas
-                        (<?= htmlspecialchars($loggedSiswa['wali_kelas'] ?? 'Wali Kelas') ?>) atau Bagian Kurikulum.</p>
-                    <div class="d-flex gap-2">
-                        <a href="https://wa.me/?text=Halo%20Wali%20Kelas%20saya%20orang%20tua%20dari%20<?= urlencode($loggedSiswa['nama'] ?? '') ?>"
-                            target="_blank" class="btn btn-light btn-sm fw-bold rounded-pill px-3 text-primary">Hubungi
-                            Wali Kelas</a>
-                        <button class="btn btn-outline-light btn-sm fw-bold rounded-pill px-3"
-                            onclick="alert('Skala penilaian: A (>=85), B (75-84), C (<75)')">Panduan Penilaian</button>
+                <?php if (!empty($portalConfig['hubungi_wali_kelas'])): ?>
+                    <?php
+                    $waNum = !empty($loggedSiswa['kelas_id']) ? getSetting("portal_wa_kelas_{$loggedSiswa['kelas_id']}", $portalConfig['wa_wali_default']) : $portalConfig['wa_wali_default'];
+                    $cleanWa = preg_replace('/[^0-9]/', '', $waNum);
+                    if (str_starts_with($cleanWa, '0'))
+                        $cleanWa = '62' . substr($cleanWa, 1);
+                    $waText = str_replace(
+                        ['{nama_santri}', '{kelas}', '{nis}'],
+                        [$loggedSiswa['nama'] ?? '', $loggedSiswa['nama_kelas'] ?? '', $loggedSiswa['nis'] ?? ''],
+                        $portalConfig['wa_template']
+                    );
+                    $waLink = !empty($cleanWa) ? "https://wa.me/{$cleanWa}?text=" . urlencode($waText) : "https://wa.me/?text=" . urlencode($waText);
+                    ?>
+                    <!-- HELP BLUE HERO BOX MATCHING REF IMAGE 1 -->
+                    <div class="p-4 rounded-4 text-white mb-4"
+                        style="background: linear-gradient(135deg, #003b87 0%, #0a4b9c 100%); border-radius: 26px;">
+                        <h4 class="fw-bold mb-2">Punya Pertanyaan Mengenai Nilai?</h4>
+                        <p class="small text-white-50 mb-3">Jika terdapat ketidaksesuaian nilai atau butuh konsultasi
+                            akademik, silakan hubungi Wali Kelas
+                            (<?= htmlspecialchars($loggedSiswa['wali_kelas'] ?? 'Wali Kelas') ?>) atau Bagian Kurikulum.</p>
+                        <div class="d-flex gap-2">
+                            <a href="<?= $waLink ?>" target="_blank"
+                                class="btn btn-light btn-sm fw-bold rounded-pill px-3 text-primary d-inline-flex align-items-center gap-1.5">
+                                <i class="bi bi-whatsapp"></i> Hubungi Wali Kelas</a>
+                            <button class="btn btn-outline-light btn-sm fw-bold rounded-pill px-3"
+                                onclick="alert('Skala penilaian: A (>=90), B (80-89), C (70-79), D (<70)')">Panduan
+                                Penilaian</button>
+                        </div>
                     </div>
-                </div>
+                <?php endif; ?>
 
             </div>
 
@@ -4615,6 +5310,47 @@ unset($_SESSION['flash_ortu']);
                         </div>
                     </div>
                 </div>
+
+                <?php if (!empty($portalConfig['profil_barcode'])): ?>
+                    <!-- CARD BARCODE / QR NIS SISWA -->
+                    <div class="widget-card mb-3 text-center">
+                        <button type="button"
+                            class="btn btn-primary rounded-pill px-4 fw-bold btn-sm w-100 py-2.5 d-flex align-items-center justify-content-center gap-2"
+                            onclick="showNisQrModal()">
+                            <i class="bi bi-qr-code-scan"></i> Tampilkan Barcode / QR NIS Siswa
+                        </button>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($portalConfig['profil_password'])): ?>
+                    <!-- CARD GANTI PASSWORD -->
+                    <div class="widget-card mb-3">
+                        <h4 class="section-title-text mb-3"><i class="bi bi-shield-lock-fill text-primary me-2"></i> Ganti
+                            Kata Sandi Akun</h4>
+                        <form method="POST" action="portal-ortu.php">
+                            <input type="hidden" name="action" value="ganti_password">
+                            <div class="mb-2.5">
+                                <label class="form-label extra-small fw-bold text-muted mb-1">KATA SANDI SAAT INI</label>
+                                <input type="password" name="pass_lama" class="form-control form-control-sm rounded-3"
+                                    placeholder="Masukkan sandi lama" required>
+                            </div>
+                            <div class="mb-2.5">
+                                <label class="form-label extra-small fw-bold text-muted mb-1">KATA SANDI BARU</label>
+                                <input type="password" name="pass_baru" class="form-control form-control-sm rounded-3"
+                                    placeholder="Minimal 4 karakter" minlength="4" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label extra-small fw-bold text-muted mb-1">KONFIRMASI KATA SANDI
+                                    BARU</label>
+                                <input type="password" name="pass_konfirm" class="form-control form-control-sm rounded-3"
+                                    placeholder="Ulangi sandi baru" minlength="4" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm rounded-pill w-100 fw-bold py-2">
+                                <i class="bi bi-check-circle-fill me-1"></i> Perbarui Kata Sandi
+                            </button>
+                        </form>
+                    </div>
+                <?php endif; ?>
 
                 <!-- KELUAR LOGOUT BUTTON -->
                 <div class="mb-4">
@@ -5030,29 +5766,37 @@ unset($_SESSION['flash_ortu']);
                 <span class="nav-tab-label">Beranda</span>
             </button>
 
-            <button class="nav-tab-item <?= $activeTab === 'kesantrian' ? 'active' : '' ?>" id="nav-kesantrian"
-                onclick="switchTab('kesantrian')">
-                <div class="nav-tab-icon-wrapper"><i class="bi bi-moon-stars-fill"></i></div>
-                <span class="nav-tab-label">Kesantrian</span>
-            </button>
+            <?php if (!empty($portalConfig['tab_kesantrian'])): ?>
+                <button class="nav-tab-item <?= $activeTab === 'kesantrian' ? 'active' : '' ?>" id="nav-kesantrian"
+                    onclick="switchTab('kesantrian')">
+                    <div class="nav-tab-icon-wrapper"><i class="bi bi-moon-stars-fill"></i></div>
+                    <span class="nav-tab-label">Kesantrian</span>
+                </button>
+            <?php endif; ?>
 
-            <button class="nav-tab-item <?= $activeTab === 'kantin' ? 'active' : '' ?>" id="nav-kantin"
-                onclick="switchTab('kantin')">
-                <div class="nav-tab-icon-wrapper"><i class="bi bi-cup-hot-fill"></i></div>
-                <span class="nav-tab-label">Kantin</span>
-            </button>
+            <?php if (!empty($portalConfig['tab_kantin'])): ?>
+                <button class="nav-tab-item <?= $activeTab === 'kantin' ? 'active' : '' ?>" id="nav-kantin"
+                    onclick="switchTab('kantin')">
+                    <div class="nav-tab-icon-wrapper"><i class="bi bi-cup-hot-fill"></i></div>
+                    <span class="nav-tab-label">Kantin</span>
+                </button>
+            <?php endif; ?>
 
-            <button class="nav-tab-item <?= $activeTab === 'nilai' ? 'active' : '' ?>" id="nav-nilai"
-                onclick="switchTab('nilai')">
-                <div class="nav-tab-icon-wrapper"><i class="bi bi-journal-bookmark-fill"></i></div>
-                <span class="nav-tab-label">Akademik</span>
-            </button>
+            <?php if (!empty($portalConfig['tab_akademik'])): ?>
+                <button class="nav-tab-item <?= $activeTab === 'nilai' ? 'active' : '' ?>" id="nav-nilai"
+                    onclick="switchTab('nilai')">
+                    <div class="nav-tab-icon-wrapper"><i class="bi bi-journal-bookmark-fill"></i></div>
+                    <span class="nav-tab-label">Akademik</span>
+                </button>
+            <?php endif; ?>
 
-            <button class="nav-tab-item <?= $activeTab === 'profil' || $activeTab === 'notifikasi' ? 'active' : '' ?>"
-                id="nav-profil" onclick="switchTab('profil')">
-                <div class="nav-tab-icon-wrapper"><i class="bi bi-person-fill"></i></div>
-                <span class="nav-tab-label">Profil</span>
-            </button>
+            <?php if (!empty($portalConfig['tab_profil'])): ?>
+                <button class="nav-tab-item <?= $activeTab === 'profil' || $activeTab === 'notifikasi' ? 'active' : '' ?>"
+                    id="nav-profil" onclick="switchTab('profil')">
+                    <div class="nav-tab-icon-wrapper"><i class="bi bi-person-fill"></i></div>
+                    <span class="nav-tab-label">Profil</span>
+                </button>
+            <?php endif; ?>
         </nav>
     </div>
 
@@ -5090,7 +5834,7 @@ unset($_SESSION['flash_ortu']);
                             class="bi bi-camera-fill text-primary me-2"></i> Ganti Foto Profil Siswa</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST" action="portal-ortu.php" enctype="multipart/form-data">
+                <form method="POST" action="portal-ortu.php" enctype="multipart/form-data" id="formGantiFoto">
                     <input type="hidden" name="action" value="upload_foto">
                     <div class="modal-body text-center py-4">
                         <div class="avatar-hero-img mx-auto mb-3"
@@ -5124,6 +5868,204 @@ unset($_SESSION['flash_ortu']);
         </div>
     </div>
 
+    <!-- MODAL PENGATURAN PEMBATASAN UANG JAJAN -->
+    <div class="modal fade" id="modalLimitJajan" tabindex="-1" aria-labelledby="modalLimitJajanLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+            <div class="modal-content p-3 rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-1">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width: 44px; height: 44px; font-size: 1.35rem;">
+                            <i class="bi bi-shield-lock-fill d-flex align-items-center justify-content-center"
+                                style="line-height: 1;"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold modal-title text-dark mb-0" id="modalLimitJajanLabel"
+                                style="font-family: 'Outfit', sans-serif; font-size: 1.15rem;">
+                                Pembatasan Uang Jajan
+                            </h5>
+                            <small class="text-muted extra-small">Kunci &amp; batasi maksimal belanja santri di
+                                kantin</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form method="POST" action="portal-ortu.php" id="formLimitJajan"
+                    onsubmit="return handleFormLimitJajan(event)">
+                    <input type="hidden" name="action" value="simpan_limit_jajan">
+                    <input type="hidden" name="siswa_id" value="<?= (int) $siswaId ?>">
+                    <input type="hidden" name="is_ajax" value="1">
+
+                    <div class="modal-body py-3">
+                        <!-- Info Santri & Saldo -->
+                        <div
+                            class="p-3 bg-light rounded-4 mb-3 border d-flex align-items-center justify-content-between">
+                            <div>
+                                <small class="text-muted d-block extra-small fw-bold">SANTRI</small>
+                                <strong class="text-dark small fw-extrabold"
+                                    style="font-family: 'Outfit', sans-serif;"><?= htmlspecialchars($loggedSiswa['nama'] ?? 'Siswa') ?></strong>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block extra-small fw-bold">TOTAL SALDO</small>
+                                <strong class="text-primary small fw-extrabold"
+                                    style="font-family: 'Outfit', sans-serif;">Rp
+                                    <?= number_format($saldoKantin, 0, ',', '.') ?></strong>
+                            </div>
+                        </div>
+
+                        <!-- Pilihan Tipe Pembatasan (Cards Radio) -->
+                        <label class="form-label extra-small fw-extrabold text-muted uppercase mb-2">
+                            PILIH JENIS PEMBATASAN
+                        </label>
+                        <div class="d-flex flex-column gap-2 mb-3">
+                            <!-- Harian -->
+                            <label
+                                class="limit-option-card p-3 rounded-3 border d-flex align-items-center justify-content-between cursor-pointer <?= ($limitJajan['aktif'] && $limitJajan['tipe'] === 'harian') ? 'border-primary bg-primary-subtle' : 'bg-white' ?>"
+                                style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center gap-3"
+                                    style="min-width: 0; flex: 1 1 auto; margin-right: 8px;">
+                                    <input type="radio" name="limit_tipe" value="harian"
+                                        class="form-check-input flex-shrink-0"
+                                        style="position: static !important; float: none !important; margin: 0 !important; width: 1.25rem; height: 1.25rem; cursor: pointer;"
+                                        <?= ($limitJajan['aktif'] && $limitJajan['tipe'] === 'harian') ? 'checked' : '' ?>
+                                        onchange="toggleLimitNominalInput(this.value)">
+                                    <div style="min-width: 0; flex: 1 1 auto;">
+                                        <strong class="d-block text-dark small fw-bold mb-0.5">Batasi Jajan
+                                            Harian</strong>
+                                        <small class="text-muted extra-small d-block" style="line-height: 1.3;">Batas
+                                            belanja per hari, reset setiap tengah malam (00:00)</small>
+                                    </div>
+                                </div>
+                                <span
+                                    class="badge bg-primary-subtle text-primary rounded-pill extra-small fw-bold px-2 py-1 flex-shrink-0">Harian</span>
+                            </label>
+
+                            <!-- Pekanan -->
+                            <label
+                                class="limit-option-card p-3 rounded-3 border d-flex align-items-center justify-content-between cursor-pointer <?= ($limitJajan['aktif'] && $limitJajan['tipe'] === 'pekanan') ? 'border-primary bg-primary-subtle' : 'bg-white' ?>"
+                                style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center gap-3"
+                                    style="min-width: 0; flex: 1 1 auto; margin-right: 8px;">
+                                    <input type="radio" name="limit_tipe" value="pekanan"
+                                        class="form-check-input flex-shrink-0"
+                                        style="position: static !important; float: none !important; margin: 0 !important; width: 1.25rem; height: 1.25rem; cursor: pointer;"
+                                        <?= ($limitJajan['aktif'] && $limitJajan['tipe'] === 'pekanan') ? 'checked' : '' ?>
+                                        onchange="toggleLimitNominalInput(this.value)">
+                                    <div style="min-width: 0; flex: 1 1 auto;">
+                                        <strong class="d-block text-dark small fw-bold mb-0.5">Batasi Jajan
+                                            Pekanan</strong>
+                                        <small class="text-muted extra-small d-block" style="line-height: 1.3;">Batas
+                                            belanja per minggu, reset setiap Senin pagi</small>
+                                    </div>
+                                </div>
+                                <span
+                                    class="badge bg-info-subtle text-info rounded-pill extra-small fw-bold px-2 py-1 flex-shrink-0">Pekanan</span>
+                            </label>
+
+                            <!-- Bulanan -->
+                            <label
+                                class="limit-option-card p-3 rounded-3 border d-flex align-items-center justify-content-between cursor-pointer <?= ($limitJajan['aktif'] && $limitJajan['tipe'] === 'bulanan') ? 'border-primary bg-primary-subtle' : 'bg-white' ?>"
+                                style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center gap-3"
+                                    style="min-width: 0; flex: 1 1 auto; margin-right: 8px;">
+                                    <input type="radio" name="limit_tipe" value="bulanan"
+                                        class="form-check-input flex-shrink-0"
+                                        style="position: static !important; float: none !important; margin: 0 !important; width: 1.25rem; height: 1.25rem; cursor: pointer;"
+                                        <?= ($limitJajan['aktif'] && $limitJajan['tipe'] === 'bulanan') ? 'checked' : '' ?>
+                                        onchange="toggleLimitNominalInput(this.value)">
+                                    <div style="min-width: 0; flex: 1 1 auto;">
+                                        <strong class="d-block text-dark small fw-bold mb-0.5">Batasi Jajan
+                                            Bulanan</strong>
+                                        <small class="text-muted extra-small d-block" style="line-height: 1.3;">Batas
+                                            belanja per bulan kalender</small>
+                                    </div>
+                                </div>
+                                <span
+                                    class="badge bg-warning-subtle text-warning-emphasis rounded-pill extra-small fw-bold px-2 py-1 flex-shrink-0">Bulanan</span>
+                            </label>
+
+                            <!-- Nonaktif / Tanpa Batas -->
+                            <label
+                                class="limit-option-card p-3 rounded-3 border d-flex align-items-center justify-content-between cursor-pointer <?= (!$limitJajan['aktif'] || $limitJajan['tipe'] === 'none') ? 'border-primary bg-primary-subtle' : 'bg-white' ?>"
+                                style="cursor: pointer; transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center gap-3"
+                                    style="min-width: 0; flex: 1 1 auto; margin-right: 8px;">
+                                    <input type="radio" name="limit_tipe" value="none"
+                                        class="form-check-input flex-shrink-0"
+                                        style="position: static !important; float: none !important; margin: 0 !important; width: 1.25rem; height: 1.25rem; cursor: pointer;"
+                                        <?= (!$limitJajan['aktif'] || $limitJajan['tipe'] === 'none') ? 'checked' : '' ?>
+                                        onchange="toggleLimitNominalInput(this.value)">
+                                    <div style="min-width: 0; flex: 1 1 auto;">
+                                        <strong class="d-block text-dark small fw-bold mb-0.5">Tanpa Batasan
+                                            (Bebas)</strong>
+                                        <small class="text-muted extra-small d-block" style="line-height: 1.3;">Santri
+                                            dapat jajan bebas sesuai saldo yang tersedia</small>
+                                    </div>
+                                </div>
+                                <span
+                                    class="badge bg-light text-secondary rounded-pill extra-small fw-bold px-2 py-1 flex-shrink-0">Nonaktif</span>
+                            </label>
+                        </div>
+
+                        <!-- Dynamic Nominal Input Container -->
+                        <div id="containerNominalLimit"
+                            class="mb-3 <?= (!$limitJajan['aktif'] || $limitJajan['tipe'] === 'none') ? 'd-none' : '' ?>">
+                            <label class="form-label extra-small fw-extrabold text-muted uppercase mb-1"
+                                id="lblNominalLimit">
+                                NOMINAL MAKSIMAL PEMBATASAN (RP) *
+                            </label>
+
+                            <!-- Quick Preset Nominal Chips -->
+                            <div class="d-flex flex-wrap gap-1.5 mb-2" id="presetLimitChips">
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-secondary rounded-pill extra-small fw-bold"
+                                    onclick="setLimitNominalVal(10000)">Rp 10.000</button>
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-secondary rounded-pill extra-small fw-bold"
+                                    onclick="setLimitNominalVal(15000)">Rp 15.000</button>
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-secondary rounded-pill extra-small fw-bold"
+                                    onclick="setLimitNominalVal(20000)">Rp 20.000</button>
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-secondary rounded-pill extra-small fw-bold"
+                                    onclick="setLimitNominalVal(30000)">Rp 30.000</button>
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-secondary rounded-pill extra-small fw-bold"
+                                    onclick="setLimitNominalVal(50000)">Rp 50.000</button>
+                                <button type="button"
+                                    class="btn btn-sm btn-outline-secondary rounded-pill extra-small fw-bold"
+                                    onclick="setLimitNominalVal(100000)">Rp 100.000</button>
+                            </div>
+
+                            <div class="input-group input-group-sm">
+                                <span
+                                    class="input-group-text bg-light border-end-0 fw-bold text-primary font-monospace">Rp</span>
+                                <input type="number" name="nominal_limit" id="inputLimitNominal"
+                                    class="form-control border-start-0 fs-6 fw-bold text-primary"
+                                    placeholder="Contoh: 20000" min="1000" step="1000"
+                                    value="<?= (int) $limitJajan['nominal'] ?>">
+                            </div>
+                            <div class="form-text extra-small" id="hintLimitText">
+                                Masukkan nominal batas uang jajan santri.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-sm btn-light rounded-pill px-3"
+                            data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" id="btnSubmitLimitJajan"
+                            class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                            <i class="bi bi-check-circle-fill me-1"></i> Simpan Pengaturan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL TOP-UP SALDO E-KANTIN -->
     <div class="modal fade" id="modalTopupKantin" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -5133,8 +6075,9 @@ unset($_SESSION['flash_ortu']);
                             class="bi bi-wallet2 me-2"></i> Top-Up Saldo E-Kantin Siswa</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="POST" action="portal-ortu.php" enctype="multipart/form-data">
+                <form method="POST" action="portal-ortu.php" enctype="multipart/form-data" id="formTopupKantin">
                     <input type="hidden" name="action" value="topup_kantin">
+                    <input type="hidden" name="siswa_id" value="<?= (int) $siswaId ?>">
                     <div class="modal-body py-3">
 
                         <!-- Saldo Saat Ini Banner -->
@@ -5182,17 +6125,16 @@ unset($_SESSION['flash_ortu']);
                             </div>
                         </div>
 
-                        <!-- Bank Account Info -->
+                        <!-- Bank Account Info Dynamic dari Pengaturan Admin -->
+                        <?php
+                        $kantinRek = !empty($portalConfig['kantin_rekening_info']) ? $portalConfig['kantin_rekening_info'] : (!empty($portalConfig['tunggakan_rekening_info']) ? $portalConfig['tunggakan_rekening_info'] : "BSI (Bank Syariah Indonesia) No. 7148123456\na.n. SMP Islamic School Minhaj Al-Ilmi");
+                        ?>
                         <div class="p-3 bg-light rounded-3 mb-3 border">
-                            <small class="fw-bold d-block text-dark mb-1"><i class="bi bi-bank me-1 text-primary"></i>
+                            <small class="fw-bold d-block text-dark mb-1.5"><i
+                                    class="bi bi-bank me-1.5 text-primary"></i>
                                 REKENING TRANSFER E-KANTIN</small>
-                            <div class="d-flex align-items-center justify-content-between small">
-                                <span class="text-muted">BSI (Bank Syariah)</span>
-                                <strong class="font-monospace text-dark">7700-8899-001</strong>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between small">
-                                <span class="text-muted">A.N. Rekening</span>
-                                <strong class="text-dark">E-Kantin Sekolah</strong>
+                            <div class="small text-dark font-monospace"
+                                style="line-height: 1.5; white-space: pre-line;"><?= htmlspecialchars($kantinRek) ?>
                             </div>
                         </div>
 
@@ -5552,6 +6494,400 @@ unset($_SESSION['flash_ortu']);
                 }
             }
         }
+
+        // MODAL & INTERAKSI PEMBATASAN UANG JAJAN SANTRI
+        function showModalLimitJajan() {
+            const el = document.getElementById('modalLimitJajan');
+            if (el && typeof bootstrap !== 'undefined') {
+                const modal = new bootstrap.Modal(el);
+                modal.show();
+            }
+        }
+
+        function setLimitNominalVal(val) {
+            const input = document.getElementById('inputLimitNominal');
+            if (input) {
+                input.value = val;
+            }
+        }
+
+        function toggleLimitNominalInput(tipe) {
+            const container = document.getElementById('containerNominalLimit');
+            const input = document.getElementById('inputLimitNominal');
+            const hint = document.getElementById('hintLimitText');
+            const cards = document.querySelectorAll('.limit-option-card');
+
+            cards.forEach(c => {
+                const rad = c.querySelector('input[type="radio"]');
+                if (rad && rad.checked) {
+                    c.classList.add('border-primary', 'bg-primary-subtle');
+                    c.classList.remove('bg-white');
+                } else {
+                    c.classList.remove('border-primary', 'bg-primary-subtle');
+                    c.classList.add('bg-white');
+                }
+            });
+
+            if (tipe === 'none' || !tipe) {
+                if (container) container.classList.add('d-none');
+                if (input) input.removeAttribute('required');
+            } else {
+                if (container) container.classList.remove('d-none');
+                if (input) {
+                    input.setAttribute('required', 'required');
+                    input.focus();
+                }
+                if (hint) {
+                    if (tipe === 'harian') hint.textContent = 'Maksimal uang jajan yang dapat dibelanjakan anak dalam 1 hari.';
+                    else if (tipe === 'pekanan') hint.textContent = 'Maksimal uang jajan yang dapat dibelanjakan anak dalam 1 pekan (Senin - Minggu).';
+                    else if (tipe === 'bulanan') hint.textContent = 'Maksimal uang jajan yang dapat dibelanjakan anak dalam 1 bulan.';
+                }
+            }
+        }
+
+        async function handleFormLimitJajan(e) {
+            e.preventDefault();
+            const form = document.getElementById('formLimitJajan');
+            const btn = document.getElementById('btnSubmitLimitJajan');
+            if (!form || !btn) return;
+
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Menyimpan...';
+
+            try {
+                const formData = new FormData(form);
+                const res = await fetch('portal-ortu.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+                if (data && data.success) {
+                    window.location.href = data.redirect || 'portal-ortu.php?tab=kantin';
+                } else {
+                    alert(data.message || 'Gagal menyimpan pengaturan.');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            } catch (err) {
+                form.submit();
+            }
+        }
+
+        // FILTER PERMOHONAN TOP-UP BY BULAN (FLEKSIBEL TANPA BATASAN JUMLAH)
+        function filterTopupByMonth(selectedMonth) {
+            const items = document.querySelectorAll('.topup-item-card');
+            const emptyMsg = document.getElementById('topupEmptyMonth');
+            const emptyMonthName = document.getElementById('topupEmptyMonthName');
+            const monthNames = {
+                '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
+                '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
+                '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+            };
+
+            // Jika belum memilih bulan (default saat menu pertama dibuka), kosongkan total
+            if (!selectedMonth || selectedMonth === '') {
+                items.forEach(el => {
+                    el.classList.add('d-none');
+                    el.classList.remove('d-flex');
+                });
+                if (emptyMsg) emptyMsg.classList.add('d-none');
+                return;
+            }
+
+            let visibleCount = 0;
+            items.forEach(el => {
+                const itemMonth = el.getAttribute('data-month');
+                let match = false;
+
+                if (selectedMonth === 'all') {
+                    match = true;
+                } else {
+                    match = (String(itemMonth) === String(selectedMonth));
+                }
+
+                if (match) {
+                    el.classList.remove('d-none');
+                    el.classList.add('d-flex');
+                    visibleCount++;
+                } else {
+                    el.classList.add('d-none');
+                    el.classList.remove('d-flex');
+                }
+            });
+
+            if (emptyMsg) {
+                if (visibleCount === 0) {
+                    emptyMsg.classList.remove('d-none');
+                    if (emptyMonthName) {
+                        emptyMonthName.textContent = monthNames[selectedMonth] || selectedMonth;
+                    }
+                } else {
+                    emptyMsg.classList.add('d-none');
+                }
+            }
+        }
+
+        // FILTER MUTASI SALDO E-WALLET SANTRI BY BULAN
+        function filterMutasiByMonth(selectedMonth) {
+            const items = document.querySelectorAll('.mutasi-item-card');
+            const emptyMsg = document.getElementById('mutasiEmptyMonth');
+            const emptyMonthName = document.getElementById('mutasiEmptyMonthName');
+            const monthNames = {
+                '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
+                '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
+                '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+            };
+
+            // Jika belum memilih bulan (default saat menu pertama dibuka), kosongkan total
+            if (!selectedMonth || selectedMonth === '') {
+                items.forEach(el => {
+                    el.classList.add('d-none');
+                    el.classList.remove('d-flex');
+                });
+                if (emptyMsg) emptyMsg.classList.add('d-none');
+                return;
+            }
+
+            let visibleCount = 0;
+            items.forEach(el => {
+                const itemMonth = el.getAttribute('data-month');
+                let match = false;
+
+                if (selectedMonth === 'all') {
+                    match = true;
+                } else {
+                    match = (String(itemMonth) === String(selectedMonth));
+                }
+
+                if (match) {
+                    el.classList.remove('d-none');
+                    el.classList.add('d-flex');
+                    visibleCount++;
+                } else {
+                    el.classList.add('d-none');
+                    el.classList.remove('d-flex');
+                }
+            });
+
+            if (emptyMsg) {
+                if (visibleCount === 0) {
+                    emptyMsg.classList.remove('d-none');
+                    if (emptyMonthName) {
+                        emptyMonthName.textContent = monthNames[selectedMonth] || selectedMonth;
+                    }
+                } else {
+                    emptyMsg.classList.add('d-none');
+                }
+            }
+        }
+
+        // FILTER RIWAYAT TRANSAKSI JAJAN KANTIN (BULAN + PENCARIAN MENU)
+        function filterKantinItems() {
+            const searchInput = document.getElementById('inputSearchKantin');
+            const filterMonthEl = document.getElementById('filterBulanTransaksi');
+            const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+            const selectedMonth = filterMonthEl ? (filterMonthEl.value || '') : '';
+
+            const items = document.querySelectorAll('.kantin-tx-item');
+            const emptyState = document.getElementById('txEmptyState');
+            const emptyStateMsg = document.getElementById('txEmptyStateMsg');
+            const monthNames = {
+                '1': 'Januari', '2': 'Februari', '3': 'Maret', '4': 'April',
+                '5': 'Mei', '6': 'Juni', '7': 'Juli', '8': 'Agustus',
+                '9': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+            };
+
+            // Jika belum memilih bulan (default saat menu pertama dibuka), kosongkan total
+            if (!selectedMonth || selectedMonth === '') {
+                items.forEach(el => {
+                    el.classList.add('d-none');
+                    el.classList.remove('d-flex');
+                });
+                if (emptyState) emptyState.classList.add('d-none');
+                return;
+            }
+
+            let visibleCount = 0;
+            items.forEach(el => {
+                const itemMonth = el.getAttribute('data-month');
+                const titleTxt = (el.querySelector('.item-title-txt')?.textContent || '').toLowerCase();
+
+                let matchMonth = (selectedMonth === 'all' || String(itemMonth) === String(selectedMonth));
+                let matchSearch = (query === '' || titleTxt.includes(query));
+
+                if (matchMonth && matchSearch) {
+                    el.classList.remove('d-none');
+                    el.classList.add('d-flex');
+                    visibleCount++;
+                } else {
+                    el.classList.add('d-none');
+                    el.classList.remove('d-flex');
+                }
+            });
+
+            if (emptyState) {
+                if (visibleCount === 0) {
+                    emptyState.classList.remove('d-none');
+                    if (emptyStateMsg) {
+                        if (query !== '') {
+                            emptyStateMsg.innerHTML = `Tidak ditemukan menu yang sesuai dengan kata kunci "<strong>${query}</strong>".`;
+                        } else {
+                            const mName = monthNames[selectedMonth] || selectedMonth;
+                            emptyStateMsg.innerHTML = `Tidak ada riwayat transaksi pada bulan <strong class="text-dark">${mName}</strong>.`;
+                        }
+                    }
+                } else {
+                    emptyState.classList.add('d-none');
+                }
+            }
+        }
+
+        // =========================================================================
+        // CLIENT-SIDE IMAGE COMPRESSION (CANVAS RESIZER) - ANTI 403 FORBIDDEN / WAF
+        // =========================================================================
+        function compressImage(file, maxWidth = 1280, quality = 0.82) {
+            return new Promise((resolve) => {
+                if (!file || !file.type || !file.type.startsWith('image/')) {
+                    return resolve(null);
+                }
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const img = new Image();
+                    img.onload = function () {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = function () { resolve(null); };
+                    img.src = e.target.result;
+                };
+                reader.onerror = function () { resolve(null); };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // AUTO-ATTACH KOMPRESI PADA FORM PEMBAYARAN SPP & TOPUP KANTIN
+        document.addEventListener('DOMContentLoaded', function () {
+            // Inisialisasi tampilan Status Permohonan Top-Up, Mutasi Saldo, dan Riwayat Transaksi (Default kosong)
+            const filterTopupEl = document.getElementById('filterBulanTopup');
+            if (filterTopupEl) {
+                filterTopupByMonth(filterTopupEl.value || '');
+            }
+            const filterMutasiEl = document.getElementById('filterBulanMutasi');
+            if (filterMutasiEl) {
+                filterMutasiByMonth(filterMutasiEl.value || '');
+            }
+            const filterTxEl = document.getElementById('filterBulanTransaksi');
+            if (filterTxEl) {
+                filterKantinItems();
+            }
+
+            // 1. FORM PEMBAYARAN ONLINE (SPP, UANG PANGKAL, LAINNYA)
+            const formBayar = document.getElementById('formBayarOrtu');
+            if (formBayar) {
+                formBayar.addEventListener('submit', async function (e) {
+                    const fileInput = formBayar.querySelector('input[type="file"][name="bukti_transfer"]');
+                    const btnSubmit = formBayar.querySelector('button[type="submit"]');
+                    const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : '';
+
+                    if (fileInput && fileInput.files && fileInput.files[0]) {
+                        const file = fileInput.files[0];
+                        if (file.type && file.type.startsWith('image/')) {
+                            e.preventDefault();
+                            if (btnSubmit) {
+                                btnSubmit.disabled = true;
+                                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengompres &amp; Mengirim Bukti...';
+                            }
+
+                            try {
+                                const base64 = await compressImage(file, 1280, 0.82);
+                                const formData = new FormData(formBayar);
+                                formData.append('is_ajax', '1');
+                                if (base64) {
+                                    formData.append('bukti_base64', base64);
+                                }
+
+                                const response = await fetch('portal-ortu.php', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                });
+                                const resData = await response.json();
+                                if (resData && resData.redirect) {
+                                    window.location.href = resData.redirect;
+                                } else {
+                                    window.location.href = 'portal-ortu.php?tab=pembayaran';
+                                }
+                            } catch (err) {
+                                // Fallback jika fetch/AJAX terkendala
+                                formBayar.submit();
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. FORM TOP-UP KANTIN
+            const formTopup = document.getElementById('formTopupKantin');
+            if (formTopup) {
+                formTopup.addEventListener('submit', async function (e) {
+                    const fileInput = formTopup.querySelector('input[type="file"][name="bukti_transfer"]');
+                    const btnSubmit = formTopup.querySelector('button[type="submit"]');
+                    const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : '';
+
+                    if (btnSubmit) {
+                        btnSubmit.disabled = true;
+                        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengompres &amp; Mengirim...';
+                    }
+
+                    if (fileInput && fileInput.files && fileInput.files[0]) {
+                        const file = fileInput.files[0];
+                        if (file.type && file.type.startsWith('image/')) {
+                            e.preventDefault();
+                            try {
+                                const base64 = await compressImage(file, 1280, 0.82);
+                                const formData = new FormData(formTopup);
+                                formData.append('is_ajax', '1');
+                                if (base64) {
+                                    formData.append('bukti_base64', base64);
+                                }
+
+                                const response = await fetch('portal-ortu.php', {
+                                    method: 'POST',
+                                    body: formData,
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                });
+                                const resData = await response.json();
+                                if (resData && resData.success) {
+                                    window.location.href = resData.redirect || 'portal-ortu.php?tab=kantin';
+                                } else {
+                                    alert(resData.message || 'Gagal mengirim permohonan top-up.');
+                                    if (btnSubmit) {
+                                        btnSubmit.disabled = false;
+                                        btnSubmit.innerHTML = originalBtnHtml;
+                                    }
+                                }
+                            } catch (err) {
+                                formTopup.submit();
+                            }
+                            return;
+                        }
+                    }
+                });
+            }
+        });
     </script>
 
     <!-- MODAL DETAIL NOTIFIKASI -->
@@ -5588,6 +6924,135 @@ unset($_SESSION['flash_ortu']);
             </div>
         </div>
     </div>
+
+    <!-- MODERN PORTAL ANNOUNCEMENT POPUP MODAL -->
+    <?php if (!empty($portalPopup['active']) && (!empty($portalPopup['title']) || !empty($portalPopup['content']) || !empty($portalPopup['file']))): ?>
+        <?php
+        $popupFile = $portalPopup['file'];
+        $popupIsPdf = !empty($popupFile) && strtolower(pathinfo($popupFile, PATHINFO_EXTENSION)) === 'pdf';
+        $popupIsImg = !empty($popupFile) && in_array(strtolower(pathinfo($popupFile, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif']);
+        $popupColor = match ($portalPopup['type']) {
+            'warning' => ['bg' => '#fef3c7', 'border' => '#f59e0b', 'text' => '#92400e', 'badge' => 'bg-warning text-dark', 'icon' => 'bi-exclamation-triangle-fill'],
+            'danger' => ['bg' => '#fee2e2', 'border' => '#ef4444', 'text' => '#991b1b', 'badge' => 'bg-danger text-white', 'icon' => 'bi-exclamation-circle-fill'],
+            'success' => ['bg' => '#dcfce7', 'border' => '#10b981', 'text' => '#166534', 'badge' => 'bg-success text-white', 'icon' => 'bi-check-circle-fill'],
+            default => ['bg' => '#eff6ff', 'border' => '#3b82f6', 'text' => '#1e40af', 'badge' => 'bg-primary text-white', 'icon' => 'bi-megaphone-fill']
+        };
+        ?>
+        <div class="modal fade" id="modalPortalAnnouncement" tabindex="-1" aria-labelledby="modalPortalAnnouncementLabel"
+            aria-hidden="true" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width: 580px; margin: 1.5rem auto;">
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden" style="background: #ffffff;">
+                    <!-- HEADER -->
+                    <div class="modal-header border-0 px-4 pt-4 pb-2" style="background: <?= $popupColor['bg'] ?>;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span
+                                class="badge <?= $popupColor['badge'] ?> rounded-pill px-3 py-1.5 fs-7 d-flex align-items-center gap-1.5 shadow-sm">
+                                <i class="bi <?= $popupColor['icon'] ?>"></i> PENGUMUMAN PENTING
+                            </span>
+                        </div>
+                        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"
+                            onclick="dismissAnnouncementPopup()"></button>
+                    </div>
+
+                    <!-- BODY -->
+                    <div class="modal-body px-4 py-4">
+                        <?php if (!empty($portalPopup['title'])): ?>
+                            <h4 class="fw-bold mb-3" style="color: #0f172a; line-height: 1.35;">
+                                <?= htmlspecialchars($portalPopup['title']) ?>
+                            </h4>
+                        <?php endif; ?>
+
+                        <?php if (!empty($portalPopup['content'])): ?>
+                            <div class="text-secondary fs-6 mb-4" style="line-height: 1.65; white-space: pre-line;">
+                                <?= nl2br(htmlspecialchars($portalPopup['content'])) ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($popupIsImg): ?>
+                            <div class="mb-4 rounded-3 overflow-hidden border shadow-sm text-center bg-light">
+                                <img src="<?= htmlspecialchars($popupFile) ?>" alt="Pengumuman" class="img-fluid"
+                                    style="max-height: 380px; object-fit: contain;">
+                            </div>
+                        <?php elseif ($popupIsPdf): ?>
+                            <div class="p-3 mb-4 rounded-3 border d-flex align-items-center justify-content-between"
+                                style="background: #f8fafc;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-3 p-2 bg-danger bg-opacity-10 text-danger fs-3">
+                                        <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark fs-6">
+                                            <?= htmlspecialchars(!empty($portalPopup['file_name']) ? $portalPopup['file_name'] : basename($popupFile)) ?>
+                                        </div>
+                                        <div class="text-muted extra-small">Dokumen Lampiran Resmi (PDF)</div>
+                                    </div>
+                                </div>
+                                <a href="<?= htmlspecialchars($popupFile) ?>" target="_blank"
+                                    class="btn btn-sm btn-outline-danger px-3 py-1.5 rounded-pill fw-bold">
+                                    <i class="bi bi-download me-1"></i> Buka PDF
+                                </a>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- ACTIONS -->
+                        <div class="d-flex align-items-center justify-content-end gap-2 pt-2 border-top">
+                            <?php if (!empty($portalPopup['btn_link'])): ?>
+                                <a href="<?= htmlspecialchars($portalPopup['btn_link']) ?>"
+                                    class="btn btn-primary px-4 py-2 rounded-pill fw-bold">
+                                    <?= htmlspecialchars(!empty($portalPopup['btn_text']) ? $portalPopup['btn_text'] : 'Buka Tautan') ?>
+                                    <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            <?php endif; ?>
+                            <button type="button" class="btn btn-light px-4 py-2 rounded-pill fw-semibold border"
+                                data-bs-dismiss="modal" onclick="dismissAnnouncementPopup()">
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const popupKey = "portal_popup_shown_<?= md5($portalPopup['title'] . $portalPopup['updated_at']) ?>";
+                const freq = "<?= $portalPopup['frequency'] ?>";
+                let shouldShow = true;
+
+                if (freq === 'once' && localStorage.getItem(popupKey)) {
+                    shouldShow = false;
+                } else if (freq === 'daily') {
+                    const lastShown = localStorage.getItem(popupKey);
+                    if (lastShown && (Date.now() - parseInt(lastShown)) < 24 * 60 * 60 * 1000) {
+                        shouldShow = false;
+                    }
+                } else if (freq === 'session' && sessionStorage.getItem(popupKey)) {
+                    shouldShow = false;
+                }
+
+                if (shouldShow) {
+                    setTimeout(function () {
+                        const el = document.getElementById('modalPortalAnnouncement');
+                        if (el && typeof bootstrap !== 'undefined') {
+                            const modal = new bootstrap.Modal(el);
+                            modal.show();
+                        }
+                    }, 600);
+                }
+            });
+
+            function dismissAnnouncementPopup() {
+                const popupKey = "portal_popup_shown_<?= md5($portalPopup['title'] . $portalPopup['updated_at']) ?>";
+                const freq = "<?= $portalPopup['frequency'] ?>";
+                if (freq === 'session') {
+                    sessionStorage.setItem(popupKey, Date.now().toString());
+                } else {
+                    localStorage.setItem(popupKey, Date.now().toString());
+                }
+            }
+        </script>
+    <?php endif; ?>
+
 </body>
 
 </html>
