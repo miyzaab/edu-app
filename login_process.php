@@ -142,6 +142,21 @@ try {
         $_SESSION['role'] = $user['role'];
         $_SESSION['auth_password_hash'] = $user['password']; // Track password hash untuk auto-logout jika ganti password
         $_SESSION['siswa_id'] = !empty($user['siswa_id']) ? (int) $user['siswa_id'] : 0;
+
+        // Auto-heal jika akun ortu belum memiliki siswa_id tetapi username-nya sama dengan NIS santri
+        if ($user['role'] === 'ortu' && empty($_SESSION['siswa_id'])) {
+            try {
+                $stmtCheckNis = $pdo->prepare("SELECT id FROM siswa WHERE nis = :nis LIMIT 1");
+                $stmtCheckNis->execute([':nis' => $user['username']]);
+                $matchedSId = $stmtCheckNis->fetchColumn();
+                if ($matchedSId) {
+                    $_SESSION['siswa_id'] = (int) $matchedSId;
+                    $pdo->prepare("UPDATE users SET siswa_id = :sid WHERE id = :uid AND (siswa_id IS NULL OR siswa_id = 0)")
+                        ->execute([':sid' => $matchedSId, ':uid' => $user['id']]);
+                }
+            } catch (Exception $eNisMatch) {
+            }
+        }
         $_SESSION['permissions'] = loadUserPermissions((int) $user['id']);
 
         // Update last_login di database secara aman

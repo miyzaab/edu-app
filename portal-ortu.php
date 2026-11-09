@@ -120,16 +120,49 @@ if (!$loggedSiswa && !empty($_SESSION['username'])) {
     $stmtS->execute([':nis' => $_SESSION['username']]);
     $loggedSiswa = $stmtS->fetch();
 }
-if (!$loggedSiswa && !empty($_SESSION['nama_lengkap'])) {
-    $cleanName = trim(str_ireplace(['Orang Tua', 'Ortu', 'Wali', 'Bapak', 'Ibu'], '', $_SESSION['nama_lengkap']));
-    $stmtS = $pdo->prepare("SELECT s.*, COALESCE(k.nama_kelas, 'Tanpa Kelas') as nama_kelas, k.tingkat FROM siswa s LEFT JOIN kelas k ON s.kelas_id = k.id WHERE LOWER(s.nama) LIKE LOWER(:n) LIMIT 1");
-    $stmtS->execute([':n' => '%' . $cleanName . '%']);
-    $loggedSiswa = $stmtS->fetch();
+
+// Jika berhasil menemukan santri berdasarkan NIS, otomatis simpan ke tabel users agar permanen
+if ($loggedSiswa && empty($userOrtu['siswa_id'])) {
+    try {
+        $pdo->prepare("UPDATE users SET siswa_id = :sid WHERE id = :uid AND (siswa_id IS NULL OR siswa_id = 0)")
+            ->execute([':sid' => $loggedSiswa['id'], ':uid' => $_SESSION['user_id']]);
+    } catch (Exception $eAutoLink) {
+    }
 }
+
+// Keamanan: Jika akun tidak terhubung ke santri manapun, JANGAN pernah menampilkan santri lain (fallback acak)
 if (!$loggedSiswa) {
-    // Fallback to first active student in database if still not matched
-    $stmtS = $pdo->query("SELECT s.*, COALESCE(k.nama_kelas, 'Tanpa Kelas') as nama_kelas, k.tingkat FROM siswa s LEFT JOIN kelas k ON s.kelas_id = k.id LIMIT 1");
-    $loggedSiswa = $stmtS->fetch();
+    ?>
+    <!DOCTYPE html>
+    <html lang="id">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Akun Belum Ditautkan — <?= htmlspecialchars(defined('APP_NAME') ? APP_NAME : 'Edu-App') ?></title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+            .card-notice { background: #fff; max-width: 480px; width: 100%; border-radius: 20px; padding: 2.25rem 2rem; text-align: center; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06), 0 8px 10px -6px rgba(0,0,0,0.01); border: 1px solid #e2e8f0; }
+            .icon-box { width: 72px; height: 72px; border-radius: 50%; background: #fef3c7; color: #d97706; display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin-bottom: 1.25rem; }
+            h2 { font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+            p { font-size: 0.9rem; color: #64748b; line-height: 1.6; margin-bottom: 1.75rem; }
+            .btn-logout { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: #4f46e5; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 0.92rem; transition: background 0.2s; }
+            .btn-logout:hover { background: #4338ca; }
+        </style>
+    </head>
+    <body>
+        <div class="card-notice">
+            <div class="icon-box"><i class="bi bi-shield-exclamation"></i></div>
+            <h2>Akun Belum Ditautkan</h2>
+            <p>Akun Anda (<strong><?= htmlspecialchars($_SESSION['nama_lengkap'] ?? $_SESSION['username']) ?></strong>) belum terhubung dengan data santri manapun di sistem. Silakan hubungi bagian Tata Usaha / Admin sekolah untuk menautkan akun Anda ke santri yang benar.</p>
+            <a href="<?= BASE_URL ?>/logout.php" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Keluar / Kembali ke Login</a>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
 }
 
 if ($loggedSiswa) {
