@@ -26,16 +26,13 @@ $placeholders = implode(',', array_fill(0, $count, '?'));
 try {
     $pdo->beginTransaction();
 
-    if ($action === 'delete') {
-        // Hapus permissions terlebih dahulu
-        $pdo->prepare("DELETE FROM user_permissions WHERE user_id IN ($placeholders)")->execute($ids);
-
-        // Hapus users
-        $stmt = $pdo->prepare("DELETE FROM users WHERE id IN ($placeholders)");
+    if ($action === 'delete' || $action === 'deactivate') {
+        // Soft deactivate: nonaktifkan akun tanpa menghapus data
+        $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id IN ($placeholders)");
         $stmt->execute($ids);
 
         $pdo->commit();
-        redirect('index.php', 'success', "🎉 Berhasil menghapus <b>$count</b> user secara massal.");
+        redirect('index.php', 'success', "🎉 Berhasil MENONAKTIFKAN <b>$count</b> user. Riwayat transaksi dan data akun tetap aman.");
     } elseif ($action === 'activate') {
         $stmt = $pdo->prepare("UPDATE users SET is_active = 1 WHERE id IN ($placeholders)");
         $stmt->execute($ids);

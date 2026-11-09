@@ -344,29 +344,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     }
 }
 
-// ===== PROSES HAPUS USER =====
+// ===== PROSES NONAKTIFKAN USER (SOFT DEACTIVATE) =====
 if (isset($_GET['delete'])) {
     $deleteId = (int) $_GET['delete'];
 
-    // Jangan hapus diri sendiri
+    // Jangan nonaktifkan diri sendiri
     if ($deleteId === (int) ($_SESSION['user_id'] ?? 0)) {
-        redirect('index.php', 'danger', 'Tidak bisa menghapus akun sendiri.');
+        redirect('index.php', 'danger', 'Tidak bisa menonaktifkan akun sendiri.');
     } else {
         try {
-            $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE users SET is_active = 0 WHERE id = :id");
             $stmt->execute([':id' => $deleteId]);
-
-            if ($stmt->rowCount() > 0) {
-                redirect('index.php', 'success', 'User berhasil dihapus.');
-            } else {
-                redirect('index.php', 'warning', 'User tidak ditemukan atau sudah dihapus.');
-            }
+            redirect('index.php', 'success', 'Akun user berhasil dinonaktifkan (data dan riwayat transaksi tetap aman).');
         } catch (PDOException $e) {
-            if ($e->getCode() == '23000' || strpos($e->getMessage(), '1217') !== false || strpos($e->getMessage(), '1451') !== false) {
-                redirect('index.php', 'danger', 'User tidak bisa dihapus karena telah tercatat dalam transaksi (SPP, Uang Pangkal, atau Kas). Silakan nonaktifkan saja jika perlu.');
-            } else {
-                redirect('index.php', 'danger', 'Gagal menghapus user: ' . $e->getMessage());
-            }
+            redirect('index.php', 'danger', 'Gagal menonaktifkan user: ' . $e->getMessage());
         }
     }
 }
@@ -832,11 +823,6 @@ require_once __DIR__ . '/../../includes/header.php';
                                             onclick="return confirm('Apakah Anda yakin ingin <?= $isActive === 1 ? 'MENONAKTIFKAN' : 'MENGAKTIFKAN' ?> user <?= addslashes(htmlspecialchars($u['username'])) ?>?')">
                                             <i class="bi <?= $isActive === 1 ? 'bi-person-slash' : 'bi-person-check-fill' ?>"></i>
                                         </a>
-                                        <button type="button"
-                                            onclick="confirmDelete('index.php?delete=<?= $u['id'] ?>','<?= addslashes(htmlspecialchars($u['username'])) ?>')"
-                                            class="btn-sm-action btn-delete" title="Hapus User">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -872,9 +858,6 @@ require_once __DIR__ . '/../../includes/header.php';
             </button>
             <button type="button" class="btn-bulk-action btn-bulk-secondary" onclick="handleBulkResetPassword()">
                 <i class="bi bi-key-fill"></i> Reset Password
-            </button>
-            <button type="button" class="btn-bulk-action btn-bulk-delete" onclick="handleBulkDeleteUsers()">
-                <i class="bi bi-trash-fill"></i> Hapus User
             </button>
             <button type="button" class="btn-bulk-cancel" title="Batalkan Pilihan">
                 <i class="bi bi-x-lg"></i>
@@ -1494,15 +1477,6 @@ require_once __DIR__ . '/../../includes/header.php';
         if (selected.length === 0) return;
         if (confirm(`🔴 NONAKTIFKAN PENGGUNA:\n\nApakah Anda yakin ingin MENONAKTIFKAN ${selected.length} user yang dipilih? Pengguna tidak akan bisa login sampai diaktifkan kembali.`)) {
             document.getElementById('bulkActionType').value = 'deactivate';
-            document.getElementById('bulkActionForm').submit();
-        }
-    }
-
-    function handleBulkDeleteUsers() {
-        const selected = window.getSelectedBulkIds();
-        if (selected.length === 0) return;
-        if (confirm(`⚠️ PERINGATAN:\n\nApakah Anda yakin ingin MENGHAPUS ${selected.length} user yang dipilih? Tindakan ini permanen dan tidak dapat dibatalkan.`)) {
-            document.getElementById('bulkActionType').value = 'delete';
             document.getElementById('bulkActionForm').submit();
         }
     }

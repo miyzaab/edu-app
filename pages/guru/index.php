@@ -482,10 +482,9 @@ require_once __DIR__ . '/../../includes/header.php';
                                                     onclick='editGuru(<?= htmlspecialchars(json_encode($g, JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>)'>
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-outline-danger" title="Hapus Guru"
-                                                    onclick="confirmDelete('delete.php?id=<?= $g['id'] ?>', '<?= htmlspecialchars(addslashes($namaLengkapGelar), ENT_QUOTES) ?>')">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
+                                                <a href="delete.php?id=<?= $g['id'] ?>" class="btn btn-outline-<?= ($g['is_active'] ?? 1) ? 'warning' : 'success' ?>" title="<?= ($g['is_active'] ?? 1) ? 'Nonaktifkan Guru' : 'Aktifkan Kembali Guru' ?>" onclick="return confirm('Apakah Anda yakin ingin <?= ($g['is_active'] ?? 1) ? 'menonaktifkan' : 'mengaktifkan kembali' ?> akun guru <?= htmlspecialchars(addslashes($namaLengkapGelar), ENT_QUOTES) ?>?')">
+                                                    <i class="bi <?= ($g['is_active'] ?? 1) ? 'bi-person-slash' : 'bi-person-check-fill' ?>"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -511,9 +510,6 @@ require_once __DIR__ . '/../../includes/header.php';
                         <button type="button" class="btn-bulk-action btn-bulk-secondary"
                             onclick="handleBulkStatusGuru('deactivate')">
                             <i class="bi bi-dash-circle-fill text-warning"></i> Nonaktifkan
-                        </button>
-                        <button type="button" class="btn-bulk-action btn-bulk-delete" onclick="handleBulkDeleteGuru()">
-                            <i class="bi bi-trash-fill"></i> Hapus Guru
                         </button>
                         <button type="button" class="btn-bulk-cancel" title="Batalkan Pilihan">
                             <i class="bi bi-x-lg"></i>
@@ -1050,15 +1046,6 @@ require_once __DIR__ . '/../../includes/header.php';
                 formId: 'bulkActionForm'
             });
         });
-
-        function handleBulkDeleteGuru() {
-            const selected = window.getSelectedBulkIds();
-            if (selected.length === 0) return;
-            if (confirm(`⚠️ PERINGATAN:\n\nApakah Anda yakin ingin MENGHAPUS ${selected.length} data guru yang dipilih beserta seluruh plotting mengajar & hak aksesnya? Tindakan ini tidak dapat dibatalkan.`)) {
-                document.getElementById('bulkActionType').value = 'delete';
-                document.getElementById('bulkActionForm').submit();
-            }
-        }
 
         function handleBulkStatusGuru(type) {
             const selected = window.getSelectedBulkIds();

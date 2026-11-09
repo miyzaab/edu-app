@@ -117,9 +117,12 @@ require_once __DIR__ . '/../../includes/header.php';
                                         title="Riwayat Pembayaran"><i class="bi bi-clock-history"></i> Riwayat</a>
                                     <a href="edit.php?id=<?= $s['id'] ?>" class="btn-sm-action btn-edit" title="Edit"><i
                                             class="bi bi-pencil"></i></a>
-                                    <button type="button"
-                                        onclick="confirmDelete('delete.php?id=<?= $s['id'] ?>','<?= htmlspecialchars($s['nama']) ?>')"
-                                        class="btn-sm-action btn-delete" title="Hapus"><i class="bi bi-trash"></i></button>
+                                    <a href="delete.php?id=<?= $s['id'] ?>"
+                                        class="btn-sm-action <?= ($s['status'] === 'aktif') ? 'text-warning' : 'text-success' ?>"
+                                        title="<?= ($s['status'] === 'aktif') ? 'Nonaktifkan Santri' : 'Aktifkan Kembali Santri' ?>"
+                                        onclick="return confirm('Apakah Anda yakin ingin <?= ($s['status'] === 'aktif') ? 'MENONAKTIFKAN' : 'MENGAKTIFKAN KEMBALI' ?> data santri <?= addslashes(htmlspecialchars($s['nama'])) ?>?')">
+                                        <i class="bi <?= ($s['status'] === 'aktif') ? 'bi-person-slash' : 'bi-person-check-fill' ?>"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -154,8 +157,8 @@ require_once __DIR__ . '/../../includes/header.php';
                 data-bs-target="#modalBulkStatus">
                 <i class="bi bi-toggle2-on"></i> Ubah Status
             </button>
-            <button type="button" class="btn-bulk-action btn-bulk-delete" onclick="handleBulkDelete()">
-                <i class="bi bi-trash-fill"></i> Hapus
+            <button type="button" class="btn-bulk-action btn-bulk-deactivate" onclick="handleBulkDeactivate()">
+                <i class="bi bi-person-slash"></i> Nonaktifkan
             </button>
             <button type="button" class="btn-bulk-cancel" title="Batalkan Pilihan">
                 <i class="bi bi-x-lg"></i>
@@ -242,11 +245,11 @@ require_once __DIR__ . '/../../includes/header.php';
         window.open('kartu.php?ids=' + selected.join(','), '_blank');
     }
 
-    function handleBulkDelete() {
+    function handleBulkDeactivate() {
         const selected = window.getSelectedBulkIds();
         if (selected.length === 0) return;
-        if (confirm(`⚠️ PERINGATAN:\n\nApakah Anda yakin ingin MENGHAPUS PERMANEN ${selected.length} siswa terpilih beserta seluruh data tagihan/pembayarannya? Tindakan ini tidak dapat dibatalkan.`)) {
-            document.getElementById('bulkActionType').value = 'delete';
+        if (confirm(`🔴 NONAKTIFKAN SANTRI:\n\nApakah Anda yakin ingin MENONAKTIFKAN ${selected.length} santri terpilih? Seluruh data tagihan dan riwayat pembayaran tetap tersimpan aman.`)) {
+            document.getElementById('bulkActionType').value = 'deactivate';
             document.getElementById('bulkActionForm').submit();
         }
     }
