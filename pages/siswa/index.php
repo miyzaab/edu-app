@@ -121,7 +121,8 @@ require_once __DIR__ . '/../../includes/header.php';
                                         class="btn-sm-action <?= ($s['status'] === 'aktif') ? 'text-warning' : 'text-success' ?>"
                                         title="<?= ($s['status'] === 'aktif') ? 'Nonaktifkan Santri' : 'Aktifkan Kembali Santri' ?>"
                                         onclick="return confirm('Apakah Anda yakin ingin <?= ($s['status'] === 'aktif') ? 'MENONAKTIFKAN' : 'MENGAKTIFKAN KEMBALI' ?> data santri <?= addslashes(htmlspecialchars($s['nama'])) ?>?')">
-                                        <i class="bi <?= ($s['status'] === 'aktif') ? 'bi-person-slash' : 'bi-person-check-fill' ?>"></i>
+                                        <i
+                                            class="bi <?= ($s['status'] === 'aktif') ? 'bi-person-slash' : 'bi-person-check-fill' ?>"></i>
                                     </a>
                                 </div>
                             </td>

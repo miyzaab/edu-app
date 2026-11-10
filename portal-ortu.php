@@ -635,38 +635,74 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
 
 // PROSES GANTI FOTO PROFIL SISWA
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_foto' && $siswaId) {
-    if (isset($_FILES['foto_siswa']) && $_FILES['foto_siswa']['error'] === UPLOAD_ERR_OK) {
+    $isAjax = !empty($_POST['is_ajax']) || (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+    $uploadDir = __DIR__ . '/uploads/siswa/';
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0755, true);
+    }
+
+    $base64Foto = $_POST['foto_base64'] ?? null;
+    $success = false;
+    $newFileName = '';
+
+    // 1. Simpan dari Base64 (Compressed dari HP)
+    if (!empty($base64Foto) && is_string($base64Foto)) {
+        if (preg_match('/^data:image\/(\w+);base64,/', $base64Foto, $type)) {
+            $base64Raw = substr($base64Foto, strpos($base64Foto, ',') + 1);
+            $ext = strtolower($type[1]);
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                $ext = 'jpg';
+            }
+            $bin = base64_decode($base64Raw);
+            if ($bin !== false && strlen($bin) > 0) {
+                $newFileName = 'siswa_' . time() . '_' . rand(1000, 9999) . '.' . ($ext === 'jpeg' ? 'jpg' : $ext);
+                if (@file_put_contents($uploadDir . $newFileName, $bin)) {
+                    $success = true;
+                }
+            }
+        }
+    }
+
+    // 2. Simpan dari $_FILES biasa
+    if (!$success && isset($_FILES['foto_siswa']) && $_FILES['foto_siswa']['error'] === UPLOAD_ERR_OK) {
         $tmpName = $_FILES['foto_siswa']['tmp_name'];
         $ext = strtolower(pathinfo($_FILES['foto_siswa']['name'], PATHINFO_EXTENSION));
         $allowed = ['jpg', 'jpeg', 'png', 'webp'];
 
         if (in_array($ext, $allowed) && $_FILES['foto_siswa']['size'] <= 5 * 1024 * 1024) {
-            $uploadDir = __DIR__ . '/uploads/siswa/';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0755, true);
-            }
-
-            // Hapus foto lama jika ada
-            if (!empty($loggedSiswa['foto'])) {
-                $old1 = $uploadDir . $loggedSiswa['foto'];
-                $old2 = __DIR__ . '/' . $loggedSiswa['foto'];
-                if (file_exists($old1))
-                    @unlink($old1);
-                if (file_exists($old2))
-                    @unlink($old2);
-            }
-
             $newFileName = 'siswa_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
             if (move_uploaded_file($tmpName, $uploadDir . $newFileName)) {
-                $stmtUp = $pdo->prepare("UPDATE siswa SET foto = :f WHERE id = :id");
-                $stmtUp->execute([':f' => $newFileName, ':id' => $siswaId]);
-                $_SESSION['flash_ortu'] = ['type' => 'success', 'message' => 'Alhamdulillah, foto profil siswa berhasil diperbarui!'];
-            } else {
-                $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => 'Gagal menyimpan foto. Silakan coba lagi.'];
+                $success = true;
             }
-        } else {
-            $_SESSION['flash_ortu'] = ['type' => 'warning', 'message' => 'Format foto harus JPG, PNG, atau WEBP (Maksimal 5MB).'];
         }
+    }
+
+    if ($success) {
+        // Hapus foto lama jika ada
+        if (!empty($loggedSiswa['foto'])) {
+            $old1 = $uploadDir . $loggedSiswa['foto'];
+            $old2 = __DIR__ . '/' . $loggedSiswa['foto'];
+            if (file_exists($old1))
+                @unlink($old1);
+            if (file_exists($old2))
+                @unlink($old2);
+        }
+        $stmtUp = $pdo->prepare("UPDATE siswa SET foto = :f WHERE id = :id");
+        $stmtUp->execute([':f' => $newFileName, ':id' => $siswaId]);
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => true, 'message' => 'Alhamdulillah, foto profil siswa berhasil diperbarui!', 'redirect' => 'portal-ortu.php']);
+            exit;
+        }
+        $_SESSION['flash_ortu'] = ['type' => 'success', 'message' => 'Alhamdulillah, foto profil siswa berhasil diperbarui!'];
+    } else {
+        $errMsg = 'Gagal menyimpan foto profil siswa. Pastikan format JPG, PNG, atau WEBP (maks 5MB).';
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => false, 'message' => $errMsg]);
+            exit;
+        }
+        $_SESSION['flash_ortu'] = ['type' => 'danger', 'message' => $errMsg];
     }
     header("Location: portal-ortu.php");
     exit;
@@ -780,17 +816,24 @@ function handleProofUpload(?array $fileData, ?string $base64Data, string $prefix
         }
     }
 
-    // 1. Cek jika dikirim via Base64 (Compressed Image dari HP)
+    // 1. Cek jika dikirim via Base64 (Compressed Image / In-Memory Data dari HP)
     if (!empty($base64Data) && is_string($base64Data)) {
-        if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
-            $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
-            $type = strtolower($type[1]);
-            if (!in_array($type, ['jpg', 'jpeg', 'png', 'webp'])) {
-                $type = 'jpg';
+        if (preg_match('/^data:([a-zA-Z0-9\/\+\.-]+);base64,/', $base64Data, $matches)) {
+            $mime = strtolower($matches[1]);
+            $base64Raw = substr($base64Data, strpos($base64Data, ',') + 1);
+            $ext = 'jpg';
+            if (strpos($mime, 'pdf') !== false) {
+                $ext = 'pdf';
+            } elseif (strpos($mime, 'png') !== false) {
+                $ext = 'png';
+            } elseif (strpos($mime, 'webp') !== false) {
+                $ext = 'webp';
+            } elseif (strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) {
+                $ext = 'jpg';
             }
-            $bin = base64_decode($base64Data);
-            if ($bin !== false) {
-                $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . ($type === 'jpeg' ? 'jpg' : $type);
+            $bin = base64_decode($base64Raw);
+            if ($bin !== false && strlen($bin) > 0) {
+                $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
                 $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
                 if (@file_put_contents($targetPath, $bin)) {
                     return $relPrefix . $filename;
@@ -799,10 +842,17 @@ function handleProofUpload(?array $fileData, ?string $base64Data, string $prefix
         }
     }
 
-    // 2. Cek jika dikirim via standard $_FILES
+    // 2. Cek jika dikirim via standard $_FILES (atau In-Memory Blob)
     if (!empty($fileData) && isset($fileData['error']) && $fileData['error'] === UPLOAD_ERR_OK) {
         $ext = strtolower(pathinfo($fileData['name'], PATHINFO_EXTENSION));
         $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'heic', 'jfif', 'bmp', 'svg'];
+        if (empty($ext) || !in_array($ext, $allowedExts)) {
+            if (!empty($fileData['type']) && strpos($fileData['type'], 'pdf') !== false) {
+                $ext = 'pdf';
+            } else {
+                $ext = 'jpg';
+            }
+        }
         if (in_array($ext, $allowedExts) && $fileData['size'] <= 15 * 1024 * 1024) {
             $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . ($ext === 'heic' ? 'jpg' : $ext);
             $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
@@ -6778,12 +6828,43 @@ unset($_SESSION['flash_ortu']);
         }
 
         // =========================================================================
-        // CLIENT-SIDE IMAGE COMPRESSION (CANVAS RESIZER) - ANTI 403 FORBIDDEN / WAF
+        // CLIENT-SIDE IN-MEMORY FILE UPLOAD HANDLER (ANTI ERR_UPLOAD_FILE_CHANGED & WAF)
         // =========================================================================
+        function dataURLtoBlob(dataUrl) {
+            try {
+                const parts = dataUrl.split(',');
+                if (parts.length < 2) return null;
+                const mimeMatch = parts[0].match(/:(.*?);/);
+                const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+                const bstr = atob(parts[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                return new Blob([u8arr], { type: mime });
+            } catch (e) {
+                console.warn('dataURLtoBlob error:', e);
+                return null;
+            }
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve) => {
+                if (!file) return resolve(null);
+                const reader = new FileReader();
+                reader.onload = function (e) { resolve(e.target.result); };
+                reader.onerror = function () { resolve(null); };
+                reader.readAsDataURL(file);
+            });
+        }
+
         function compressImage(file, maxWidth = 1280, quality = 0.82) {
             return new Promise((resolve) => {
-                if (!file || !file.type || !file.type.startsWith('image/')) {
-                    return resolve(null);
+                if (!file) return resolve(null);
+                if (!file.type || !file.type.startsWith('image/')) {
+                    // Jika bukan gambar (misal dokumen PDF), baca langsung sebagai DataURL tanpa canvas
+                    return readFileAsDataURL(file).then(resolve);
                 }
                 const reader = new FileReader();
                 reader.onload = function (e) {
@@ -6803,7 +6884,10 @@ unset($_SESSION['flash_ortu']);
                         const dataUrl = canvas.toDataURL('image/jpeg', quality);
                         resolve(dataUrl);
                     };
-                    img.onerror = function () { resolve(null); };
+                    img.onerror = function () {
+                        // Fallback ke data URL mentah jika gagal didecode canvas
+                        resolve(e.target.result);
+                    };
                     img.src = e.target.result;
                 };
                 reader.onerror = function () { resolve(null); };
@@ -6811,7 +6895,7 @@ unset($_SESSION['flash_ortu']);
             });
         }
 
-        // AUTO-ATTACH KOMPRESI PADA FORM PEMBAYARAN SPP & TOPUP KANTIN
+        // AUTO-ATTACH KOMPRESI & ANTI ERR_UPLOAD_FILE_CHANGED PADA FORM UPLOAD
         document.addEventListener('DOMContentLoaded', function () {
             // Inisialisasi tampilan Status Permohonan Top-Up, Mutasi Saldo, dan Riwayat Transaksi (Default kosong)
             const filterTopupEl = document.getElementById('filterBulanTopup');
@@ -6827,46 +6911,101 @@ unset($_SESSION['flash_ortu']);
                 filterKantinItems();
             }
 
+            // Helper untuk pre-load file ke memori HP segera setelah dipilih dari kamera/galeri
+            function bindSafeInput(inputEl) {
+                if (!inputEl) return;
+                inputEl.addEventListener('change', async function () {
+                    if (!inputEl.files || !inputEl.files[0]) {
+                        inputEl._safeBase64 = null;
+                        inputEl._safeBlob = null;
+                        return;
+                    }
+                    const f = inputEl.files[0];
+                    try {
+                        const base64 = await compressImage(f, 1280, 0.82);
+                        if (base64) {
+                            inputEl._safeBase64 = base64;
+                            inputEl._safeBlob = dataURLtoBlob(base64);
+                            inputEl._safeFileName = f.name || 'bukti.jpg';
+                        }
+                    } catch (e) {
+                        console.warn('Safe pre-cache warning:', e);
+                    }
+                });
+            }
+
+            const inputBayar = document.querySelector('#formBayarOrtu input[type="file"][name="bukti_transfer"]');
+            const inputTopup = document.querySelector('#formTopupKantin input[type="file"][name="bukti_transfer"]');
+            const inputFoto = document.querySelector('#formGantiFoto input[type="file"][name="foto_siswa"]');
+            bindSafeInput(inputBayar);
+            bindSafeInput(inputTopup);
+            bindSafeInput(inputFoto);
+
             // 1. FORM PEMBAYARAN ONLINE (SPP, UANG PANGKAL, LAINNYA)
             const formBayar = document.getElementById('formBayarOrtu');
             if (formBayar) {
                 formBayar.addEventListener('submit', async function (e) {
+                    e.preventDefault();
                     const fileInput = formBayar.querySelector('input[type="file"][name="bukti_transfer"]');
                     const btnSubmit = formBayar.querySelector('button[type="submit"]');
                     const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : '';
 
-                    if (fileInput && fileInput.files && fileInput.files[0]) {
-                        const file = fileInput.files[0];
-                        if (file.type && file.type.startsWith('image/')) {
-                            e.preventDefault();
+                    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                        alert('Silakan pilih file bukti transfer terlebih dahulu.');
+                        return;
+                    }
+
+                    if (btnSubmit) {
+                        btnSubmit.disabled = true;
+                        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Memproses &amp; Mengirim Bukti...';
+                    }
+
+                    try {
+                        let base64 = fileInput._safeBase64;
+                        let blob = fileInput._safeBlob;
+                        let fileName = fileInput._safeFileName || fileInput.files[0].name || 'bukti.jpg';
+
+                        if (!base64) {
+                            base64 = await compressImage(fileInput.files[0], 1280, 0.82);
+                            if (base64) {
+                                blob = dataURLtoBlob(base64);
+                            }
+                        }
+
+                        const formData = new FormData(formBayar);
+                        // Hapus file asli dari FormData agar browser TIDAK mengakses pointer file storage Android yang rentan berubah (ERR_UPLOAD_FILE_CHANGED)
+                        formData.delete('bukti_transfer');
+                        formData.append('is_ajax', '1');
+
+                        if (blob) {
+                            formData.append('bukti_transfer', blob, fileName);
+                        }
+                        if (base64) {
+                            formData.append('bukti_base64', base64);
+                        }
+
+                        const response = await fetch('portal-ortu.php', {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+
+                        const resData = await response.json();
+                        if (resData && resData.success) {
+                            window.location.href = resData.redirect || 'portal-ortu.php?tab=pembayaran';
+                        } else {
+                            alert(resData.message || 'Gagal mengirim konfirmasi pembayaran.');
                             if (btnSubmit) {
-                                btnSubmit.disabled = true;
-                                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengompres &amp; Mengirim Bukti...';
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = originalBtnHtml;
                             }
-
-                            try {
-                                const base64 = await compressImage(file, 1280, 0.82);
-                                const formData = new FormData(formBayar);
-                                formData.append('is_ajax', '1');
-                                if (base64) {
-                                    formData.append('bukti_base64', base64);
-                                }
-
-                                const response = await fetch('portal-ortu.php', {
-                                    method: 'POST',
-                                    body: formData,
-                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                                });
-                                const resData = await response.json();
-                                if (resData && resData.redirect) {
-                                    window.location.href = resData.redirect;
-                                } else {
-                                    window.location.href = 'portal-ortu.php?tab=pembayaran';
-                                }
-                            } catch (err) {
-                                // Fallback jika fetch/AJAX terkendala
-                                formBayar.submit();
-                            }
+                        }
+                    } catch (err) {
+                        console.error('Submission error:', err);
+                        alert('Terjadi kendala saat mengunggah bukti pembayaran. Silakan periksa koneksi internet Anda atau pilih ulang foto.');
+                        if (btnSubmit) {
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = originalBtnHtml;
                         }
                     }
                 });
@@ -6876,46 +7015,135 @@ unset($_SESSION['flash_ortu']);
             const formTopup = document.getElementById('formTopupKantin');
             if (formTopup) {
                 formTopup.addEventListener('submit', async function (e) {
+                    e.preventDefault();
                     const fileInput = formTopup.querySelector('input[type="file"][name="bukti_transfer"]');
                     const btnSubmit = formTopup.querySelector('button[type="submit"]');
                     const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : '';
 
-                    if (btnSubmit) {
-                        btnSubmit.disabled = true;
-                        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Mengompres &amp; Mengirim...';
+                    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                        alert('Silakan pilih file bukti transfer terlebih dahulu.');
+                        return;
                     }
 
-                    if (fileInput && fileInput.files && fileInput.files[0]) {
-                        const file = fileInput.files[0];
-                        if (file.type && file.type.startsWith('image/')) {
-                            e.preventDefault();
-                            try {
-                                const base64 = await compressImage(file, 1280, 0.82);
-                                const formData = new FormData(formTopup);
-                                formData.append('is_ajax', '1');
-                                if (base64) {
-                                    formData.append('bukti_base64', base64);
-                                }
+                    if (btnSubmit) {
+                        btnSubmit.disabled = true;
+                        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Memproses &amp; Mengirim...';
+                    }
 
-                                const response = await fetch('portal-ortu.php', {
-                                    method: 'POST',
-                                    body: formData,
-                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                                });
-                                const resData = await response.json();
-                                if (resData && resData.success) {
-                                    window.location.href = resData.redirect || 'portal-ortu.php?tab=kantin';
-                                } else {
-                                    alert(resData.message || 'Gagal mengirim permohonan top-up.');
-                                    if (btnSubmit) {
-                                        btnSubmit.disabled = false;
-                                        btnSubmit.innerHTML = originalBtnHtml;
-                                    }
-                                }
-                            } catch (err) {
-                                formTopup.submit();
+                    try {
+                        let base64 = fileInput._safeBase64;
+                        let blob = fileInput._safeBlob;
+                        let fileName = fileInput._safeFileName || fileInput.files[0].name || 'bukti.jpg';
+
+                        if (!base64) {
+                            base64 = await compressImage(fileInput.files[0], 1280, 0.82);
+                            if (base64) {
+                                blob = dataURLtoBlob(base64);
                             }
-                            return;
+                        }
+
+                        const formData = new FormData(formTopup);
+                        formData.delete('bukti_transfer');
+                        formData.append('is_ajax', '1');
+
+                        if (blob) {
+                            formData.append('bukti_transfer', blob, fileName);
+                        }
+                        if (base64) {
+                            formData.append('bukti_base64', base64);
+                        }
+
+                        const response = await fetch('portal-ortu.php', {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+
+                        const resData = await response.json();
+                        if (resData && resData.success) {
+                            window.location.href = resData.redirect || 'portal-ortu.php?tab=kantin';
+                        } else {
+                            alert(resData.message || 'Gagal mengirim permohonan top-up.');
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = originalBtnHtml;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Topup error:', err);
+                        alert('Terjadi kendala saat mengajukan top-up. Silakan periksa koneksi internet Anda atau pilih ulang foto.');
+                        if (btnSubmit) {
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = originalBtnHtml;
+                        }
+                    }
+                });
+            }
+
+            // 3. FORM GANTI FOTO PROFIL SISWA
+            const formFoto = document.getElementById('formGantiFoto');
+            if (formFoto) {
+                formFoto.addEventListener('submit', async function (e) {
+                    e.preventDefault();
+                    const fileInput = formFoto.querySelector('input[type="file"][name="foto_siswa"]');
+                    const btnSubmit = formFoto.querySelector('button[type="submit"]');
+                    const originalBtnHtml = btnSubmit ? btnSubmit.innerHTML : '';
+
+                    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                        alert('Silakan pilih file foto terlebih dahulu.');
+                        return;
+                    }
+
+                    if (btnSubmit) {
+                        btnSubmit.disabled = true;
+                        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Menyimpan Foto...';
+                    }
+
+                    try {
+                        let base64 = fileInput._safeBase64;
+                        let blob = fileInput._safeBlob;
+                        let fileName = fileInput._safeFileName || fileInput.files[0].name || 'foto.jpg';
+
+                        if (!base64) {
+                            base64 = await compressImage(fileInput.files[0], 1000, 0.85);
+                            if (base64) {
+                                blob = dataURLtoBlob(base64);
+                            }
+                        }
+
+                        const formData = new FormData(formFoto);
+                        formData.delete('foto_siswa');
+                        formData.append('is_ajax', '1');
+
+                        if (blob) {
+                            formData.append('foto_siswa', blob, fileName);
+                        }
+                        if (base64) {
+                            formData.append('foto_base64', base64);
+                        }
+
+                        const response = await fetch('portal-ortu.php', {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+
+                        const resData = await response.json();
+                        if (resData && resData.success) {
+                            window.location.href = resData.redirect || 'portal-ortu.php?tab=profil';
+                        } else {
+                            alert(resData.message || 'Gagal menyimpan foto profil.');
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = originalBtnHtml;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Foto upload error:', err);
+                        alert('Terjadi kendala saat mengunggah foto profil. Silakan periksa koneksi internet Anda atau pilih ulang foto.');
+                        if (btnSubmit) {
+                            btnSubmit.disabled = false;
+                            btnSubmit.innerHTML = originalBtnHtml;
                         }
                     }
                 });
