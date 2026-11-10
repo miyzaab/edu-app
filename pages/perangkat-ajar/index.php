@@ -59,10 +59,12 @@ require_once __DIR__ . '/subnav.php';
             </div>
             <h2 class="fw-extrabold mb-1" style="font-family: 'Outfit', sans-serif;">Perangkat Ajar Terpadu</h2>
             <p class="opacity-75 small mb-0 fs-6" style="max-width: 650px;">
-                Satu pintu input bab &amp; jam per pekan yang otomatis meng-generate Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), Alur (ATP), serta Modul Ajar lengkap yang siap diunduh ke PDF.
+                Satu pintu input bab &amp; jam per pekan yang otomatis meng-generate Capaian Pembelajaran (CP), Tujuan
+                Pembelajaran (TP), Alur (ATP), serta Modul Ajar lengkap yang siap diunduh ke PDF.
             </p>
         </div>
-        <a href="create.php" class="btn btn-emerald px-4 py-3 fw-extrabold rounded-pill text-white shadow-lg d-inline-flex align-items-center gap-2"
+        <a href="create.php"
+            class="btn btn-emerald px-4 py-3 fw-extrabold rounded-pill text-white shadow-lg d-inline-flex align-items-center gap-2"
             style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; font-size: 1rem;">
             <i class="bi bi-magic fs-5"></i>
             <span>✨ Buat Perangkat Ajar Baru</span>
@@ -80,7 +82,8 @@ require_once __DIR__ . '/subnav.php';
             </div>
             <div>
                 <div class="text-muted small fw-bold">Total Perangkat Ajar</div>
-                <div class="h4 fw-bold mb-0 text-dark"><?= $totalDocs ?> <small class="text-muted fs-6">dokumen</small></div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= $totalDocs ?> <small class="text-muted fs-6">dokumen</small>
+                </div>
             </div>
         </div>
     </div>
@@ -92,7 +95,8 @@ require_once __DIR__ . '/subnav.php';
             </div>
             <div>
                 <div class="text-muted small fw-bold">Dokumen Saya</div>
-                <div class="h4 fw-bold mb-0 text-dark"><?= $myDocs ?> <small class="text-muted fs-6">dokumen</small></div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= $myDocs ?> <small class="text-muted fs-6">dokumen</small>
+                </div>
             </div>
         </div>
     </div>
@@ -104,7 +108,8 @@ require_once __DIR__ . '/subnav.php';
             </div>
             <div>
                 <div class="text-muted small fw-bold">Mata Pelajaran</div>
-                <div class="h4 fw-bold mb-0 text-dark"><?= count($mapelList) ?> <small class="text-muted fs-6">mapel terdaftar</small></div>
+                <div class="h4 fw-bold mb-0 text-dark"><?= count($mapelList) ?> <small class="text-muted fs-6">mapel
+                        terdaftar</small></div>
             </div>
         </div>
     </div>
@@ -115,7 +120,7 @@ require_once __DIR__ . '/subnav.php';
     <div class="col-md-3 col-6">
         <div class="p-3 bg-white border-0 shadow-sm rounded-4 text-center h-100">
             <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
-                 style="width: 44px; height: 44px; background: rgba(6, 182, 212, 0.12); color: #0891b2; font-size: 1.3rem;">
+                style="width: 44px; height: 44px; background: rgba(6, 182, 212, 0.12); color: #0891b2; font-size: 1.3rem;">
                 <i class="bi bi-journal-text"></i>
             </div>
             <h6 class="fw-bold text-dark mb-1">1. CP (Capaian)</h6>
@@ -125,7 +130,7 @@ require_once __DIR__ . '/subnav.php';
     <div class="col-md-3 col-6">
         <div class="p-3 bg-white border-0 shadow-sm rounded-4 text-center h-100">
             <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
-                 style="width: 44px; height: 44px; background: rgba(59, 130, 246, 0.12); color: #2563eb; font-size: 1.3rem;">
+                style="width: 44px; height: 44px; background: rgba(59, 130, 246, 0.12); color: #2563eb; font-size: 1.3rem;">
                 <i class="bi bi-bullseye"></i>
             </div>
             <h6 class="fw-bold text-dark mb-1">2. TP (Tujuan)</h6>
@@ -135,7 +140,7 @@ require_once __DIR__ . '/subnav.php';
     <div class="col-md-3 col-6">
         <div class="p-3 bg-white border-0 shadow-sm rounded-4 text-center h-100">
             <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
-                 style="width: 44px; height: 44px; background: rgba(139, 92, 246, 0.12); color: #7c3aed; font-size: 1.3rem;">
+                style="width: 44px; height: 44px; background: rgba(139, 92, 246, 0.12); color: #7c3aed; font-size: 1.3rem;">
                 <i class="bi bi-diagram-3-fill"></i>
             </div>
             <h6 class="fw-bold text-dark mb-1">3. ATP (Alur)</h6>
@@ -145,7 +150,7 @@ require_once __DIR__ . '/subnav.php';
     <div class="col-md-3 col-6">
         <div class="p-3 bg-white border-0 shadow-sm rounded-4 text-center h-100">
             <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
-                 style="width: 44px; height: 44px; background: rgba(236, 72, 153, 0.12); color: #db2777; font-size: 1.3rem;">
+                style="width: 44px; height: 44px; background: rgba(236, 72, 153, 0.12); color: #db2777; font-size: 1.3rem;">
                 <i class="bi bi-box-seam-fill"></i>
             </div>
             <h6 class="fw-bold text-dark mb-1">4. Modul Ajar</h6>
@@ -156,7 +161,8 @@ require_once __DIR__ . '/subnav.php';
 
 <!-- TABEL DOKUMEN -->
 <div class="card border-0 shadow-sm rounded-4 bg-white mb-5 overflow-hidden">
-    <div class="card-header bg-white border-bottom p-3.5 d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div
+        class="card-header bg-white border-bottom p-3.5 d-flex flex-wrap align-items-center justify-content-between gap-2">
         <h5 class="m-0 fw-bold text-dark" style="font-family: 'Outfit', sans-serif;">
             <i class="bi bi-folder-check text-primary me-2"></i> Daftar Perangkat Ajar Kurikulum Merdeka
         </h5>
@@ -184,9 +190,10 @@ require_once __DIR__ . '/subnav.php';
                         <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-journal-x fs-1 d-block mb-2 text-secondary"></i>
                             <div class="fw-bold mb-1">Belum ada Perangkat Ajar yang dibuat.</div>
-                            <small class="d-block mb-3">Klik tombol di bawah ini untuk membuat perangkat ajar 1 tahun ajaran secara otomatis.</small>
+                            <small class="d-block mb-3">Klik tombol di bawah ini untuk membuat perangkat ajar 1 tahun ajaran
+                                secara otomatis.</small>
                             <a href="create.php" class="btn btn-emerald btn-sm rounded-pill px-4 fw-bold text-white"
-                               style="background: #10b981;">
+                                style="background: #10b981;">
                                 <i class="bi bi-plus-circle me-1"></i> Mulai Buat Perangkat Ajar
                             </a>
                         </td>
@@ -203,8 +210,10 @@ require_once __DIR__ . '/subnav.php';
                                 <small class="text-muted extra-small"><?= htmlspecialchars($row['topik']) ?></small>
                             </td>
                             <td>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 extra-small fw-bold">
-                                    Kelas <?= htmlspecialchars($row['kelas']) ?> (Fase <?= htmlspecialchars($row['fase'] ?? 'D') ?>)
+                                <span
+                                    class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 extra-small fw-bold">
+                                    Kelas <?= htmlspecialchars($row['kelas']) ?> (Fase
+                                    <?= htmlspecialchars($row['fase'] ?? 'D') ?>)
                                 </span>
                             </td>
                             <td>
@@ -224,22 +233,25 @@ require_once __DIR__ . '/subnav.php';
                             <td class="text-end">
                                 <div class="d-inline-flex align-items-center gap-1.5">
                                     <!-- Buka Dokumen Hub -->
-                                    <a href="view.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold"
-                                       title="Buka Dokumen & Unduh PDF">
+                                    <a href="view.php?id=<?= $row['id'] ?>"
+                                        class="btn btn-sm btn-primary rounded-pill px-3 fw-bold"
+                                        title="Buka Dokumen & Unduh PDF">
                                         <i class="bi bi-eye-fill me-1"></i> Buka
                                     </a>
 
                                     <!-- Unduh Cepat Bundel Lengkap -->
                                     <a href="print.php?id=<?= $row['id'] ?>&doc_type=all" target="_blank"
-                                       class="btn btn-sm btn-outline-danger rounded-pill px-2.5" title="Cetak PDF Bundel Lengkap">
+                                        class="btn btn-sm btn-outline-danger rounded-pill px-2.5"
+                                        title="Cetak PDF Bundel Lengkap">
                                         <i class="bi bi-file-earmark-pdf-fill"></i>
                                     </a>
 
                                     <!-- Hapus -->
                                     <?php if ($userRole === 'admin' || $row['user_id'] == $userId): ?>
-                                        <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-light text-danger rounded-circle p-1.5"
-                                           onclick="return confirm('Apakah Anda yakin ingin menghapus dokumen Perangkat Ajar ini secara permanen?');"
-                                           title="Hapus Dokumen">
+                                        <a href="delete.php?id=<?= $row['id'] ?>"
+                                            class="btn btn-sm btn-light text-danger rounded-circle p-1.5"
+                                            onclick="return confirm('Apakah Anda yakin ingin menghapus dokumen Perangkat Ajar ini secara permanen?');"
+                                            title="Hapus Dokumen">
                                             <i class="bi bi-trash"></i>
                                         </a>
                                     <?php endif; ?>

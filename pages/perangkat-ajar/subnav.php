@@ -5,11 +5,17 @@
  */
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
 $docId = isset($_GET['id']) ? (int) $_GET['id'] : (isset($_GET['cp_id']) ? (int) $_GET['cp_id'] : 0);
+$userRole = strtolower($_SESSION['role'] ?? 'guru');
 
 $navItems = [
     'index.php'  => ['icon' => 'bi-speedometer2', 'label' => 'Dashboard'],
     'create.php' => ['icon' => 'bi-plus-circle-fill', 'label' => '✨ Buat Perangkat Ajar Baru (1 Pintu)'],
 ];
+
+// Khusus Admin: Menu Edit Identitas Dokumen & Kop Surat
+if ($userRole === 'admin') {
+    $navItems['identitas.php'] = ['icon' => 'bi-gear-fill', 'label' => '⚙️ Edit Identitas Dokumen'];
+}
 
 if ($docId > 0) {
     $navItems['view.php?id=' . $docId] = ['icon' => 'bi-file-earmark-check-fill', 'label' => '📄 Dokumen & Unduh PDF'];

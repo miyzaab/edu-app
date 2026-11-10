@@ -345,17 +345,21 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
     <?php
     // Helper Render Kop Surat
     function renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah) {
+        $logoSetting = getSetting('logo_path', '');
+        $logoUrl = !empty($logoSetting) ? (strpos($logoSetting, 'http') === 0 ? $logoSetting : '../../' . ltrim($logoSetting, '/')) : '../../assets/img/logo.png';
         ?>
         <table class="kop-table">
             <tr>
                 <td class="kop-logo">
-                    <img src="../../assets/img/logo.png" alt="Logo" onerror="this.style.display='none'">
+                    <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo" onerror="this.src='../../assets/img/logo.png'">
                 </td>
                 <td class="kop-text">
-                    <div class="kop-instansi">YAYASAN PENDIDIKAN DAN SOSIAL ISLAM</div>
                     <div class="kop-nama-sekolah"><?= htmlspecialchars($namaSekolah) ?></div>
                     <div class="kop-alamat">
-                        <?= htmlspecialchars($alamatSekolah) ?> | Telp: <?= htmlspecialchars($teleponSekolah) ?> | Email: <?= htmlspecialchars($emailSekolah) ?>
+                        <?= htmlspecialchars($alamatSekolah) ?>
+                        <?php if (!empty($teleponSekolah) || !empty($emailSekolah)): ?>
+                            <br>Telp: <?= htmlspecialchars($teleponSekolah) ?> | Email: <?= htmlspecialchars($emailSekolah) ?>
+                        <?php endif; ?>
                     </div>
                 </td>
             </tr>
@@ -365,27 +369,41 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
 
     // Helper Render Tanda Tangan
     function renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah) {
-        $city = 'Kota / Kabupaten';
-        if (!empty($alamatSekolah)) {
-            $parts = explode(',', $alamatSekolah);
-            if (count($parts) > 1) {
-                $possibleCity = trim(end($parts));
-                $possibleCity = preg_replace('/\b\d{5}\b/', '', $possibleCity);
-                $possibleCity = trim($possibleCity);
-                if (!empty($possibleCity) && $possibleCity !== 'Kota / Kabupaten') {
-                    $city = $possibleCity;
+        $citySetting = getSetting('kota_sekolah', '');
+        if (!empty($citySetting)) {
+            $city = $citySetting;
+        } else {
+            $city = 'Kota / Kabupaten';
+            if (!empty($alamatSekolah)) {
+                $parts = explode(',', $alamatSekolah);
+                if (count($parts) > 1) {
+                    $possibleCity = trim(end($parts));
+                    $possibleCity = preg_replace('/\b\d{5}\b/', '', $possibleCity);
+                    $possibleCity = trim($possibleCity);
+                    if (!empty($possibleCity) && $possibleCity !== 'Kota / Kabupaten') {
+                        $city = $possibleCity;
+                    }
                 }
             }
         }
 
-        $months = [
-            1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-        ];
-        $day = date('j');
-        $monthNum = date('n');
-        $year = date('Y');
-        $indonesianDate = $day . ' ' . $months[$monthNum] . ' ' . $year;
+        // Cek apakah ada titimangsa tanggal khusus
+        $customDate = getSetting('titimangsa_dokumen', '');
+        if (!empty($customDate)) {
+            $indonesianDate = $customDate;
+        } else {
+            $months = [
+                1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+            $day = date('j');
+            $monthNum = date('n');
+            $year = date('Y');
+            $indonesianDate = $day . ' ' . $months[$monthNum] . ' ' . $year;
+        }
+
+        $stempelSetting = getSetting('stempel_path', '');
+        $stempelUrl = !empty($stempelSetting) ? (strpos($stempelSetting, 'http') === 0 ? $stempelSetting : '../../' . ltrim($stempelSetting, '/')) : '';
         ?>
         <div class="ttd-container">
             <table class="ttd-table">
@@ -393,7 +411,11 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                     <td>
                         Mengetahui,<br>
                         Kepala Sekolah <?= htmlspecialchars($namaSekolah) ?>
-                        <div class="ttd-space"></div>
+                        <div class="ttd-space" style="position: relative;">
+                            <?php if (!empty($stempelUrl)): ?>
+                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height: 60px; position: absolute; left: 15px; top: 2px; opacity: 0.85;">
+                            <?php endif; ?>
+                        </div>
                         <strong><u><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
                         NIP. <?= htmlspecialchars($nipKepsek) ?>
                     </td>
