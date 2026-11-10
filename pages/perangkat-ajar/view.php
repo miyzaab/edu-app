@@ -91,6 +91,12 @@ if (empty($smt1['bab_list']) && empty($smt2['bab_list'])) {
         $smt2 = $modulData['semester_2'] ?? ['bab_list' => []];
     } catch (Exception $e) {}
 }
+
+$allBabList = array_merge(
+    $smt1['bab_list'] ?? [],
+    $smt2['bab_list'] ?? []
+);
+
 $settingNamaKepsek = getSetting('nama_kepsek', '');
 if (empty($settingNamaKepsek)) $settingNamaKepsek = getSetting('nama_kepala_sekolah', '');
 
@@ -297,6 +303,12 @@ $activeTab = $_GET['tab'] ?? 'cp';
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-3 py-2 fw-bold <?= $activeTab === 'tp' ? 'active' : '' ?>" 
+                        id="tab-tp-btn" data-bs-toggle="pill" data-bs-target="#tab-tp" type="button" role="tab">
+                    <i class="bi bi-bullseye me-1.5"></i> Tujuan Pembelajaran (TP)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link rounded-pill px-3 py-2 fw-bold <?= $activeTab === 'atp' ? 'active' : '' ?>" 
                         id="tab-atp-btn" data-bs-toggle="pill" data-bs-target="#tab-atp" type="button" role="tab">
                     <i class="bi bi-diagram-3-fill me-1.5"></i> Alur Pembelajaran (ATP)
@@ -391,7 +403,75 @@ $activeTab = $_GET['tab'] ?? 'cp';
                 </div>
             </div>
 
-            <!-- TAB 2: ALUR TUJUAN PEMBELAJARAN (ATP) -->
+            <!-- TAB 2: TUJUAN PEMBELAJARAN (TP) -->
+            <div class="tab-pane fade <?= $activeTab === 'tp' ? 'show active' : '' ?>" id="tab-tp" role="tabpanel">
+                <div class="card border-0 rounded-4 shadow-sm mb-4" style="background: #ffffff;">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+                            <div>
+                                <h4 class="fw-bold mb-1" style="font-family: 'Outfit', sans-serif;">
+                                    Tujuan Pembelajaran (TP) 1 Tahun Ajaran
+                                </h4>
+                                <p class="text-muted extra-small mb-0">
+                                    Pemetaan indikator ketercapaian tujuan pembelajaran bertingkat Taksonomi Bloom per bab pembahasan.
+                                </p>
+                            </div>
+                            <a href="print.php?id=<?= $id ?>&doc_type=tp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF TP
+                            </a>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle border mb-0" style="border-radius: 12px; overflow: hidden;">
+                                <thead class="table-light extra-small text-uppercase fw-bold">
+                                    <tr>
+                                        <th style="width: 22%;">Bab / Materi Pokok</th>
+                                        <th style="width: 12%;" class="text-center">Semester</th>
+                                        <th style="width: 52%;">Rumusan Tujuan Pembelajaran (TP)</th>
+                                        <th style="width: 14%;" class="text-center">Alokasi Waktu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($allBabList)): ?>
+                                        <?php foreach ($allBabList as $b): ?>
+                                            <tr>
+                                                <td class="fw-bold text-dark">
+                                                    <span class="badge bg-secondary-subtle text-secondary border me-1">Bab <?= htmlspecialchars($b['nomor']) ?></span><br>
+                                                    <?= htmlspecialchars($b['judul_bersih']) ?>
+                                                </td>
+                                                <td class="text-center small">
+                                                    <span class="badge bg-light text-dark border">
+                                                        Semester <?= $b['semester'] ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <ul class="mb-0 ps-3 small" style="line-height: 1.6;">
+                                                        <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
+                                                            <li class="mb-1"><?= htmlspecialchars($tpItem) ?></li>
+                                                        <?php endforeach; ?>
+                                                    </ul>
+                                                </td>
+                                                <td class="text-center small fw-bold">
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1.5 rounded-pill">
+                                                        <?= htmlspecialchars($b['alokasi_jp']) ?> JP
+                                                    </span>
+                                                    <div class="extra-small text-muted mt-1"><?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan</div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">Belum ada rincian Tujuan Pembelajaran.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: ALUR TUJUAN PEMBELAJARAN (ATP) -->
             <div class="tab-pane fade <?= $activeTab === 'atp' ? 'show active' : '' ?>" id="tab-atp" role="tabpanel">
                 <div class="card border-0 rounded-4 shadow-sm mb-4" style="background: #ffffff;">
                     <div class="card-body p-4 p-md-5">

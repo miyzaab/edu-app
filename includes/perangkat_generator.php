@@ -54,6 +54,31 @@ class PerangkatGenerator
     }
 
     /**
+     * Deteksi Sub-Tipe Mapel Spesifik untuk Narasi Pedagogik Alami
+     */
+    public static function detectSubMapel(string $mapel): string
+    {
+        $m = strtolower(trim($mapel));
+        if (stripos($m, 'shorof') !== false || stripos($m, 'sharaf') !== false || stripos($m, 'tashrif') !== false) return 'shorof';
+        if (stripos($m, 'nahwu') !== false || stripos($m, 'jurumiyah') !== false || stripos($m, 'imrithi') !== false) return 'nahwu';
+        if (stripos($m, 'fiqih') !== false || stripos($m, 'fikih') !== false || stripos($m, 'safinah') !== false || stripos($m, 'ushul fiqih') !== false) return 'fiqih';
+        if (stripos($m, 'aqidah') !== false || stripos($m, 'akidah') !== false || stripos($m, 'tauhid') !== false || stripos($m, 'akhlak') !== false) return 'aqidah';
+        if (stripos($m, 'qur') !== false || stripos($m, 'tajwid') !== false || stripos($m, 'hadits') !== false || stripos($m, 'hadis') !== false || stripos($m, 'tahfidz') !== false || stripos($m, 'tafsir') !== false) return 'quran_hadits';
+        if (stripos($m, 'tarikh') !== false || stripos($m, 'ski') !== false || stripos($m, 'sejarah islam') !== false) return 'tarikh';
+        if (stripos($m, 'arab') !== false || stripos($m, 'muhadatsah') !== false || stripos($m, 'insya') !== false || stripos($m, 'bayan') !== false) return 'bahasa_arab';
+        if (stripos($m, 'pjok') !== false || stripos($m, 'olahraga') !== false || stripos($m, 'penjas') !== false) return 'pjok';
+        if (stripos($m, 'matematika') !== false || stripos($m, 'math') !== false) return 'matematika';
+        if (stripos($m, 'ipa') !== false || stripos($m, 'sains') !== false || stripos($m, 'fisika') !== false || stripos($m, 'biologi') !== false || stripos($m, 'kimia') !== false) return 'ipa';
+        if (stripos($m, 'it') !== false || stripos($m, 'informatika') !== false || stripos($m, 'komputer') !== false) return 'informatika';
+        if (stripos($m, 'indonesia') !== false) return 'bahasa_indonesia';
+        if (stripos($m, 'inggris') !== false || stripos($m, 'english') !== false) return 'bahasa_inggris';
+        if (stripos($m, 'ips') !== false || stripos($m, 'sejarah') !== false || stripos($m, 'geografi') !== false || stripos($m, 'sosiologi') !== false || stripos($m, 'ekonomi') !== false) return 'ips';
+        if (stripos($m, 'pkn') !== false || stripos($m, 'pancasila') !== false) return 'pkn';
+        if (stripos($m, 'seni') !== false || stripos($m, 'prakarya') !== false || stripos($m, 'sbdp') !== false) return 'seni';
+        return 'umum';
+    }
+
+    /**
      * Membersihkan nama bab dari prefix seperti "Bab 1:", "1.", dll.
      */
     public static function cleanBabName(string $rawBab): string
@@ -221,18 +246,18 @@ class PerangkatGenerator
             $babJp = $baseJp + ($idx === 0 ? $remainderJp : 0);
             $pertemuan = max(1, intval(round($babJp / $jpPerPekan)));
 
-            // Buat CP per bab
-            $cpBab = self::generateCpBab($cleanBab, $mapel, $kategori, $fase);
+            // Buat CP per bab (dengan variasi otentik berotasi berdasarkan nomor bab dan mapel spesifik)
+            $cpBab = self::generateCpBab($cleanBab, $mapel, $kategori, $fase, $globalNum);
             $cpLines[] = "• Bab {$globalNum} ({$cleanBab}): {$cpBab}";
 
-            // Buat TP per bab (3-4 butir taksonomi operasional)
+            // Buat TP per bab (3-4 butir taksonomi operasional otentik)
             $tpItems = self::generateTpBab($cleanBab, $globalNum, $mapel, $kategori);
             foreach ($tpItems as $tp) {
                 $tpLines[] = $tp;
             }
 
             // Buat ATP per bab
-            $atpBab = self::generateAtpBab($cleanBab, $globalNum, $babJp, $pertemuan, $kategori);
+            $atpBab = self::generateAtpBab($cleanBab, $globalNum, $babJp, $pertemuan, $kategori, $mapel);
             $atpLines[] = $atpBab;
 
             // Generate Modul Ajar spesifik untuk Bab ini
@@ -304,22 +329,112 @@ class PerangkatGenerator
     }
 
     /**
-     * Rumusan CP Khusus Per Bab
+     * Rumusan CP Khusus Per Bab (Variasi Otentik & Menghindari Pola Template Kaku)
      */
-    private static function generateCpBab(string $cleanBab, string $mapel, string $kategori, string $fase): string
+    private static function generateCpBab(string $cleanBab, string $mapel, string $kategori, string $fase, int $babNum = 1): string
     {
-        switch ($kategori) {
-            case 'diniyah':
-                return "Peserta didik mampu memahami ketentuan syariat, dalil naqli, dan hikmah materi {$cleanBab}, serta mampu mendemonstrasikan penerapannya secara istiqamah dengan berlandaskan adab dan keteladanan islami.";
-            case 'bahasa':
-                return "Peserta didik mampu menganalisis struktur gagasan dan kaidah kebahasaan pada materi {$cleanBab}, mengevaluasi pesan tersurat maupun tersirat, serta memproduksi karya lisan atau tulisan yang orisinal dan komunikatif.";
-            case 'eksakta':
-                return "Peserta didik mampu memahami konsep dasar {$cleanBab}, mengidentifikasi hubungan antarvariabel, dan menerapkan strategi pemecahan masalah kontekstual secara sistematis dan terukur.";
-            case 'sosial':
-                return "Peserta didik mampu menelaah fakta, konsep, dan dampak sosial-lingkungan terkait {$cleanBab}, serta menunjukkan sikap empati, kepedulian, dan tanggung jawab sosial.";
-            default:
-                return "Peserta didik mampu menguasai prinsip mendasar {$cleanBab}, menganalisis contoh kasus nyata, dan mengaplikasikan pengetahuannya secara mandiri serta kolaboratif.";
+        $sub = self::detectSubMapel($mapel);
+
+        // Khusus Shorof (Ilmu Tashrif & Morfologi Bahasa Arab)
+        if ($sub === 'shorof') {
+            $shorofStyles = [
+                1 => "Peserta didik mampu memahami hakikat timbangan kata (wazan) dan huruf asal pada kaidah mizan shorfi, mengidentifikasi huruf zaidah, serta terampil menimbang ragam kosakata bahasa Arab secara presisi.",
+                2 => "Peserta didik terampil menguraikan perubahan bentuk kata (shighah) dari fi'il madhi hingga isim alat, serta menganalisis pergeseran makna leksikal dan gramatikal pada materi {$cleanBab}.",
+                3 => "Peserta didik mampu mengonjugasikan bentuk kata {$cleanBab} berdasarkan 14 dhomir secara fasih dan sistematis, baik dalam pelafalan lisan maupun penulisan teks bertanda baca.",
+                4 => "Peserta didik menunjukkan kecakapan dalam mentransformasikan bentuk fi'il serta menerapkan aturan pembentukan {$cleanBab} ke dalam struktur kalimat pernyataan, perintah, atau larangan secara tepat.",
+                5 => "Peserta didik mampu membedah karakteristik dan faedah penambahan huruf pada materi {$cleanBab}, serta membedakan pola bina' dengan tepat sesuai kaidah ahli shorof.",
+                6 => "Peserta didik mampu menganalisis proses perpindahan huruf, pembuangan, dan penggantian harakat pada materi {$cleanBab}, serta mengaplikasikannya untuk menelaah kejanggalan lafadz dalam teks Arab.",
+                7 => "Peserta didik mampu merekonstruksi kaidah morfologi komprehensif terkait {$cleanBab}, menghubungkan konsep gramatika dengan keterampilan membaca kitab gundul, serta memvalidasi akurasi makna kata secara mandiri.",
+                8 => "Peserta didik memiliki kemahiran dalam mengurai struktur tashrif pada materi {$cleanBab}, memverifikasi perubahan wazan pada ayat Al-Qur'an dan hadits nabawi, serta menginternalisasikan kecintaan terhadap keindahan bahasa Arab."
+            ];
+            $key = (($babNum - 1) % count($shorofStyles)) + 1;
+            return $shorofStyles[$key];
         }
+
+        // Khusus Nahwu (Sintaksis Arab & I'rab)
+        if ($sub === 'nahwu') {
+            $nahwuStyles = [
+                1 => "Peserta didik mampu mengenali pembagian kalam, jenis-jenis kata, serta membedakan ciri-ciri khas materi {$cleanBab} dalam rangkaian struktur kalimat bahasa Arab.",
+                2 => "Peserta didik terampil menganalisis jabatan kata (tarkib), menentukan fungsi subjek dan predikat pada materi {$cleanBab}, serta membaca harakat akhirnya secara tepat.",
+                3 => "Peserta didik mampu mengidentifikasi pengaruh amil terhadap tanda-tanda i'rab (rafa', nashab, jar, jazm) pada materi {$cleanBab} secara teliti dan kritis.",
+                4 => "Peserta didik menunjukkan kemahiran dalam membedah relasi gramatikal pada pembahasan {$cleanBab}, serta mampu menyusun pola kalimat fungsional sesuai kaidah nahwu standar.",
+                5 => "Peserta didik mampu menerapkan analisis i'rab komprehensif pada materi {$cleanBab} untuk mengoreksi kekeliruan struktur kalimat dan meningkatkan kelancaran membaca literatur Arab."
+            ];
+            $key = (($babNum - 1) % count($nahwuStyles)) + 1;
+            return $nahwuStyles[$key];
+        }
+
+        // Khusus Fiqih & Syariah
+        if ($sub === 'fiqih') {
+            $fiqihStyles = [
+                1 => "Peserta didik mampu menelaah dalil naqli, hakikat hukum, dan rukun pokok terkait materi {$cleanBab}, serta memahami hikmah pensyariatannya dalam kehidupan pribadi dan sosial.",
+                2 => "Peserta didik mampu mengklasifikasikan syarat sah, rukun, dan perkara yang membatalkan pada materi {$cleanBab}, serta terampil mendemonstrasikan tata caranya sesuai sunnah Rasulullah SAW.",
+                3 => "Peserta didik memiliki kepekaan dalam menganalisis problematika fiqih kontemporer seputar {$cleanBab}, serta mampu merumuskan sikap amaliah yang bijak berlandaskan tuntunan syar'i.",
+                4 => "Peserta didik mampu menginternalisasikan nilai-nilai kepatuhan, kebersihan lahir-batin, dan keikhlasan ibadah melalui pemahaman mendalam tentang materi {$cleanBab} dalam rutinitas keseharian."
+            ];
+            $key = (($babNum - 1) % count($fiqihStyles)) + 1;
+            return $fiqihStyles[$key];
+        }
+
+        // Khusus Aqidah / Akhlak / Tauhid
+        if ($sub === 'aqidah') {
+            $aqidahStyles = [
+                1 => "Peserta didik mampu mengkaji dalil aqli dan naqli mengenai materi {$cleanBab}, memperkokoh keyakinan tauhid, serta menghindarkan diri dari berbagai bentuk keraguan dan penyimpangan akidah.",
+                2 => "Peserta didik mampu menguraikan nilai-nilai keluhuran budi pekerti pada materi {$cleanBab}, merefleksikan keteladanan salafus shalih, dan mengamalkannya dalam interaksi sosial sehari-hari.",
+                3 => "Peserta didik menunjukkan integritas moral, keteguhan prinsip keimanan, dan kemuliaan akhlakul karimah yang terinspirasi dari pendalaman materi {$cleanBab} di lingkungan madrasah dan masyarakat."
+            ];
+            $key = (($babNum - 1) % count($aqidahStyles)) + 1;
+            return $aqidahStyles[$key];
+        }
+
+        // Khusus PJOK / Penjas
+        if ($sub === 'pjok') {
+            $pjokStyles = [
+                1 => "Peserta didik mampu menganalisis konsep gerak, teknik dasar, dan prinsip mekanika tubuh pada aktivitas {$cleanBab}, serta mempraktikkannya dengan koordinasi motorik yang baik.",
+                2 => "Peserta didik terampil memvariasikan dan mengombinasikan keterampilan gerak spesifik {$cleanBab}, mengedepankan sportivitas, disiplin, keselamatan, serta kerja sama tim dalam aktivitas jasmani.",
+                3 => "Peserta didik memahami pentingnya kebugaran jasmani melalui latihan materi {$cleanBab}, serta mampu merancang pola pembiasaan hidup aktif dan sehat secara berkala dan berkelanjutan."
+            ];
+            $key = (($babNum - 1) % count($pjokStyles)) + 1;
+            return $pjokStyles[$key];
+        }
+
+        // Khusus Eksakta & Sains (Matematika & IPA)
+        if ($kategori === 'eksakta') {
+            $eksaktaStyles = [
+                1 => "Peserta didik mampu menguasai konsep dasar, definisi, dan notasi ilmiah terkait materi {$cleanBab}, serta mengidentifikasi pola keteraturan kuantitatif yang melandasinya.",
+                2 => "Peserta didik terampil melakukan perhitungan operasional, memodelkan hubungan matematis/saintifik, dan memecahkan soal kontekstual berbasis pemecahan masalah pada topik {$cleanBab}.",
+                3 => "Peserta didik mampu merancang prosedur penyelidikan, mengumpulkan dan mengolah data empiris, serta menarik kesimpulan logis yang valid mengenai materi {$cleanBab}.",
+                4 => "Peserta didik memiliki daya nalar kritis dalam mengevaluasi efektivitas solusi pemecahan masalah serta mengomunikasikan argumentasi saintifik materi {$cleanBab} secara sistematis."
+            ];
+            $key = (($babNum - 1) % count($eksaktaStyles)) + 1;
+            return $eksaktaStyles[$key];
+        }
+
+        // Khusus Bahasa (Indonesia & Asing)
+        if ($kategori === 'bahasa') {
+            $bahasaStyles = [
+                1 => "Peserta didik mampu menyimak dan mengekstraksi informasi faktual, ide pokok, serta sudut pandang penulis dalam teks wacana materi {$cleanBab} secara mendalam.",
+                2 => "Peserta didik terampil menganalisis struktur retorika, kohesi kalimat, dan karakteristik diksi pada materi {$cleanBab} secara cermat dan kritis.",
+                3 => "Peserta didik mampu mengonstruksi gagasan orisinal ke dalam karya tulis fungsional maupun sastra bertema {$cleanBab} dengan kaidah kebahasaan yang baku dan komunikatif.",
+                4 => "Peserta didik menunjukkan kemahiran dalam mempresentasikan dan mendiskusikan ulasan kritis materi {$cleanBab} di hadapan audiens dengan santun dan percaya diri."
+            ];
+            $key = (($babNum - 1) % count($bahasaStyles)) + 1;
+            return $bahasaStyles[$key];
+        }
+
+        // Variasi Alami Berotasi untuk Mapel Sosial & Umum Lainnya (8 Pola Beragam)
+        $umumStyles = [
+            1 => "Peserta didik mampu menelaah hakikat dan landasan konsep dasar {$cleanBab}, mengidentifikasi unsur-unsur esensial di dalamnya, serta menjelaskan keterhubungannya secara sistematis.",
+            2 => "Peserta didik terampil mengaplikasikan prinsip operasional dan aturan prosedural pada materi {$cleanBab} dalam menyelesaikan tugas dan studi kasus kontekstual secara mandiri.",
+            3 => "Peserta didik menunjukkan kemampuan bernalar kritis dalam membedah karakteristik {$cleanBab}, membandingkan berbagai alternatif perspektif, dan menyimpulkan intisari materi secara logis.",
+            4 => "Peserta didik mampu mengonstruksi pemahaman aplikatif mengenai {$cleanBab}, merancang langkah penyelidikan atau karya nyata, serta mengomunikasikan gagasannya secara efektif.",
+            5 => "Peserta didik memiliki kecakapan dalam mengevaluasi efektivitas penerapan materi {$cleanBab}, merefleksikan dinamika yang terjadi, serta merumuskan strategi tindak lanjut yang konstruktif.",
+            6 => "Peserta didik mampu menghubungkan materi {$cleanBab} dengan realitas kehidupan bermasyarakat, serta menginternalisasikan nilai-nilai ketekunan, integritas, dan tanggung jawab belajar.",
+            7 => "Peserta didik terampil menganalisis relasi antarkonsep pada pembahasan {$cleanBab}, serta mampu menyajikan sintesis materi dalam bentuk pemaparan yang terstruktur dan mudah dipahami.",
+            8 => "Peserta didik mampu menunjukkan penguasaan komprehensif terhadap capaian materi {$cleanBab} melalui unjuk kerja, portofolio pemecahan masalah, dan asesmen berkala yang berbobot."
+        ];
+        $key = (($babNum - 1) % count($umumStyles)) + 1;
+        return $umumStyles[$key];
     }
 
     /**
@@ -327,63 +442,98 @@ class PerangkatGenerator
      */
     private static function generateTpBab(string $cleanBab, int $babNum, string $mapel, string $kategori): array
     {
+        $sub = self::detectSubMapel($mapel);
         $tp = [];
 
-        switch ($kategori) {
-            case 'diniyah':
-                $tp[] = "{$babNum}.1 Peserta didik mampu menjelaskan pengertian, hukum, rukun, dan dalil pokok terkait materi {$cleanBab} dengan tepat.";
-                $tp[] = "{$babNum}.2 Peserta didik mampu mengidentifikasi syarat sah, tata cara, dan hikmah pelaksanaan {$cleanBab} dalam bingkai syariat Islam.";
-                $tp[] = "{$babNum}.3 Peserta didik mampu mendemonstrasikan / menerapkan kaidah {$cleanBab} secara benar melalui simulasi dan pembiasaan terarah.";
-                $tp[] = "{$babNum}.4 Peserta didik mampu merefleksikan nilai-nilai keteladanan dari {$cleanBab} dalam menjaga adab santri dan ketundukan ibadah sehari-hari.";
-                break;
-
-            case 'bahasa':
-                $tp[] = "{$babNum}.1 Peserta didik mampu mengidentifikasi informasi faktual, ide pokok, dan tujuan komunikasi dari teks materi {$cleanBab}.";
-                $tp[] = "{$babNum}.2 Peserta didik mampu menganalisis struktur pembangun dan unsur kebahasaan khas pada materi {$cleanBab} secara kritis.";
-                $tp[] = "{$babNum}.3 Peserta didik mampu menyusun draf karya tulis / lisan terkait {$cleanBab} dengan pilihan kata yang efektif dan santun.";
-                $tp[] = "{$babNum}.4 Peserta didik mampu menyajikan hasil karya {$cleanBab} di hadapan rekan sejawat serta saling memberikan apresiasi dan tanggapan konstruktif.";
-                break;
-
-            case 'eksakta':
-                $tp[] = "{$babNum}.1 Peserta didik mampu memahami definisi, sifat-sifat matematis/ilmiah, dan konsep dasar dari materi {$cleanBab}.";
-                $tp[] = "{$babNum}.2 Peserta didik mampu melakukan operasi perhitungan / prosedur penyelidikan terkait materi {$cleanBab} secara teliti.";
-                $tp[] = "{$babNum}.3 Peserta didik mampu memodelkan dan menyelesaikan persoalan kontekstual sehari-hari yang melibatkan materi {$cleanBab}.";
-                $tp[] = "{$babNum}.4 Peserta didik mampu mengomunikasikan runtutan langkah penyelesaian dan argumen logis dari solusi {$cleanBab} yang diperoleh.";
-                break;
-
-            case 'sosial':
-                $tp[] = "{$babNum}.1 Peserta didik mampu menjelaskan latar belakang, konsep utama, dan kronologi fenomena terkait materi {$cleanBab}.";
-                $tp[] = "{$babNum}.2 Peserta didik mampu menganalisis faktor penyebab, dinamika, dan dampak materi {$cleanBab} bagi kehidupan bermasyarakat.";
-                $tp[] = "{$babNum}.3 Peserta didik mampu mengaitkan materi {$cleanBab} dengan peristiwa kekinian di lingkungan sekitar secara objektif.";
-                $tp[] = "{$babNum}.4 Peserta didik mampu merumuskan gagasan solusi atau aksi nyata yang mencerminkan sikap gotong royong dan kepedulian sosial.";
-                break;
-
-            default:
-                $tp[] = "{$babNum}.1 Peserta didik mampu mengenali konsep dasar, istilah kunci, dan prinsip utama pada materi {$cleanBab}.";
-                $tp[] = "{$babNum}.2 Peserta didik mampu menjelaskan hubungan antarkonsep serta prosedur pelaksanaan terkait materi {$cleanBab}.";
-                $tp[] = "{$babNum}.3 Peserta didik mampu mengaplikasikan pemahaman {$cleanBab} dalam menyelesaikan studi kasus dan tugas kelompok.";
-                $tp[] = "{$babNum}.4 Peserta didik mampu menyimpulkan poin pembelajaran penting materi {$cleanBab} dan melakukan evaluasi diri secara mandiri.";
-                break;
+        if ($sub === 'shorof') {
+            $tp[] = "{$babNum}.1 Peserta didik mampu menjelaskan pengertian, konsep wazan, dan fungsi gramatikal dari materi {$cleanBab} secara tepat.";
+            $tp[] = "{$babNum}.2 Peserta didik mampu mengidentifikasi karakteristik shighah dan pola perubahan bentuk kata pada {$cleanBab} secara cermat.";
+            $tp[] = "{$babNum}.3 Peserta didik mampu mempraktikkan tashrif lughawi dan istilahi terkait {$cleanBab} secara fasih dalam lisan maupun tulisan.";
+            $tp[] = "{$babNum}.4 Peserta didik mampu menganalisis contoh kosakata materi {$cleanBab} yang terdapat dalam ayat Al-Qur'an, hadits, atau teks bacaan Arab.";
+            return $tp;
         }
 
+        if ($sub === 'nahwu') {
+            $tp[] = "{$babNum}.1 Peserta didik mampu mengidentifikasi kedudukan kalimat (tarkib) dan fungsi kata pada materi {$cleanBab}.";
+            $tp[] = "{$babNum}.2 Peserta didik mampu menganalisis pengaruh amil terhadap perubahan tanda i'rab pada materi {$cleanBab}.";
+            $tp[] = "{$babNum}.3 Peserta didik mampu menyusun contoh kalimat berbahasa Arab yang menerapkan kaidah {$cleanBab} secara benar.";
+            $tp[] = "{$babNum}.4 Peserta didik mampu mengoreksi kekeliruan struktur sintaksis terkait {$cleanBab} pada wacana literatur Arab.";
+            return $tp;
+        }
+
+        if ($sub === 'fiqih') {
+            $tp[] = "{$babNum}.1 Peserta didik mampu menelaah dalil naqli, ketentuan hukum, dan rukun pokok terkait materi {$cleanBab} secara mendalam.";
+            $tp[] = "{$babNum}.2 Peserta didik mampu mengklasifikasikan syarat sah, perkara yang membatalkan, dan sunnah-sunnah dalam materi {$cleanBab}.";
+            $tp[] = "{$babNum}.3 Peserta didik mampu mendemonstrasikan simulasi amaliah ibadah/muamalah pada materi {$cleanBab} secara tertib dan benar.";
+            $tp[] = "{$babNum}.4 Peserta didik mampu menyimpulkan hikmah syariat dan merefleksikan nilai ketundukan ibadah dari materi {$cleanBab} dalam rutinitas harian.";
+            return $tp;
+        }
+
+        if ($sub === 'aqidah') {
+            $tp[] = "{$babNum}.1 Peserta didik mampu mengkaji dalil aqli dan naqli yang melandasi pokok materi {$cleanBab} secara terstruktur.";
+            $tp[] = "{$babNum}.2 Peserta didik mampu mengidentifikasi nilai-nilai tauhid dan keutamaan akhlak yang terkandung dalam materi {$cleanBab}.";
+            $tp[] = "{$babNum}.3 Peserta didik mampu membedakan pemahaman yang lurus dari kekeliruan pemikiran seputar materi {$cleanBab}.";
+            $tp[] = "{$babNum}.4 Peserta didik mampu mengaktualisasikan keteladanan akhlakul karimah berbasis materi {$cleanBab} dalam pergaulan sehari-hari.";
+            return $tp;
+        }
+
+        if ($sub === 'pjok') {
+            $tp[] = "{$babNum}.1 Peserta didik mampu menganalisis konsep gerak, teknik dasar, dan prinsip biomekanika sederhana pada aktivitas {$cleanBab}.";
+            $tp[] = "{$babNum}.2 Peserta didik mampu mempraktikkan variasi dan kombinasi gerak spesifik {$cleanBab} dengan koordinasi dan kontrol tubuh yang baik.";
+            $tp[] = "{$babNum}.3 Peserta didik mampu menerapkan taktik bermain, kepatuhan aturan, serta sportivitas dalam simulasi aktivitas {$cleanBab}.";
+            $tp[] = "{$babNum}.4 Peserta didik mampu menunjukkan perilaku bertanggung jawab, kerja sama tim, dan kepedulian terhadap keselamatan diri serta teman.";
+            return $tp;
+        }
+
+        if ($kategori === 'eksakta') {
+            $tp[] = "{$babNum}.1 Peserta didik mampu memahami definisi, sifat-sifat fisis/matematis, dan formula kunci dari materi {$cleanBab}.";
+            $tp[] = "{$babNum}.2 Peserta didik mampu melakukan prosedur perhitungan atau investigasi ilmiah terkait {$cleanBab} secara teliti dan sistematis.";
+            $tp[] = "{$babNum}.3 Peserta didik mampu memodelkan dan menyelesaikan persoalan kontekstual yang melibatkan materi {$cleanBab}.";
+            $tp[] = "{$babNum}.4 Peserta didik mampu memvalidasi keakuratan hasil pemecahan masalah serta mengomunikasikan argumentasi logisnya secara tertulis.";
+            return $tp;
+        }
+
+        if ($kategori === 'bahasa') {
+            $tp[] = "{$babNum}.1 Peserta didik mampu mengidentifikasi informasi penting, ide pokok, dan tujuan komunikatif dari teks materi {$cleanBab}.";
+            $tp[] = "{$babNum}.2 Peserta didik mampu membedah unsur kebahasaan, struktur teks, dan pilihan diksi pada materi {$cleanBab} secara analitis.";
+            $tp[] = "{$babNum}.3 Peserta didik mampu memproduksi teks fungsional atau sastra terkait {$cleanBab} dengan alur gagasan yang runtut dan efektif.";
+            $tp[] = "{$babNum}.4 Peserta didik mampu menyajikan hasil karyanya secara lisan dengan artikulasi jelas serta saling bertukar apresiasi konstruktif.";
+            return $tp;
+        }
+
+        // Variasi Dinamis Taksonomi Bloom untuk Mapel Umum
+        $tp[] = "{$babNum}.1 Peserta didik mampu mengenali konsep dasar, istilah kunci, dan prinsip utama materi {$cleanBab} secara tepat.";
+        $tp[] = "{$babNum}.2 Peserta didik mampu menjelaskan keterkaitan antarkonsep serta dinamika fenomena yang terjadi pada materi {$cleanBab}.";
+        $tp[] = "{$babNum}.3 Peserta didik mampu mengaplikasikan wawasan materi {$cleanBab} untuk menganalisis studi kasus nyata di lingkungan sekitar.";
+        $tp[] = "{$babNum}.4 Peserta didik mampu merumuskan kesimpulan terpadu dan merefleksikan nilai-nilai positif materi {$cleanBab} dalam sikap mandiri.";
         return $tp;
     }
 
     /**
      * Rumusan Alur Tujuan Pembelajaran (ATP)
      */
-    private static function generateAtpBab(string $cleanBab, int $babNum, int $jp, int $pertemuan, string $kategori): string
+    private static function generateAtpBab(string $cleanBab, int $babNum, int $jp, int $pertemuan, string $kategori, string $mapel = ''): string
     {
-        switch ($kategori) {
-            case 'diniyah':
-                return "Tahap {$babNum}: Kajian dalil naqli & makna materi {$cleanBab} -> Analisis kaidah dan hikmah ibadah -> Praktik simulasi & evaluasi keteladanan santri ({$jp} JP / {$pertemuan} Pertemuan)";
-            case 'bahasa':
-                return "Tahap {$babNum}: Dekonstruksi teks model {$cleanBab} -> Analisis struktur & kaidah kebahasaan -> Konstruksi terbimbing dan penyajian karya mandiri ({$jp} JP / {$pertemuan} Pertemuan)";
-            case 'eksakta':
-                return "Tahap {$babNum}: Orientasi fenomena kontekstual {$cleanBab} -> Eksplorasi konsep dan penemuan rumus -> Latihan pemecahan masalah & asesmen ({$jp} JP / {$pertemuan} Pertemuan)";
-            default:
-                return "Tahap {$babNum}: Pemahaman konsep dasar {$cleanBab} -> Diskusi studi kasus kontekstual -> Presentasi hasil diskusi & asesmen sumatif ({$jp} JP / {$pertemuan} Pertemuan)";
+        $sub = self::detectSubMapel($mapel);
+        if ($sub === 'shorof') {
+            return "Tahap {$babNum}: Pemahaman kaidah wazan & rumus dasar {$cleanBab} -> Praktik tashrif lisan-tulisan terbimbing -> Analisis aplikasi wazan pada teks Arab/Al-Qur'an ({$jp} JP / {$pertemuan} Pertemuan)";
         }
+        if ($sub === 'nahwu') {
+            return "Tahap {$babNum}: Penjelasan jabatan kata & kaidah {$cleanBab} -> Analisis tanda i'rab & amil pembentuk -> Latihan tarkib dan pembedahan teks kitab ({$jp} JP / {$pertemuan} Pertemuan)";
+        }
+        if ($sub === 'fiqih') {
+            return "Tahap {$babNum}: Kajian dalil naqli & syarat rukun {$cleanBab} -> Analisis perkara sah-batal -> Simulasi amaliah praktis & pembiasaan adab ({$jp} JP / {$pertemuan} Pertemuan)";
+        }
+        if ($sub === 'pjok') {
+            return "Tahap {$babNum}: Pengenalan gerak spesifik {$cleanBab} -> Latihan repetisi teknik & koordinasi motorik -> Simulasi permainan kompetitif & evaluasi kebugaran ({$jp} JP / {$pertemuan} Pertemuan)";
+        }
+        if ($kategori === 'bahasa') {
+            return "Tahap {$babNum}: Dekonstruksi teks model {$cleanBab} -> Bedah kaidah kebahasaan & struktur -> Konstruksi karya mandiri dan presentasi apresiatif ({$jp} JP / {$pertemuan} Pertemuan)";
+        }
+        if ($kategori === 'eksakta') {
+            return "Tahap {$babNum}: Pengenalan fenomena kontekstual {$cleanBab} -> Eksplorasi konsep dan penemuan rumus -> Latihan pemodelan soal & validasi solusi ({$jp} JP / {$pertemuan} Pertemuan)";
+        }
+        return "Tahap {$babNum}: Orientasi konsep esensial {$cleanBab} -> Diskusi studi kasus & eksplorasi kelompok -> Presentasi temuan & asesmen sumatif ({$jp} JP / {$pertemuan} Pertemuan)";
     }
 
     /**

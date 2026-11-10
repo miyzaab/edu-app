@@ -467,8 +467,8 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
             <select onchange="window.location.href='print.php?id=<?= $id ?>&doc_type=' + this.value">
                 <option value="all" <?= $docType === 'all' ? 'selected' : '' ?>>📦 Bundel Lengkap 1 Tahun</option>
                 <option value="cp" <?= $docType === 'cp' ? 'selected' : '' ?>>📄 1. Capaian Pembelajaran (CP)</option>
-                <option value="atp" <?= $docType === 'atp' ? 'selected' : '' ?>>📄 2. Alur Pembelajaran (ATP 1 Tahun)</option>
-                <option value="tp" <?= $docType === 'tp' ? 'selected' : '' ?>>📄 3. Tujuan Pembelajaran (TP)</option>
+                <option value="tp" <?= $docType === 'tp' ? 'selected' : '' ?>>📄 2. Tujuan Pembelajaran (TP)</option>
+                <option value="atp" <?= $docType === 'atp' ? 'selected' : '' ?>>📄 3. Alur Tujuan Pembelajaran (ATP 1 Tahun)</option>
                 <option value="modul_sem1" <?= $docType === 'modul_sem1' ? 'selected' : '' ?>>📂 Modul Ajar Semester 1</option>
                 <option value="modul_sem2" <?= $docType === 'modul_sem2' ? 'selected' : '' ?>>📂 Modul Ajar Semester 2</option>
             </select>
@@ -731,7 +731,96 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
         <?php endif; ?>
 
         <!-- ==================================================================== -->
-        <!-- 3. DOKUMEN ALUR TUJUAN PEMBELAJARAN (ATP) -->
+        <!-- 3. DOKUMEN TUJUAN PEMBELAJARAN (TP) 1 TAHUN AJARAN -->
+        <!-- ==================================================================== -->
+        <?php if ($docType === 'tp' || $docType === 'all'): ?>
+            <div class="paper">
+                <?php renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah); ?>
+
+                <div class="title-header-center">
+                    TUJUAN PEMBELAJARAN (TP)<br>
+                    MATA PELAJARAN: <?= strtoupper(htmlspecialchars($doc['mapel'])) ?><br>
+                    KURIKULUM MERDEKA — TAHUN AJARAN <?= htmlspecialchars($doc['tahun_ajaran']) ?>
+                </div>
+
+                <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
+                    <tr>
+                        <td class="label-col">Satuan Pendidikan</td>
+                        <td class="colon-col">:</td>
+                        <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
+                        <td class="label-col-r">Fase / Kelas</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Mata Pelajaran</td>
+                        <td class="colon-col">:</td>
+                        <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
+                        <td class="label-col-r">Tahun Ajaran</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r"><?= htmlspecialchars($doc['tahun_ajaran']) ?></td>
+                    </tr>
+                    <tr>
+                        <td class="label-col">Beban Belajar</td>
+                        <td class="colon-col">:</td>
+                        <td class="value-col"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
+                        <td class="label-col-r">Guru Pengampu</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r"><?= htmlspecialchars($namaGuru) ?></td>
+                    </tr>
+                </table>
+
+                <div class="section-title">Matriks Rumusan Tujuan Pembelajaran (TP) Per Bab Pembahasan</div>
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Bab / Materi Pokok</th>
+                            <th style="width: 13%; text-align: center;">Semester</th>
+                            <th style="width: 53%;">Rumusan Tujuan Pembelajaran (TP)</th>
+                            <th style="width: 14%; text-align: center;">Alokasi JP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($allBabList)): ?>
+                            <?php foreach ($allBabList as $b): ?>
+                                <tr>
+                                    <td>
+                                        <strong>Bab <?= htmlspecialchars($b['nomor']) ?></strong><br>
+                                        <?= htmlspecialchars($b['judul_bersih']) ?>
+                                    </td>
+                                    <td style="text-align: center; vertical-align: middle;">
+                                        Semester <?= $b['semester'] ?><br>
+                                        <small style="color: #555;"><?= $b['semester'] == 1 ? '(Ganjil)' : '(Genap)' ?></small>
+                                    </td>
+                                    <td>
+                                        <ul style="margin: 0; padding-left: 18px; line-height: 1.55;">
+                                            <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
+                                                <li style="margin-bottom: 4px; text-align: justify;"><?= htmlspecialchars($tpItem) ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </td>
+                                    <td style="text-align: center; vertical-align: middle; font-weight: bold;">
+                                        <?= htmlspecialchars($b['alokasi_jp']) ?> JP<br>
+                                        <small style="font-weight: normal; color: #555;">(<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan)</small>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="4" style="text-align: center; padding: 20px; color: #888;">
+                                    Belum ada data Tujuan Pembelajaran.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+
+                <?php renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah); ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- ==================================================================== -->
+        <!-- 4. DOKUMEN ALUR TUJUAN PEMBELAJARAN (ATP) -->
         <!-- ==================================================================== -->
         <?php if ($docType === 'atp' || $docType === 'all'): ?>
             <div class="paper">
