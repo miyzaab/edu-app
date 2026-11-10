@@ -53,6 +53,29 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
     $modulData['kelas']        = $kelas;
     $modulData['tahun_ajaran'] = $tahun;
 
+    $modelPem  = trim($_POST['model_pembelajaran'] ?? '');
+    $targetS   = trim($_POST['target_siswa'] ?? '');
+    $pustaka   = trim($_POST['daftar_pustaka'] ?? '');
+
+    if (!empty($modelPem)) $modulData['model_pembelajaran'] = $modelPem;
+    if (!empty($targetS))  $modulData['target_siswa'] = $targetS;
+    if (!empty($pustaka))  $modulData['daftar_pustaka'] = $pustaka;
+
+    // Sinkronkan ke seluruh modul bab jika diisi
+    if (!empty($modelPem) || !empty($targetS) || !empty($pustaka)) {
+        foreach (['semester_1', 'semester_2'] as $semKey) {
+            if (isset($modulData[$semKey]['bab_list']) && is_array($modulData[$semKey]['bab_list'])) {
+                foreach ($modulData[$semKey]['bab_list'] as &$bItem) {
+                    if (!isset($bItem['modul'])) $bItem['modul'] = [];
+                    if (!empty($modelPem)) $bItem['modul']['model_pembelajaran'] = $modelPem;
+                    if (!empty($targetS))  $bItem['modul']['target_siswa'] = $targetS;
+                    if (!empty($pustaka))  $bItem['modul']['daftar_pustaka'] = $pustaka;
+                }
+                unset($bItem);
+            }
+        }
+    }
+
     try {
         $stmtUpdate = $pdo->prepare("
             UPDATE perangkat_ajar SET 
@@ -166,6 +189,27 @@ require_once __DIR__ . '/subnav.php';
                         <div class="col-md-6 col-12">
                             <label class="form-label extra-small fw-bold text-muted mb-1">NIP KEPALA SEKOLAH</label>
                             <input type="text" name="nip_kepsek" class="form-control rounded-3" value="<?= htmlspecialchars((!empty($modulData['nip_kepsek']) && $modulData['nip_kepsek'] !== '—' && $modulData['nip_kepsek'] !== '-') ? $modulData['nip_kepsek'] : getSetting('nip_kepsek', '—')) ?>">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 pt-3 border-top">
+                        <div class="col-md-4 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">MODEL PEMBELAJARAN</label>
+                            <input type="text" name="model_pembelajaran" class="form-control rounded-3" 
+                                   value="<?= htmlspecialchars($modulData['model_pembelajaran'] ?? ($modulData['semester_1']['bab_list'][0]['modul']['model_pembelajaran'] ?? '')) ?>" 
+                                   placeholder="Contoh: Problem-Based Learning (PBL)">
+                        </div>
+                        <div class="col-md-4 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">TARGET PESERTA DIDIK (JUMLAH SISWA)</label>
+                            <input type="text" name="target_siswa" class="form-control rounded-3" 
+                                   value="<?= htmlspecialchars($modulData['target_siswa'] ?? ($modulData['semester_1']['bab_list'][0]['modul']['target_siswa'] ?? '')) ?>" 
+                                   placeholder="Contoh: 30 Siswa (Peserta Didik Reguler)">
+                        </div>
+                        <div class="col-md-4 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">DAFTAR PUSTAKA (RUJUKAN / KITAB)</label>
+                            <input type="text" name="daftar_pustaka" class="form-control rounded-3" 
+                                   value="<?= htmlspecialchars($modulData['daftar_pustaka'] ?? ($modulData['semester_1']['bab_list'][0]['modul']['daftar_pustaka'] ?? '')) ?>" 
+                                   placeholder="Contoh: Kitab Rujukan, Buku Siswa Resmi">
                         </div>
                     </div>
                 </div>

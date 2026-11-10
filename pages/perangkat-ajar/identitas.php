@@ -4,7 +4,7 @@
  * Khusus Administrator: Mengatur Logo, Nama Sekolah, Alamat, Kontak, dan Kepala Sekolah
  * Dilengkapi Live Interactive Preview Kop Surat & Lembar Tanda Tangan Resmi.
  */
-$pageTitle  = 'Edit Identitas Dokumen & Kop Sekolah';
+$pageTitle = 'Edit Identitas Dokumen & Kop Sekolah';
 $activePage = 'perangkat-ajar';
 require_once __DIR__ . '/../../config/auth.php';
 requirePermission('perangkat_ajar');
@@ -19,14 +19,14 @@ $pdo = getConnection();
 
 // Handle Form Submission
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_identitas') {
-    $namaSekolah   = trim($_POST['nama_sekolah'] ?? '');
+    $namaSekolah = trim($_POST['nama_sekolah'] ?? '');
     $alamatSekolah = trim($_POST['alamat_sekolah'] ?? '');
-    $kotaSekolah   = trim($_POST['kota_sekolah'] ?? '');
-    $teleponSekolah= trim($_POST['telepon_sekolah'] ?? '');
-    $emailSekolah  = trim($_POST['email_sekolah'] ?? '');
-    $namaKepsek    = trim($_POST['nama_kepsek'] ?? '');
-    $nipKepsek     = trim($_POST['nip_kepsek'] ?? '');
-    $titimangsa    = trim($_POST['titimangsa_dokumen'] ?? '');
+    $kotaSekolah = trim($_POST['kota_sekolah'] ?? '');
+    $teleponSekolah = trim($_POST['telepon_sekolah'] ?? '');
+    $emailSekolah = trim($_POST['email_sekolah'] ?? '');
+    $namaKepsek = trim($_POST['nama_kepsek'] ?? '');
+    $nipKepsek = trim($_POST['nip_kepsek'] ?? '');
+    $titimangsa = trim($_POST['titimangsa_dokumen'] ?? '');
 
     // 1. Simpan Settings Teks
     updateSetting('nama_sekolah', $namaSekolah);
@@ -82,8 +82,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
             $j = json_decode($row['modul_ajar_json'] ?? '{}', true);
             if (is_array($j)) {
                 $j['nama_sekolah'] = $namaSekolah;
-                $j['nama_kepsek']  = $namaKepsek;
-                $j['nip_kepsek']   = $nipKepsek;
+                $j['nama_kepsek'] = $namaKepsek;
+                $j['nip_kepsek'] = $nipKepsek;
                 $updateStmt->execute([':json' => json_encode($j, JSON_UNESCAPED_UNICODE), ':id' => $row['id']]);
             }
         }
@@ -95,16 +95,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
 }
 
 // Ambil data settings aktif
-$namaSekolah    = getSetting('nama_sekolah', SCHOOL_NAME);
-$alamatSekolah  = getSetting('alamat_sekolah', 'Jl. Nakula No. 1');
-$kotaSekolah    = getSetting('kota_sekolah', 'Kota / Kabupaten');
+$namaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
+$alamatSekolah = getSetting('alamat_sekolah', 'Jl. Nakula No. 1');
+$kotaSekolah = getSetting('kota_sekolah', 'Kota / Kabupaten');
 $teleponSekolah = getSetting('telepon_sekolah', '0812-3456-7890');
-$emailSekolah   = getSetting('email_sekolah', 'info@sekolah.sch.id');
-$namaKepsek     = getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd');
-$nipKepsek      = getSetting('nip_kepsek', '—');
-$titimangsa     = getSetting('titimangsa_dokumen', '');
-$logoPath       = getSetting('logo_path', '');
-$stempelPath    = getSetting('stempel_path', '');
+$emailSekolah = getSetting('email_sekolah', 'info@sekolah.sch.id');
+$namaKepsek = getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd');
+$nipKepsek = getSetting('nip_kepsek', '—');
+$titimangsa = getSetting('titimangsa_dokumen', '');
+$logoPath = getSetting('logo_path', '');
+$stempelPath = getSetting('stempel_path', '');
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/subnav.php';
@@ -114,8 +114,8 @@ require_once __DIR__ . '/subnav.php';
     <div class="col-xl-11 col-12">
 
         <!-- HEADER BANNER -->
-        <div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden" 
-             style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #1e40af 100%); color: #ffffff;">
+        <div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden"
+            style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #1e40af 100%); color: #ffffff;">
             <div class="card-body p-4 p-md-5 position-relative">
                 <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3"
                     style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.22); backdrop-filter: blur(10px);">
@@ -126,7 +126,9 @@ require_once __DIR__ . '/subnav.php';
                     Edit Identitas Dokumen &amp; Kop Sekolah
                 </h2>
                 <p class="text-white-50 mb-0 fs-6" style="max-width: 780px; line-height: 1.6;">
-                    Atur logo, nama sekolah, kontak, dan tanda tangan kepala sekolah. Perubahan di sini otomatis tersinkronisasi ke seluruh dokumen cetak PDF (CP, TP, ATP, dan Modul Ajar) dengan pratinjau real-time.
+                    Atur logo, nama sekolah, kontak, dan tanda tangan kepala sekolah. Perubahan di sini otomatis
+                    tersinkronisasi ke seluruh dokumen cetak PDF (CP, TP, ATP, dan Modul Ajar) dengan pratinjau
+                    real-time.
                 </p>
             </div>
         </div>
@@ -142,7 +144,7 @@ require_once __DIR__ . '/subnav.php';
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                     style="width: 32px; height: 32px; background: #e0f2fe; color: #0284c7;">
+                                    style="width: 32px; height: 32px; background: #e0f2fe; color: #0284c7;">
                                     <i class="bi bi-bank2 fs-6"></i>
                                 </div>
                                 <h5 class="fw-bold mb-0 text-dark" style="font-family: 'Outfit', sans-serif;">
@@ -155,14 +157,17 @@ require_once __DIR__ . '/subnav.php';
                                 <label class="form-label extra-small fw-bold text-muted mb-1">LOGO RESMI SEKOLAH</label>
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="rounded-3 border d-flex align-items-center justify-content-center p-2 bg-light flex-shrink-0"
-                                         style="width: 70px; height: 70px;">
-                                        <img src="<?= !empty($logoPath) ? BASE_URL . $logoPath : '../../assets/img/logo.png' ?>" 
-                                             alt="Logo" id="logoPreviewImg" style="max-width: 100%; max-height: 100%; object-fit: contain;"
-                                             onerror="this.src='../../assets/img/logo.png'">
+                                        style="width: 70px; height: 70px;">
+                                        <img src="<?= !empty($logoPath) ? BASE_URL . $logoPath : '../../assets/img/logo.png' ?>"
+                                            alt="Logo" id="logoPreviewImg"
+                                            style="max-width: 100%; max-height: 100%; object-fit: contain;"
+                                            onerror="this.src='../../assets/img/logo.png'">
                                     </div>
                                     <div>
-                                        <input type="file" name="logo_sekolah" id="inputLogoSekolah" class="form-control form-control-sm rounded-3" 
-                                               accept="image/png, image/jpeg, image/webp, image/svg+xml" onchange="previewLogo(this)">
+                                        <input type="file" name="logo_sekolah" id="inputLogoSekolah"
+                                            class="form-control form-control-sm rounded-3"
+                                            accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                                            onchange="previewLogo(this)">
                                         <div class="form-text extra-small text-muted">
                                             Format: PNG transparan, JPG, atau WebP (Maksimal 3MB).
                                         </div>
@@ -175,8 +180,10 @@ require_once __DIR__ . '/subnav.php';
                                 <label class="form-label extra-small fw-bold text-muted mb-1">
                                     NAMA RESMI SEKOLAH / MADRASAH <span class="text-danger">*</span>
                                 </label>
-                                <input type="text" name="nama_sekolah" id="inputNamaSekolah" class="form-control rounded-3 py-2 fw-bold" 
-                                       value="<?= htmlspecialchars($namaSekolah) ?>" placeholder="Contoh: SMP ISLAM TERPADU ..." required>
+                                <input type="text" name="nama_sekolah" id="inputNamaSekolah"
+                                    class="form-control rounded-3 py-2 fw-bold"
+                                    value="<?= htmlspecialchars($namaSekolah) ?>"
+                                    placeholder="Contoh: SMP ISLAM TERPADU ..." required>
                             </div>
 
                             <!-- Alamat Lengkap -->
@@ -184,8 +191,10 @@ require_once __DIR__ . '/subnav.php';
                                 <label class="form-label extra-small fw-bold text-muted mb-1">
                                     ALAMAT LENGKAP SEKOLAH <span class="text-danger">*</span>
                                 </label>
-                                <textarea name="alamat_sekolah" id="inputAlamatSekolah" rows="2" class="form-control rounded-3 small" 
-                                          placeholder="Nama jalan, nomor, RT/RW, kelurahan, kecamatan..." required><?= htmlspecialchars($alamatSekolah) ?></textarea>
+                                <textarea name="alamat_sekolah" id="inputAlamatSekolah" rows="2"
+                                    class="form-control rounded-3 small"
+                                    placeholder="Nama jalan, nomor, RT/RW, kelurahan, kecamatan..."
+                                    required><?= htmlspecialchars($alamatSekolah) ?></textarea>
                             </div>
 
                             <!-- Kota / Kabupaten & Kontak -->
@@ -194,22 +203,30 @@ require_once __DIR__ . '/subnav.php';
                                     <label class="form-label extra-small fw-bold text-muted mb-1">
                                         KOTA / KABUPATEN <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="kota_sekolah" id="inputKotaSekolah" class="form-control rounded-3 py-2" 
-                                           value="<?= htmlspecialchars($kotaSekolah) ?>" placeholder="Contoh: Cilacap / Jakarta" required>
-                                    <div class="form-text extra-small text-muted">Digunakan untuk titimangsa kota tanda tangan.</div>
+                                    <input type="text" name="kota_sekolah" id="inputKotaSekolah"
+                                        class="form-control rounded-3 py-2"
+                                        value="<?= htmlspecialchars($kotaSekolah) ?>"
+                                        placeholder="Contoh: Cilacap / Jakarta" required>
+                                    <div class="form-text extra-small text-muted">Digunakan untuk titimangsa kota tanda
+                                        tangan.</div>
                                 </div>
                                 <div class="col-md-6 col-12">
-                                    <label class="form-label extra-small fw-bold text-muted mb-1">TELEPON / WHATSAPP</label>
-                                    <input type="text" name="telepon_sekolah" id="inputTelpSekolah" class="form-control rounded-3 py-2" 
-                                           value="<?= htmlspecialchars($teleponSekolah) ?>" placeholder="Contoh: 0812-3456-7890">
+                                    <label class="form-label extra-small fw-bold text-muted mb-1">TELEPON /
+                                        WHATSAPP</label>
+                                    <input type="text" name="telepon_sekolah" id="inputTelpSekolah"
+                                        class="form-control rounded-3 py-2"
+                                        value="<?= htmlspecialchars($teleponSekolah) ?>"
+                                        placeholder="Contoh: 0812-3456-7890">
                                 </div>
                             </div>
 
                             <!-- Email Sekolah -->
                             <div class="mb-2">
-                                <label class="form-label extra-small fw-bold text-muted mb-1">EMAIL RESMI SEKOLAH</label>
-                                <input type="email" name="email_sekolah" id="inputEmailSekolah" class="form-control rounded-3 py-2" 
-                                       value="<?= htmlspecialchars($emailSekolah) ?>" placeholder="Contoh: info@sekolah.sch.id">
+                                <label class="form-label extra-small fw-bold text-muted mb-1">EMAIL RESMI
+                                    SEKOLAH</label>
+                                <input type="email" name="email_sekolah" id="inputEmailSekolah"
+                                    class="form-control rounded-3 py-2" value="<?= htmlspecialchars($emailSekolah) ?>"
+                                    placeholder="Contoh: info@sekolah.sch.id">
                             </div>
                         </div>
                     </div>
@@ -219,7 +236,7 @@ require_once __DIR__ . '/subnav.php';
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center"
-                                     style="width: 32px; height: 32px; background: #fef3c7; color: #d97706;">
+                                    style="width: 32px; height: 32px; background: #fef3c7; color: #d97706;">
                                     <i class="bi bi-pen-fill fs-6"></i>
                                 </div>
                                 <h5 class="fw-bold mb-0 text-dark" style="font-family: 'Outfit', sans-serif;">
@@ -232,43 +249,55 @@ require_once __DIR__ . '/subnav.php';
                                     <label class="form-label extra-small fw-bold text-muted mb-1">
                                         NAMA KEPALA SEKOLAH (DENGAN GELAR) <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="nama_kepsek" id="inputNamaKepsek" class="form-control rounded-3 py-2 fw-semibold" 
-                                           value="<?= htmlspecialchars($namaKepsek) ?>" placeholder="Contoh: Drs. H. Ahmad Dahlan, M.Pd" required>
+                                    <input type="text" name="nama_kepsek" id="inputNamaKepsek"
+                                        class="form-control rounded-3 py-2 fw-semibold"
+                                        value="<?= htmlspecialchars($namaKepsek) ?>"
+                                        placeholder="Contoh: Drs. H. Ahmad Dahlan, M.Pd" required>
                                 </div>
                                 <div class="col-md-5 col-12">
-                                    <label class="form-label extra-small fw-bold text-muted mb-1">NIP / NPK / NIY KEPSEK</label>
-                                    <input type="text" name="nip_kepsek" id="inputNipKepsek" class="form-control rounded-3 py-2" 
-                                           value="<?= htmlspecialchars($nipKepsek) ?>" placeholder="Contoh: 197501012000031001">
+                                    <label class="form-label extra-small fw-bold text-muted mb-1">NIP / NPK / NIY
+                                        KEPSEK</label>
+                                    <input type="text" name="nip_kepsek" id="inputNipKepsek"
+                                        class="form-control rounded-3 py-2" value="<?= htmlspecialchars($nipKepsek) ?>"
+                                        placeholder="Contoh: 197501012000031001">
                                 </div>
                             </div>
 
                             <!-- Titimangsa Tanggal -->
                             <div class="mb-3">
-                                <label class="form-label extra-small fw-bold text-muted mb-1">TITIMANGSA TANGGAL PENGESAHAN DOKUMEN</label>
-                                <input type="text" name="titimangsa_dokumen" id="inputTitimangsa" class="form-control rounded-3 py-2" 
-                                       value="<?= htmlspecialchars($titimangsa) ?>" placeholder="Kosongkan untuk otomatis tanggal cetak hari ini (atau isi: 15 Juli 2026)">
+                                <label class="form-label extra-small fw-bold text-muted mb-1">TITIMANGSA TANGGAL
+                                    PENGESAHAN DOKUMEN</label>
+                                <input type="text" name="titimangsa_dokumen" id="inputTitimangsa"
+                                    class="form-control rounded-3 py-2" value="<?= htmlspecialchars($titimangsa) ?>"
+                                    placeholder="Kosongkan untuk otomatis tanggal cetak hari ini (atau isi: 15 Juli 2026)">
                                 <div class="form-text extra-small text-muted">
-                                    Misal diisi <em>15 Juli 2026</em> agar tanggal pengesahan tertulis tetap pada awal tahun pelajaran.
+                                    Misal diisi <em>15 Juli 2026</em> agar tanggal pengesahan tertulis tetap pada awal
+                                    tahun pelajaran.
                                 </div>
                             </div>
 
                             <!-- Upload Stempel / TTD Digital (Opsional) -->
                             <div class="mb-2">
-                                <label class="form-label extra-small fw-bold text-muted mb-1">STEMPEL / TTD DIGITAL KEPALA SEKOLAH (OPSIONAL)</label>
+                                <label class="form-label extra-small fw-bold text-muted mb-1">STEMPEL / TTD DIGITAL
+                                    KEPALA SEKOLAH (OPSIONAL)</label>
                                 <div class="d-flex align-items-center gap-3">
                                     <div class="rounded-3 border d-flex align-items-center justify-content-center p-2 bg-light flex-shrink-0"
-                                         style="width: 70px; height: 70px;">
-                                        <img src="<?= !empty($stempelPath) ? BASE_URL . $stempelPath : '' ?>" 
-                                             alt="Stempel" id="stempelPreviewImg" style="max-width: 100%; max-height: 100%; object-fit: contain; <?= empty($stempelPath) ? 'display:none;' : '' ?>">
-                                        <span id="stempelPlaceholder" class="extra-small text-muted text-center" style="<?= !empty($stempelPath) ? 'display:none;' : '' ?>">
+                                        style="width: 70px; height: 70px;">
+                                        <img src="<?= !empty($stempelPath) ? BASE_URL . $stempelPath : '' ?>"
+                                            alt="Stempel" id="stempelPreviewImg"
+                                            style="max-width: 100%; max-height: 100%; object-fit: contain; <?= empty($stempelPath) ? 'display:none;' : '' ?>">
+                                        <span id="stempelPlaceholder" class="extra-small text-muted text-center"
+                                            style="<?= !empty($stempelPath) ? 'display:none;' : '' ?>">
                                             Belum Ada
                                         </span>
                                     </div>
                                     <div>
-                                        <input type="file" name="stempel_kepsek" id="inputStempelKepsek" class="form-control form-control-sm rounded-3" 
-                                               accept="image/png, image/jpeg, image/webp" onchange="previewStempel(this)">
+                                        <input type="file" name="stempel_kepsek" id="inputStempelKepsek"
+                                            class="form-control form-control-sm rounded-3"
+                                            accept="image/png, image/jpeg, image/webp" onchange="previewStempel(this)">
                                         <div class="form-text extra-small text-muted">
-                                            Format: PNG transparan (Maksimal 3MB). Muncul di atas tanda tangan kepala sekolah.
+                                            Format: PNG transparan (Maksimal 3MB). Muncul di atas tanda tangan kepala
+                                            sekolah.
                                         </div>
                                     </div>
                                 </div>
@@ -282,7 +311,8 @@ require_once __DIR__ . '/subnav.php';
                             <a href="index.php" class="btn btn-light rounded-pill px-4 fw-bold text-secondary">
                                 Batal
                             </a>
-                            <button type="submit" class="btn btn-primary rounded-pill px-5 py-2.5 fw-bold shadow-sm d-inline-flex align-items-center gap-2">
+                            <button type="submit"
+                                class="btn btn-primary rounded-pill px-5 py-2.5 fw-bold shadow-sm d-inline-flex align-items-center gap-2">
                                 <i class="bi bi-save-fill"></i>
                                 <span>Simpan Identitas Dokumen</span>
                             </button>
@@ -295,34 +325,40 @@ require_once __DIR__ . '/subnav.php';
             <div class="col-lg-5 col-12">
                 <div class="sticky-top" style="top: 20px; z-index: 10;">
                     <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill extra-small fw-bold">
+                        <span
+                            class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 rounded-pill extra-small fw-bold">
                             <i class="bi bi-eye-fill me-1"></i> LIVE INTERACTIVE PREVIEW
                         </span>
                         <small class="text-muted extra-small">Tampilan nyata di lembar A4</small>
                     </div>
 
                     <!-- KERTAS PREVIEW PUTIH -->
-                    <div class="card border rounded-4 shadow-sm p-4 bg-white" 
-                         style="border-color: #cbd5e1 !important; font-family: 'Times New Roman', Times, serif; color: #000; font-size: 10.5pt; line-height: 1.35;">
-                        
+                    <div class="card border rounded-4 shadow-sm p-4 bg-white"
+                        style="border-color: #cbd5e1 !important; font-family: 'Times New Roman', Times, serif; color: #000; font-size: 10.5pt; line-height: 1.35;">
+
                         <!-- PREVIEW KOP SURAT SIMETRIS -->
                         <div>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
                                     <td style="width: 60px; vertical-align: middle; text-align: left; padding: 0;">
-                                        <img src="<?= !empty($logoPath) ? BASE_URL . $logoPath : '../../assets/img/logo.png' ?>" 
-                                             alt="Logo" id="livePrevLogo" style="width: 55px; height: 55px; object-fit: contain; display: block;"
-                                             onerror="this.src='../../assets/img/logo.png'">
+                                        <img src="<?= !empty($logoPath) ? BASE_URL . $logoPath : '../../assets/img/logo.png' ?>"
+                                            alt="Logo" id="livePrevLogo"
+                                            style="width: 55px; height: 55px; object-fit: contain; display: block;"
+                                            onerror="this.src='../../assets/img/logo.png'">
                                     </td>
                                     <td style="vertical-align: middle; text-align: center; padding: 0 8px;">
-                                        <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; line-height: 1.25;" id="livePrevNamaSekolah">
+                                        <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; line-height: 1.25;"
+                                            id="livePrevNamaSekolah">
                                             <?= htmlspecialchars($namaSekolah) ?>
                                         </div>
-                                        <div style="font-size: 7.5pt; color: #111; line-height: 1.3;" id="livePrevAlamat">
+                                        <div style="font-size: 7.5pt; color: #111; line-height: 1.3;"
+                                            id="livePrevAlamat">
                                             <?= htmlspecialchars($alamatSekolah) ?>
                                         </div>
-                                        <div style="font-size: 7.5pt; color: #333; line-height: 1.3; margin-top: 2px;" id="livePrevKontak">
-                                            Telp: <?= htmlspecialchars($teleponSekolah) ?> | Email: <?= htmlspecialchars($emailSekolah) ?>
+                                        <div style="font-size: 7.5pt; color: #333; line-height: 1.3; margin-top: 2px;"
+                                            id="livePrevKontak">
+                                            Telp: <?= htmlspecialchars($teleponSekolah) ?> | Email:
+                                            <?= htmlspecialchars($emailSekolah) ?>
                                         </div>
                                     </td>
                                     <td style="width: 60px; padding: 0;">
@@ -337,10 +373,12 @@ require_once __DIR__ . '/subnav.php';
                         </div>
 
                         <!-- BODY CONTOH PREVIEW -->
-                        <div style="text-align: center; font-weight: bold; font-size: 10pt; text-transform: uppercase; margin: 8px 0 10px 0;">
+                        <div
+                            style="text-align: center; font-weight: bold; font-size: 10pt; text-transform: uppercase; margin: 8px 0 10px 0;">
                             MODUL AJAR KURIKULUM MERDEKA
                         </div>
-                        <div style="font-size: 8pt; color: #555; text-align: justify; margin-bottom: 15px; font-style: italic;">
+                        <div
+                            style="font-size: 8pt; color: #555; text-align: justify; margin-bottom: 15px; font-style: italic;">
                             [... Isi Capaian Pembelajaran, Alur Tujuan (ATP), Sintaks Pembelajaran, dan Asesmen ...]
                         </div>
 
@@ -350,18 +388,21 @@ require_once __DIR__ . '/subnav.php';
                                 <tr>
                                     <td style="width: 50%; vertical-align: top;">
                                         Mengetahui,<br>
-                                        <span id="livePrevJabatanKepsek">Kepala <?= htmlspecialchars($namaSekolah) ?></span>
+                                        <span id="livePrevJabatanKepsek">Kepala Sekolah
+                                            <?= htmlspecialchars($namaSekolah) ?></span>
                                         <div style="height: 40px; position: relative; margin: 4px 0;">
-                                            <img src="<?= !empty($stempelPath) ? BASE_URL . $stempelPath : '' ?>" 
-                                                 alt="Stempel" id="livePrevStempel" 
-                                                 style="max-height: 40px; position: absolute; left: 10px; top: -5px; opacity: 0.85; <?= empty($stempelPath) ? 'display:none;' : '' ?>">
+                                            <img src="<?= !empty($stempelPath) ? BASE_URL . $stempelPath : '' ?>"
+                                                alt="Stempel" id="livePrevStempel"
+                                                style="max-height: 40px; position: absolute; left: 10px; top: -5px; opacity: 0.85; <?= empty($stempelPath) ? 'display:none;' : '' ?>">
                                         </div>
-                                        <strong><u id="livePrevNamaKepsek"><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
+                                        <strong><u
+                                                id="livePrevNamaKepsek"><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
                                         NIP. <span id="livePrevNipKepsek"><?= htmlspecialchars($nipKepsek) ?></span>
                                     </td>
                                     <td style="width: 50%; vertical-align: top; text-align: right;">
-                                        <span id="livePrevKota"><?= htmlspecialchars($kotaSekolah) ?></span>, 
-                                        <span id="livePrevTanggal"><?= !empty($titimangsa) ? htmlspecialchars($titimangsa) : date('j F Y') ?></span><br>
+                                        <span id="livePrevKota"><?= htmlspecialchars($kotaSekolah) ?></span>,
+                                        <span
+                                            id="livePrevTanggal"><?= !empty($titimangsa) ? htmlspecialchars($titimangsa) : date('j F Y') ?></span><br>
                                         Guru Mata Pelajaran
                                         <div style="height: 40px; margin: 4px 0;"></div>
                                         <strong><u>[Nama Guru Pengampu]</u></strong><br>

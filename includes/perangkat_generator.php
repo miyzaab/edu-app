@@ -123,6 +123,11 @@ class PerangkatGenerator
         $babRawSmt1   = trim($params['bab_semester_1'] ?? '');
         $babRawSmt2   = trim($params['bab_semester_2'] ?? '');
 
+        // Parameter Kustom Identitas Modul (Model Pembelajaran, Target Peserta Didik, Daftar Pustaka)
+        $userModel    = trim($params['model_pembelajaran'] ?? '');
+        $userTarget   = trim($params['target_siswa'] ?? '');
+        $userPustaka  = trim($params['daftar_pustaka'] ?? '');
+
         $kategori     = self::detectKategoriMapel($mapel);
 
         $babListSmt1  = self::parseBabText($babRawSmt1);
@@ -143,10 +148,10 @@ class PerangkatGenerator
         $totalJpSmt2 = $pekanSmt2 * $jpPerPekan;
 
         // Proses Bab Semester 1
-        $processedSmt1 = self::processSemesterBab($babListSmt1, 1, $pekanSmt1, $jpPerPekan, $mapel, $kelas, $fase, $kategori, $namaSekolah, $namaGuru, $namaKepsek, $nipGuru, $nipKepsek);
+        $processedSmt1 = self::processSemesterBab($babListSmt1, 1, $pekanSmt1, $jpPerPekan, $mapel, $kelas, $fase, $kategori, $namaSekolah, $namaGuru, $namaKepsek, $nipGuru, $nipKepsek, 0, $userModel, $userTarget, $userPustaka);
 
         // Proses Bab Semester 2
-        $processedSmt2 = self::processSemesterBab($babListSmt2, 2, $pekanSmt2, $jpPerPekan, $mapel, $kelas, $fase, $kategori, $namaSekolah, $namaGuru, $namaKepsek, $nipGuru, $nipKepsek, count($babListSmt1));
+        $processedSmt2 = self::processSemesterBab($babListSmt2, 2, $pekanSmt2, $jpPerPekan, $mapel, $kelas, $fase, $kategori, $namaSekolah, $namaGuru, $namaKepsek, $nipGuru, $nipKepsek, count($babListSmt1), $userModel, $userTarget, $userPustaka);
 
         // Gabungkan CP, TP, dan ATP Teks Menyeluruh
         $allCpList  = array_merge($processedSmt1['cp_lines'], $processedSmt2['cp_lines']);
@@ -161,27 +166,32 @@ class PerangkatGenerator
         $topikUtama = "Perangkat Ajar {$mapel} Kelas {$kelas} Fase D (1 Tahun Ajaran)";
         $alokasiSummary = "{$jpPerPekan} JP/Pekan (Total " . ($totalJpSmt1 + $totalJpSmt2) . " JP/Tahun)";
 
+        $firstBabModul = $processedSmt1['bab_items'][0]['modul'] ?? ($processedSmt2['bab_items'][0]['modul'] ?? []);
+
         $modulJsonData = [
-            'nama_sekolah'   => $namaSekolah,
-            'nama_guru'      => $namaGuru,
-            'nip_guru'       => $nipGuru,
-            'nama_kepsek'    => $namaKepsek,
-            'nip_kepsek'     => $nipKepsek,
-            'mapel'          => $mapel,
-            'kelas'          => $kelas,
-            'fase'           => $fase,
-            'jp_per_pekan'   => $jpPerPekan,
-            'tahun_ajaran'   => $tahunAjaran,
-            'kategori_mapel' => $kategori,
-            'total_jp_tahun' => $totalJpSmt1 + $totalJpSmt2,
-            'cp_global'      => $cpIntroduction,
-            'semester_1'     => [
+            'nama_sekolah'       => $namaSekolah,
+            'nama_guru'          => $namaGuru,
+            'nip_guru'           => $nipGuru,
+            'nama_kepsek'        => $namaKepsek,
+            'nip_kepsek'         => $nipKepsek,
+            'mapel'              => $mapel,
+            'kelas'              => $kelas,
+            'fase'               => $fase,
+            'jp_per_pekan'       => $jpPerPekan,
+            'tahun_ajaran'       => $tahunAjaran,
+            'kategori_mapel'     => $kategori,
+            'total_jp_tahun'     => $totalJpSmt1 + $totalJpSmt2,
+            'model_pembelajaran' => !empty($userModel) ? $userModel : ($firstBabModul['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)'),
+            'target_siswa'       => !empty($userTarget) ? $userTarget : ($firstBabModul['target_siswa'] ?? 'Peserta didik reguler / tipikal (30 siswa)'),
+            'daftar_pustaka'     => !empty($userPustaka) ? $userPustaka : ($firstBabModul['daftar_pustaka'] ?? ''),
+            'cp_global'          => $cpIntroduction,
+            'semester_1'         => [
                 'nama'        => 'Semester Ganjil (1)',
                 'pekan'       => $pekanSmt1,
                 'total_jp'    => $totalJpSmt1,
                 'bab_list'    => $processedSmt1['bab_items']
             ],
-            'semester_2'     => [
+            'semester_2'         => [
                 'nama'        => 'Semester Genap (2)',
                 'pekan'       => $pekanSmt2,
                 'total_jp'    => $totalJpSmt2,
@@ -224,7 +234,10 @@ class PerangkatGenerator
         string $namaKepsek,
         string $nipGuru,
         string $nipKepsek,
-        int $startIndex = 0
+        int $startIndex = 0,
+        string $userModel = '',
+        string $userTarget = '',
+        string $userPustaka = ''
     ): array {
         $count = count($rawBabs);
         $totalJp = $totalPekan * $jpPerPekan;
@@ -277,7 +290,10 @@ class PerangkatGenerator
                 $namaKepsek,
                 $nipGuru,
                 $nipKepsek,
-                $tpItems
+                $tpItems,
+                $userModel,
+                $userTarget,
+                $userPustaka
             );
 
             $babItems[] = [
@@ -555,7 +571,10 @@ class PerangkatGenerator
         string $namaKepsek,
         string $nipGuru,
         string $nipKepsek,
-        array $tpItems
+        array $tpItems,
+        string $userModel = '',
+        string $userTarget = '',
+        string $userPustaka = ''
     ): array {
         // Model Pembelajaran yang Tepat Sesuai Karakteristik
         if ($kategori === 'diniyah') {
@@ -564,10 +583,10 @@ class PerangkatGenerator
             $kompetensiAwal    = "Peserta didik telah memiliki pembiasaan adab harian di madrasah/pesantren dan memahami dasar-dasar syariat Islam terkait thaharah dan ibadah.";
             $pemahamanBermakna = "Mempelajari {$cleanBab} menumbuhkan kesadaran bahwa ketaatan menjalankan syariat Allah secara benar mendatangkan ketenangan batin, keberkahan ilmu, dan keselamatan dunia-akhirat.";
             $pertanyaanPemantik= "1. Mengapa materi {$cleanBab} sangat menentukan kualitas ibadah dan adab kita sehari-hari?\n2. Bagaimana cara kita membentengi diri agar tidak keliru dalam mengamalkan {$cleanBab} di tengah kesibukan zaman modern?";
-            $saranaPrasarana   = 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, Lembar Studi Kasus Amaliah, Alat Peraga Praktik Ibadah.';
-            $targetSiswa       = 'Peserta didik reguler / santri (28-32 siswa dalam rombel campuran)';
+            $saranaPrasarana   = 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa dalam rombel belajar)';
             
-            $pendahuluan       = "1. Guru mengucapkan salam hangat dan mengajak peserta didik berdoa bersama/membaca shalawat thibil qulub.\n2. Guru memeriksa presensi, kesiapan fisik, serta kerapian busana santri.\n3. Apersepsi: Guru mengaitkan materi {$cleanBab} dengan kebiasaan ibadah santri sehari-hari.\n4. Guru menyampaikan tujuan pembelajaran hari ini dan pentingnya menjaga niat ikhlas menuntut ilmu.";
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa presensi, kesiapan fisik, serta kerapian busana santri.\n3. Apersepsi: Guru mengaitkan materi {$cleanBab} dengan kebiasaan ibadah santri sehari-hari.\n4. Guru menyampaikan tujuan pembelajaran hari ini dan pentingnya menjaga niat ikhlas menuntut ilmu.";
             $kegiatanInti      = "1. Stimulasi: Guru membacakan dalil pokok / memaparkan materi kunci {$cleanBab} di papan tulis.\n2. Organisasi Belajar: Peserta didik membentuk halaqah kecil (4-5 santri) untuk mendiskusikan studi kasus amaliah pada lembar kerja.\n3. Bimbingan Penyelidikan: Guru berkeliling memberikan tas-hih (arahan dan koreksi kaidah) pada halaqah yang membutuhkan penjelasan tambahan.\n4. Simulasi & Penyajian: Perwakilan halaqah memperagakan tata cara / mempresentasikan intisari pembahasan {$cleanBab} di depan kelas.\n5. Refleksi & Penguatan: Guru memberikan ta'qid (penguatan konsep hukum syariat) serta mengapresiasi keaktifan seluruh santri.";
             $penutup           = "1. Peserta didik dibimbing guru menyimpulkan kaidah utama dari materi {$cleanBab}.\n2. Guru memberikan pesan mutaba'ah amaliah untuk dipraktikkan langsung di asrama/rumah.\n3. Guru menutup pembelajaran dengan membaca hamdalah dan doa kafaratul majelis.";
 
@@ -585,9 +604,9 @@ class PerangkatGenerator
             $pemahamanBermakna = "Penguasaan materi {$cleanBab} melatih kepekaan berbahasa yang santun, kemampuan berpikir kritis menyaring informasi, serta keterampilan berkomunikasi yang persuasif.";
             $pertanyaanPemantik= "1. Apa yang membedakan sebuah teks materi {$cleanBab} yang berkualitas dengan teks yang membosankan atau membingungkan pembaca?\n2. Mengapa kita perlu memilih kosa kata yang tepat saat menyampaikan gagasan pada topik ini?";
             $saranaPrasarana   = 'Buku Teks Siswa, Tayangan Contoh Teks / Media Audio-Visual, Proyektor/Papan Tulis, LKPD Analisis Teks.';
-            $targetSiswa       = 'Peserta didik reguler / tipikal (28-32 siswa rombel campuran)';
+            $targetSiswa       = 'Peserta didik reguler / tipikal (30 siswa rombel campuran)';
 
-            $pendahuluan       = "1. Guru membuka kelas dengan salam, menyapa siswa, berdoa bersama, dan mengecek kehadiran.\n2. Guru memantik rasa ingin tahu siswa dengan membacakan cuplikan teks menarik terkait {$cleanBab}.\n3. Guru menyampaikan tujuan pembelajaran, garis besar kegiatan, serta kriteria penilaian karya siswa.";
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memantik rasa ingin tahu siswa dengan membacakan cuplikan teks menarik terkait {$cleanBab}.\n3. Guru menyampaikan tujuan pembelajaran, garis besar kegiatan, serta kriteria penilaian karya siswa.";
             $kegiatanInti      = "1. Dekonstruksi Teks: Siswa bersama guru membaca dan membedah teks model {$cleanBab} (mengamati struktur dan ciri kebahasaan).\n2. Membangun Konteks Kelompok: Siswa dibagi menjadi kelompok heterogen (4-5 orang) untuk menganalisis unsur teks pada lembar kerja.\n3. Pembimbingan: Guru memfasilitasi diskusi, memberi pancingan ide, dan meluruskan kekeliruan analisis kebahasaan siswa.\n4. Konstruksi Mandiri/Kelompok: Siswa menyusun draf karya tulis atau mempersiapkan presentasi lisan berbasis materi {$cleanBab}.\n5. Umpan Balik: Perwakilan kelompok menyajikan karyanya, kelompok lain memberikan tanggapan apresiatif berbantuan rubrik.";
             $penutup           = "1. Siswa merangkum poin kaidah kebahasaan dan struktur teks {$cleanBab} yang telah dipelajari.\n2. Refleksi: Siswa mengungkapkan hal baru yang mereka kuasai dan hal yang masih perlu latihan mandiri.\n3. Guru memberikan tugas membaca pengayaan dan menutup pertemuan dengan doa serta salam.";
 
@@ -605,9 +624,9 @@ class PerangkatGenerator
             $pemahamanBermakna = "Mempelajari {$cleanBab} melatih pola pikir logis, ketelitian menyelesaikan masalah tahap demi tahap, serta kemampuan mengaplikasikan perhitungan dalam kehidupan sehari-hari.";
             $pertanyaanPemantik= "1. Di mana saja kita sering menjumpai penerapan nyata konsep {$cleanBab} dalam aktivitas kita setiap hari?\n2. Bagaimana cara paling logis dan efisien untuk menyelesaikan teka-teki permasalahan pada materi ini?";
             $saranaPrasarana   = 'Buku Paket Siswa, Papan Tulis, Slide Presentasi/Video Pengantar Masalah, Lembar Kerja Eksplorasi (LKPD).';
-            $targetSiswa       = 'Peserta didik reguler / tipikal (28-32 siswa)';
+            $targetSiswa       = 'Peserta didik reguler / tipikal (30 siswa)';
 
-            $pendahuluan       = "1. Guru mengucap salam, menyapa ramah siswa, berdoa bersama, dan mengecek presensi.\n2. Apersepsi: Guru menyajikan sebuah masalah nyata yang paradoks atau menarik terkait {$cleanBab}.\n3. Guru mengutarakan tujuan pembelajaran dan memotivasi siswa tentang manfaat materi ini dalam karier dan kehidupan.";
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Apersepsi: Guru menyajikan sebuah masalah nyata yang paradoks atau menarik terkait {$cleanBab}.\n3. Guru mengutarakan tujuan pembelajaran dan memotivasi siswa tentang manfaat materi ini dalam karier dan kehidupan.";
             $kegiatanInti      = "1. Orientasi Masalah: Siswa mencermati tayangan kasus kontekstual yang disajikan guru di depan kelas.\n2. Organisasi Belajar: Siswa membentuk kelompok kerja (4-5 anak) menerima lembar aktivitas eksplorasi rumus/konsep.\n3. Penyelidikan Mandiri & Kelompok: Siswa mengumpulkan data, mencoba berbagai alternatif perhitungan, dan merumuskan pola.\n4. Mengembangkan Hasil: Setiap kelompok menuliskan langkah penyelesaian masalah secara sistematis di papan tulis / plano.\n5. Evaluasi & Verifikasi: Guru memandu verifikasi hasil kerja siswa, memberikan klarifikasi rumus cepat, dan apresiasi pemecahan terbaik.";
             $penutup           = "1. Siswa bersama guru merangkum rumus/konsep esensial yang berhasil ditemukan pada hari ini.\n2. Guru memberikan 1 butir soal 'tiket keluar' (exit ticket) sebagai cek pemahaman cepat.\n3. Guru memberikan arahan latihan mandiri dan menutup kelas dengan doa bersama.";
 
@@ -626,9 +645,9 @@ class PerangkatGenerator
             $pemahamanBermakna = "Mempelajari {$cleanBab} membentuk karakter warga negara yang bertanggung jawab, menghargai keberagaman, serta berdaya cipta dalam memecahkan masalah kemasyarakatan.";
             $pertanyaanPemantik= "1. Mengapa isu {$cleanBab} menjadi topik yang penting untuk kita amati dan kita pedulikan bersama?\n2. Kontribusi positif apa yang bisa kita berikan sebagai pelajar dalam menghadapi persoalan terkait topik ini?";
             $saranaPrasarana   = 'Buku Teks Siswa, Artikel Kasus Kontekstual, Peta/Gambar Pendukung, Proyektor, LKPD Analisis Sosial.';
-            $targetSiswa       = 'Peserta didik reguler / tipikal (28-32 siswa)';
+            $targetSiswa       = 'Peserta didik reguler / tipikal (30 siswa)';
 
-            $pendahuluan       = "1. Guru mengucapkan salam, menyapa siswa, berdoa bersama, dan memeriksa presensi.\n2. Apersepsi: Guru mengaitkan materi {$cleanBab} dengan berita terkini atau peristiwa di lingkungan sekitar siswa.\n3. Guru menyampaikan tujuan pembelajaran dan gambaran proyek/aktivitas yang akan dikerjakan bersama.";
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Apersepsi: Guru mengaitkan materi {$cleanBab} dengan berita terkini atau peristiwa di lingkungan sekitar siswa.\n3. Guru menyampaikan tujuan pembelajaran dan gambaran proyek/aktivitas yang akan dikerjakan bersama.";
             $kegiatanInti      = "1. Eksplorasi Fenomena: Siswa mengamati tayangan video / membaca artikel studi kasus materi {$cleanBab}.\n2. Kolaborasi Tim: Siswa berdiskusi dalam kelompok menganalisis faktor penyebab, dinamika, dan alternatif solusi.\n3. Bimbingan Fasilitator: Guru mendampingi jalannya diskusi kelompok dan mendorong partisipasi aktif setiap anggota.\n4. Penyajian Gagasan: Masing-masing kelompok mempresentasikan resume hasil telaah kasus di hadapan kelas.\n5. Refleksi Bersama: Guru dan siswa menyimpulkan nilai moral, hikmah sosial, dan langkah aksi nyata yang dapat diambil.";
             $penutup           = "1. Siswa merangkum poin-poin refleksi materi {$cleanBab} yang diperoleh hari ini.\n2. Guru memberikan penguatan karakter kebinekaan dan kepedulian lingkungan.\n3. Kelas diakhiri dengan doa bersama dan salam penutup.";
 
@@ -638,6 +657,17 @@ class PerangkatGenerator
             $lkpdContent       = "LEMBAR KERJA PESERTA DIDIK (LKPD) TELAAH " . strtoupper($cleanBab) . ":\n1. Bacalah rangkuman artikel kasus yang tersedia!\n2. Identifikasi 3 faktor utama yang melatarbelakangi kasus tersebut dan diskusikan dampaknya!\n3. Rumuskan 2 rekomendasi solusi yang realistis dan dapat diterapkan!";
             $glosarium         = "{$cleanBab}: Topik kajian utama dalam mata pelajaran {$mapel}.\nDinamika Sosial: Perubahan dan interaksi yang terus berkembang di tengah masyarakat.\nGotong Royong: Sikap kerja bersama untuk mencapai tujuan kemaslahatan bersama.";
             $daftarPustaka     = "1. Kemendikbudristek. (2022). Buku Panduan Pendidik & Siswa {$mapel} Kelas {$kelas}. Jakarta.\n2. Sumber Belajar Lingkungan & Ensiklopedia Pendukung.";
+        }
+
+        // Terapkan Kustomisasi Pengguna jika Diisi
+        if (!empty($userModel)) {
+            $modelPembelajaran = $userModel;
+        }
+        if (!empty($userTarget)) {
+            $targetSiswa = $userTarget;
+        }
+        if (!empty($userPustaka)) {
+            $daftarPustaka = $userPustaka;
         }
 
         return [

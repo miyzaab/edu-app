@@ -950,7 +950,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                             <td class="value-col"><?= htmlspecialchars($namaGuru) ?></td>
                             <td class="label-col-r">Model Pembelajaran</td>
                             <td class="colon-col-r">:</td>
-                            <td class="value-col-r"><?= htmlspecialchars($m['model_pembelajaran'] ?? 'PBL') ?></td>
+                            <td class="value-col-r"><?= htmlspecialchars(!empty($m['model_pembelajaran']) ? $m['model_pembelajaran'] : ($modulData['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)')) ?></td>
                         </tr>
                     </table>
 
@@ -965,11 +965,15 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                         </tr>
                         <tr>
                             <th style="text-align: left;">Sarana &amp; Prasarana</th>
-                            <td><?= htmlspecialchars($m['sarana_prasarana'] ?? 'Buku Siswa, Papan Tulis, LKPD') ?></td>
+                            <td><?php
+                                $saranaText = $m['sarana_prasarana'] ?? 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis';
+                                $saranaText = str_replace('Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, Lembar Studi Kasus Amaliah, Alat Peraga Praktik Ibadah.', 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis', $saranaText);
+                                echo htmlspecialchars($saranaText);
+                            ?></td>
                         </tr>
                         <tr>
                             <th style="text-align: left;">Target Peserta Didik</th>
-                            <td><?= htmlspecialchars($m['target_siswa'] ?? 'Peserta didik reguler / tipikal') ?></td>
+                            <td><?= htmlspecialchars(!empty($m['target_siswa']) ? $m['target_siswa'] : ($modulData['target_siswa'] ?? 'Peserta didik reguler / santri (30 siswa)')) ?></td>
                         </tr>
                     </table>
 
@@ -999,7 +1003,11 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                     <table class="table-custom">
                         <tr>
                             <th style="width: 25%; text-align: left;">1. Pendahuluan</th>
-                            <td style="text-align: justify; line-height: 1.5;"><?= nl2br(htmlspecialchars($m['kegiatan_pendahuluan'] ?? '—')) ?></td>
+                            <td style="text-align: justify; line-height: 1.5;"><?php
+                                $pendTeks = $m['kegiatan_pendahuluan'] ?? '—';
+                                $pendTeks = str_replace('Guru mengucapkan salam hangat dan mengajak peserta didik berdoa bersama/membaca shalawat thibil qulub.', 'Guru mengucapkan salam hangat kepada peserta ajar.', $pendTeks);
+                                echo nl2br(htmlspecialchars($pendTeks));
+                            ?></td>
                         </tr>
                         <tr>
                             <th style="text-align: left;">2. Kegiatan Inti</th>
@@ -1040,7 +1048,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                         </tr>
                         <tr>
                             <th style="text-align: left;">Daftar Pustaka</th>
-                            <td><?= nl2br(htmlspecialchars($m['daftar_pustaka'] ?? '—')) ?></td>
+                            <td><?= nl2br(htmlspecialchars(!empty($m['daftar_pustaka']) ? $m['daftar_pustaka'] : ($modulData['daftar_pustaka'] ?? '—'))) ?></td>
                         </tr>
                     </table>
 

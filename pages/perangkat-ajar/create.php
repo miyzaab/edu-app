@@ -79,6 +79,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
     $babSmt1     = trim($_POST['bab_semester_1'] ?? '');
     $babSmt2     = trim($_POST['bab_semester_2'] ?? '');
 
+    $modelPembelajaran = trim($_POST['model_pembelajaran'] ?? '');
+    $targetSiswa       = trim($_POST['target_siswa'] ?? '');
+    $daftarPustaka     = trim($_POST['daftar_pustaka'] ?? '');
+
     if (empty($mapel)) {
         $_SESSION['flash_msg'] = ['type' => 'danger', 'text' => 'Mohon pilih mata pelajaran.'];
     } elseif (empty($babSmt1) && empty($babSmt2)) {
@@ -87,17 +91,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
         try {
             // Generate seluruh perangkat ajar via Generator Engine
             $generated = PerangkatGenerator::generatePerangkatLengkap([
-                'mapel'          => $mapel,
-                'kelas'          => $kelas,
-                'jp_per_pekan'   => $jpPerPekan,
-                'tahun_ajaran'   => $tahunAjaran,
-                'nama_sekolah'   => $defaultNamaSekolah,
-                'nama_guru'      => $guruNama,
-                'nip_guru'       => $guruNip,
-                'nama_kepsek'    => $defaultNamaKepsek,
-                'nip_kepsek'     => $defaultNipKepsek,
-                'bab_semester_1' => $babSmt1,
-                'bab_semester_2' => $babSmt2
+                'mapel'              => $mapel,
+                'kelas'              => $kelas,
+                'jp_per_pekan'       => $jpPerPekan,
+                'tahun_ajaran'       => $tahunAjaran,
+                'nama_sekolah'       => $defaultNamaSekolah,
+                'nama_guru'          => $guruNama,
+                'nip_guru'           => $guruNip,
+                'nama_kepsek'        => $defaultNamaKepsek,
+                'nip_kepsek'         => $defaultNipKepsek,
+                'model_pembelajaran' => $modelPembelajaran,
+                'target_siswa'       => $targetSiswa,
+                'daftar_pustaka'     => $daftarPustaka,
+                'bab_semester_1'     => $babSmt1,
+                'bab_semester_2'     => $babSmt2
             ]);
 
             // Simpan ke database
@@ -263,6 +270,77 @@ require_once __DIR__ . '/subnav.php';
                         <div class="col-md-4 col-12">
                             <label class="form-label extra-small fw-bold text-muted mb-1">KEPALA SEKOLAH</label>
                             <input type="text" value="<?= htmlspecialchars($defaultNamaKepsek) ?>" class="form-control form-control-sm rounded-3 py-2 bg-light text-muted" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Model Pembelajaran, Target Peserta Didik, & Daftar Pustaka -->
+                    <div class="row g-3 mt-1 pt-3 border-top">
+                        <!-- Model Pembelajaran -->
+                        <div class="col-md-4 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">
+                                MODEL PEMBELAJARAN
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-secondary-subtle">
+                                    <i class="bi bi-diagram-3"></i>
+                                </span>
+                                <input type="text" name="model_pembelajaran" id="inputModelPembelajaran" list="listModelPembelajaran" 
+                                       class="form-control rounded-end-3 py-2 fw-semibold border-secondary-subtle" 
+                                       placeholder="Contoh: Problem-Based Learning (PBL)" 
+                                       value="<?= htmlspecialchars($_POST['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)') ?>">
+                                <datalist id="listModelPembelajaran">
+                                    <option value="Problem-Based Learning (PBL)">
+                                    <option value="Project-Based Learning (PjBL)">
+                                    <option value="Discovery Learning">
+                                    <option value="Inquiry Learning">
+                                    <option value="Direct Instruction & Praktik">
+                                    <option value="Cooperative Learning">
+                                    <option value="Pembelajaran Kontekstual (CTL)">
+                                    <option value="Metode Sorogan & Bandongan (Klasik Pesantren)">
+                                    <option value="Diferensiasi & Diskusi Interaktif">
+                                </datalist>
+                            </div>
+                            <div class="form-text extra-small text-muted">
+                                Bisa pilih opsi di atas atau ketik langsung model yang diinginkan.
+                            </div>
+                        </div>
+
+                        <!-- Target Peserta Didik -->
+                        <div class="col-md-4 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">
+                                TARGET PESERTA DIDIK <span class="fw-normal text-muted">(Jumlah Siswa)</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-secondary-subtle">
+                                    <i class="bi bi-people"></i>
+                                </span>
+                                <input type="text" name="target_siswa" id="inputTargetSiswa" 
+                                       class="form-control rounded-end-3 py-2 fw-semibold border-secondary-subtle" 
+                                       placeholder="Contoh: 30 Siswa (Peserta Didik Reguler)" 
+                                       value="<?= htmlspecialchars($_POST['target_siswa'] ?? '30 Siswa (Peserta Didik Reguler)') ?>">
+                            </div>
+                            <div class="form-text extra-small text-muted">
+                                Estimasi jumlah peserta didik dalam rombel belajar.
+                            </div>
+                        </div>
+
+                        <!-- Daftar Pustaka -->
+                        <div class="col-md-4 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">
+                                DAFTAR PUSTAKA <span class="fw-normal text-muted">(Rujukan / Kitab)</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-secondary-subtle">
+                                    <i class="bi bi-journal-bookmark"></i>
+                                </span>
+                                <input type="text" name="daftar_pustaka" id="inputDaftarPustaka" 
+                                       class="form-control rounded-end-3 py-2 fw-semibold border-secondary-subtle" 
+                                       placeholder="Kitab Rujukan / Buku Paket Pegangan Siswa" 
+                                       value="<?= htmlspecialchars($_POST['daftar_pustaka'] ?? '') ?>">
+                            </div>
+                            <div class="form-text extra-small text-muted">
+                                Kitab/buku pegangan belajar siswa (otomatis bila dikosongkan).
+                            </div>
                         </div>
                     </div>
                 </div>

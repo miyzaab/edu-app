@@ -152,6 +152,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
         $curBab['modul']['jumlah_pertemuan']     = $curBab['jumlah_pertemuan'];
         $curBab['modul']['alokasi_waktu']        = "{$curBab['jumlah_pertemuan']} Pertemuan ({$curBab['alokasi_jp']} JP × 40 Menit)";
         $curBab['modul']['model_pembelajaran']   = trim($_POST['model_pembelajaran'] ?? ($curBab['modul']['model_pembelajaran'] ?? ''));
+        $curBab['modul']['target_siswa']         = trim($_POST['target_siswa'] ?? ($curBab['modul']['target_siswa'] ?? ''));
+        $curBab['modul']['daftar_pustaka']       = trim($_POST['daftar_pustaka'] ?? ($curBab['modul']['daftar_pustaka'] ?? ''));
         $curBab['modul']['pemahaman_bermakna']   = trim($_POST['pemahaman_bermakna'] ?? ($curBab['modul']['pemahaman_bermakna'] ?? ''));
         $curBab['modul']['pertanyaan_pemantik']  = trim($_POST['pertanyaan_pemantik'] ?? ($curBab['modul']['pertanyaan_pemantik'] ?? ''));
         $curBab['modul']['kegiatan_pendahuluan'] = trim($_POST['kegiatan_pendahuluan'] ?? ($curBab['modul']['kegiatan_pendahuluan'] ?? ''));
@@ -558,7 +560,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                                     <?= htmlspecialchars($b['judul_bersih']) ?>
                                                 </h4>
                                                 <div class="text-muted extra-small">
-                                                    Alokasi: <strong class="text-primary"><?= htmlspecialchars($b['alokasi_jp']) ?> JP</strong> (<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan) • Model: <em><?= htmlspecialchars($m['model_pembelajaran'] ?? 'PBL') ?></em>
+                                                    Alokasi: <strong class="text-primary"><?= htmlspecialchars($b['alokasi_jp']) ?> JP</strong> (<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan) • Model: <em><?= htmlspecialchars($m['model_pembelajaran'] ?? 'PBL') ?></em> • Target: <em><?= htmlspecialchars($m['target_siswa'] ?? '30 Siswa') ?></em>
                                                 </div>
                                             </div>
 
@@ -606,7 +608,11 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                             </h6>
                                             <div class="extra-small text-muted mb-1 fw-bold">1. Pendahuluan:</div>
                                             <p class="small text-secondary mb-2" style="line-height: 1.6;">
-                                                <?= nl2br(htmlspecialchars($m['kegiatan_pendahuluan'] ?? '—')) ?>
+                                                <?php
+                                                    $pendClean = $m['kegiatan_pendahuluan'] ?? '—';
+                                                    $pendClean = str_replace('Guru mengucapkan salam hangat dan mengajak peserta didik berdoa bersama/membaca shalawat thibil qulub.', 'Guru mengucapkan salam hangat kepada peserta ajar.', $pendClean);
+                                                    echo nl2br(htmlspecialchars($pendClean));
+                                                ?>
                                             </p>
                                             <div class="extra-small text-muted mb-1 fw-bold">2. Kegiatan Inti:</div>
                                             <p class="small text-secondary mb-2" style="line-height: 1.6;">
@@ -657,7 +663,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                                     <?= htmlspecialchars($b['judul_bersih']) ?>
                                                 </h4>
                                                 <div class="text-muted extra-small">
-                                                    Alokasi: <strong class="text-primary"><?= htmlspecialchars($b['alokasi_jp']) ?> JP</strong> (<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan) • Model: <em><?= htmlspecialchars($m['model_pembelajaran'] ?? 'PBL') ?></em>
+                                                    Alokasi: <strong class="text-primary"><?= htmlspecialchars($b['alokasi_jp']) ?> JP</strong> (<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan) • Model: <em><?= htmlspecialchars($m['model_pembelajaran'] ?? 'PBL') ?></em> • Target: <em><?= htmlspecialchars($m['target_siswa'] ?? '30 Siswa') ?></em>
                                                 </div>
                                             </div>
 
@@ -705,7 +711,11 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                             </h6>
                                             <div class="extra-small text-muted mb-1 fw-bold">1. Pendahuluan:</div>
                                             <p class="small text-secondary mb-2" style="line-height: 1.6;">
-                                                <?= nl2br(htmlspecialchars($m['kegiatan_pendahuluan'] ?? '—')) ?>
+                                                <?php
+                                                    $pendClean = $m['kegiatan_pendahuluan'] ?? '—';
+                                                    $pendClean = str_replace('Guru mengucapkan salam hangat dan mengajak peserta didik berdoa bersama/membaca shalawat thibil qulub.', 'Guru mengucapkan salam hangat kepada peserta ajar.', $pendClean);
+                                                    echo nl2br(htmlspecialchars($pendClean));
+                                                ?>
                                             </p>
                                             <div class="extra-small text-muted mb-1 fw-bold">2. Kegiatan Inti:</div>
                                             <p class="small text-secondary mb-2" style="line-height: 1.6;">
@@ -769,9 +779,20 @@ $activeTab = $_GET['tab'] ?? 'cp';
                         </div>
                     </div>
 
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">MODEL PEMBELAJARAN</label>
+                            <input type="text" name="model_pembelajaran" id="editModelPembelajaran" class="form-control rounded-3" placeholder="Contoh: Problem-Based Learning (PBL)">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">TARGET PESERTA DIDIK (JUMLAH SISWA)</label>
+                            <input type="text" name="target_siswa" id="editTargetSiswa" class="form-control rounded-3" placeholder="Contoh: 30 Siswa (Reguler)">
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label class="form-label extra-small fw-bold text-muted mb-1">MODEL PEMBELAJARAN</label>
-                        <input type="text" name="model_pembelajaran" id="editModelPembelajaran" class="form-control rounded-3">
+                        <label class="form-label extra-small fw-bold text-muted mb-1">DAFTAR PUSTAKA (RUJUKAN / KITAB)</label>
+                        <input type="text" name="daftar_pustaka" id="editDaftarPustaka" class="form-control rounded-3" placeholder="Contoh: Kitab Rujukan, Buku Paket Siswa">
                     </div>
 
                     <div class="mb-3">
@@ -833,6 +854,8 @@ $activeTab = $_GET['tab'] ?? 'cp';
 
         const m = babData.modul || {};
         document.getElementById('editModelPembelajaran').value = m.model_pembelajaran || '';
+        document.getElementById('editTargetSiswa').value = m.target_siswa || '';
+        document.getElementById('editDaftarPustaka').value = m.daftar_pustaka || '';
         document.getElementById('editPemahamanBermakna').value = m.pemahaman_bermakna || '';
         document.getElementById('editPertanyaanPemantik').value = m.pertanyaan_pemantik || '';
         document.getElementById('editKegiatanInti').value = m.kegiatan_inti || '';
