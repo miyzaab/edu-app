@@ -15,9 +15,10 @@ $userRole = strtolower($_SESSION['role'] ?? '');
 
 $id = (int)($_GET['id'] ?? 0);
 $stmt = $pdo->prepare("
-    SELECT p.*, u.nama_lengkap AS nama_guru_user 
+    SELECT p.*, u.nama_lengkap AS nama_guru_user, gd.nip AS nip_guru_user 
     FROM perangkat_ajar p 
     LEFT JOIN users u ON p.user_id = u.id 
+    LEFT JOIN guru_detail gd ON u.id = gd.user_id 
     WHERE p.id = :id LIMIT 1
 ");
 $stmt->execute([':id' => $id]);
@@ -34,8 +35,62 @@ $modulData = json_decode($doc['modul_ajar_json'] ?? '{}', true) ?: [];
 $smt1 = $modulData['semester_1'] ?? ['bab_list' => []];
 $smt2 = $modulData['semester_2'] ?? ['bab_list' => []];
 
-$namaGuru   = !empty($modulData['nama_guru']) ? $modulData['nama_guru'] : ($doc['nama_guru_user'] ?? $_SESSION['nama_lengkap']);
-$nipGuru    = !empty($modulData['nip_guru']) ? $modulData['nip_guru'] : '—';
+// Nama Guru: Utamakan nama lengkap resmi dari tabel users (dengan gelar akademik)
+$rawGuruName = !empty($doc['nama_guru_user']) ? $doc['nama_guru_user'] : (!empty($modulData['nama_guru']) ? $modulData['nama_guru'] : ($_SESSION['nama_lengkap'] ?? 'Guru Pengampu'));
+$namaGuru    = preg_replace('/^(ustadz|ustadzah|ust|ustz)\.?\s+/i', '', trim($rawGuruName));
+
+// NIP Guru: Ambil dari database guru_detail resmi
+$nipGuru = !empty($doc['nip_guru_user']) && $doc['nip_guru_user'] !== '—' && $doc['nip_guru_user'] !== '-'
+    ? $doc['nip_guru_user']
+    : (!empty($modulData['nip_guru']) && $modulData['nip_guru'] !== '—' && $modulData['nip_guru'] !== '-' ? $modulData['nip_guru'] : '—');
+
+// Auto-heal jika dokumen lama belum memiliki bab terstruktur
+if (empty($smt1['bab_list']) && empty($smt2['bab_list'])) {
+    require_once __DIR__ . '/../../includes/perangkat_generator.php';
+    $rawBab = $modulData['poin_bab_raw'] ?? '';
+    $rawS1 = '';
+    $rawS2 = '';
+    if (!empty($rawBab)) {
+        $lines = preg_split('/[\r\n]+/', trim($rawBab));
+        $lines = array_filter(array_map('trim', $lines));
+        $half = max(1, (int)ceil(count($lines) / 2));
+        $rawS1 = implode("\n", array_slice($lines, 0, $half));
+        $rawS2 = implode("\n", array_slice($lines, $half));
+    }
+    $gen = PerangkatGenerator::generatePerangkatLengkap([
+        'mapel'          => $doc['mapel'],
+        'kelas'          => $doc['kelas'],
+        'jp_per_pekan'   => (int)($doc['jp_per_pekan'] ?? 2),
+        'tahun_ajaran'   => $doc['tahun_ajaran'] ?? (date('Y') . '/' . (date('Y') + 1)),
+        'nama_sekolah'   => getSetting('nama_sekolah', SCHOOL_NAME),
+        'nama_guru'      => $namaGuru,
+        'nip_guru'       => $nipGuru,
+        'nama_kepsek'    => getSetting('nama_kepsek', 'Kepala Sekolah'),
+        'nip_kepsek'     => getSetting('nip_kepsek', '—'),
+        'bab_semester_1' => $rawS1,
+        'bab_semester_2' => $rawS2
+    ]);
+    try {
+        $upd = $pdo->prepare("
+            UPDATE perangkat_ajar 
+            SET modul_ajar_json = :json,
+                capaian_pembelajaran = :cp,
+                tujuan_pembelajaran = :tp,
+                alur_tujuan_pembelajaran = :atp
+            WHERE id = :id
+        ");
+        $upd->execute([
+            ':json' => json_encode($gen['modul_json'], JSON_UNESCAPED_UNICODE),
+            ':cp'   => $gen['capaian_pembelajaran'],
+            ':tp'   => $gen['tujuan_pembelajaran'],
+            ':atp'  => $gen['alur_tujuan_pembelajaran'],
+            ':id'   => $id
+        ]);
+        $modulData = $gen['modul_json'];
+        $smt1 = $modulData['semester_1'] ?? ['bab_list' => []];
+        $smt2 = $modulData['semester_2'] ?? ['bab_list' => []];
+    } catch (Exception $e) {}
+}
 $settingNamaKepsek = getSetting('nama_kepsek', '');
 if (empty($settingNamaKepsek)) $settingNamaKepsek = getSetting('nama_kepala_sekolah', '');
 
