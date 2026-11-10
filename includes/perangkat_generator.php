@@ -319,14 +319,41 @@ class PerangkatGenerator
     }
 
     /**
-     * Narasi Capaian Pembelajaran (CP) Global
+     * Narasi Capaian Pembelajaran (CP) Global Otentik Sesuai Karakteristik Mata Pelajaran
      */
     private static function getCpNaration(string $mapel, string $kelas, string $fase, string $kategori): string
     {
-        switch ($kategori) {
-            case 'diniyah':
-                return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki kemampuan komprehensif dalam mengkaji, memahami, dan meyakini prinsip-prinsip syariat pada mata pelajaran {$mapel}. Peserta didik mampu merujuk dalil naqli secara kontekstual, mempraktikkan tata cara peribadatan dan kaidah keilmuan secara tertib sesuai tuntunan syar'i, serta menumbuhkan adab dan keteladanan akhlakul karimah dalam kehidupan sehari-hari di lingkungan pesantren/madrasah dan masyarakat.";
+        $sub = self::detectSubMapel($mapel);
 
+        if ($sub === 'shorof') {
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki kemahiran dalam menguasai kaidah morfologi bahasa Arab (Ilmu Shorof). Peserta didik mampu mengidentifikasi wazan, mawzun, shighah, dan pola perubahan kata (tashrif istilahi & lughawi), menganalisis bina' dan karakteristik perubahan bentuk kata kerja maupun kata benda, serta menerapkannya secara tepat dalam membaca, memahami, dan membedah literatur Arab serta teks-teks keislaman.";
+        }
+
+        if ($sub === 'nahwu') {
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki kemahiran dalam menguasai kaidah sintaksis bahasa Arab (Ilmu Nahwu). Peserta didik mampu menganalisis susunan kalimat (tarkib), mengenali jabatan kata dan pengaruh amil, menentukan harakat akhir dan tanda i'rab secara tepat, serta menerapkannya dalam membaca dan memahami literatur kitab berbahasa Arab.";
+        }
+
+        if ($sub === 'bahasa_arab') {
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki kemahiran berkomunikasi menggunakan bahasa Arab dalam empat keterampilan berbahasa (istima', kalam, qira'ah, dan kitabah). Peserta didik mampu memahami teks lisan dan tulis, menyusun kalimat fungsional, serta mengekspresikan gagasan dan dialog keseharian secara komunikatif.";
+        }
+
+        if ($sub === 'tarikh') {
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki wawasan historis mengenai Sejarah Kebudayaan Islam. Peserta didik mampu menelaah kronologi peristiwa penting, menganalisis faktor perkembangan dan kemajuan peradaban Islam, serta mengambil ibrah dan keteladanan dari kepemimpinan Rasulullah SAW, Khulafaur Rasyidin, dan tokoh-tokoh pembaharu Islam.";
+        }
+
+        if ($sub === 'fiqih') {
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki pemahaman mendalam mengenai prinsip-prinsip syariat Islam pada mata pelajaran {$mapel}. Peserta didik mampu menelaah dalil naqli secara kontekstual, memahami ketentuan hukum, syarat dan rukun, serta mempraktikkan tata cara peribadatan dan muamalah secara tertib dan benar dalam kehidupan sehari-hari.";
+        }
+
+        if ($sub === 'aqidah') {
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki keyakinan tauhid yang kokoh dan berakhlakul karimah. Peserta didik mampu mengkaji dalil aqli dan naqli mengenai rukun iman, menghindarkan diri dari penyimpangan akidah, serta menginternalisasikan nilai-nilai kesalehan moral dalam interaksi sosial sehari-hari.";
+        }
+
+        if ($sub === 'quran_hadits') {
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki keterampilan membaca Al-Qur'an dan Hadits secara tartil sesuai kaidah tajwid yang benar. Peserta didik mampu menghafal surah/hadits pilihan, memahami kandungan makna dan asbabun nuzul/wurud, serta mengamalkan nilai-nilai Al-Qur'an dan Hadits dalam keseharian.";
+        }
+
+        switch ($kategori) {
             case 'bahasa':
                 return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki kemampuan berbahasa yang santun, kritis, dan reflektif dalam mata pelajaran {$mapel}. Peserta didik mampu menyimak gagasan pokok, memirsa dan membaca teks multimodal secara analitis, menyampaikan gagasan secara lisan melalui diskusi dan presentasi yang terstruktur, serta memproduksi karya tulis fungsional maupun sastra yang komunikatif sesuai kaidah kebahasaan.";
 
@@ -576,26 +603,175 @@ class PerangkatGenerator
         string $userTarget = '',
         string $userPustaka = ''
     ): array {
-        // Model Pembelajaran yang Tepat Sesuai Karakteristik
-        if ($kategori === 'diniyah') {
-            $modelPembelajaran = 'Direct Instruction, Simulasi Praktik Amaliah, & Diskusi Halaqah';
+        $sub = self::detectSubMapel($mapel);
+
+        if ($sub === 'shorof') {
+            // Khusus Morfologi Bahasa Arab (Shorof / Tashrif) - Tanpa Dalil Naqli Syariat
+            $modelPembelajaran = 'Metode Qiyasiyah (Deduktif-Drill), Latihan Tashrif Mandiri & Berpasangan';
+            $profilPancasila   = ['Mandiri', 'Bernalar Kritis', 'Beriman & Bertakwa kepada Tuhan YME'];
+            $kompetensiAwal    = "Peserta didik telah mampu membaca tulisan Arab berharakat dengan lancar dan mengenal jenis kata dasar (fi'il, isim, huruf).";
+            $pemahamanBermakna = "Menguasai kaidah {$cleanBab} menjadi pondasi utama untuk membongkar susunan bentuk kata bahasa Arab, memahami perubahan makna kata, dan ketelitian menelaah literatur Islam.";
+            $pertanyaanPemantik= "1. Bagaimana pola wazan pada materi {$cleanBab} memandu kita merangkai berbagai variasi bentuk kata?\n2. Mengapa perubahan harakat dan huruf pada materi {$cleanBab} dapat melahirkan arti kata yang berbeda?";
+            $saranaPrasarana   = 'Kitab Matan Al-Amtsilah At-Tashrifiyyah/Modul Shorof, Papan Tulis, Tabel Wazan, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa)';
+
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa presensi, kesiapan fisik, dan perlengkapan kitab santri.\n3. Apersepsi: Guru mengaitkan wazan dasar materi {$cleanBab} dengan kosakata yang telah dipelajari sebelumnya.\n4. Guru menyampaikan tujuan pembelajaran hari ini.";
+            $kegiatanInti      = "1. Pengenalan Pola: Guru menuliskan rumus wazan pokok dan mawzun materi {$cleanBab} di papan tulis.\n2. Latihan Repetisi (Drill): Guru membimbing santri melafalkan tashrif secara bersama-sama hingga fasih dan berirama.\n3. Praktik Mandiri: Peserta didik menyusun bentuk tashrif untuk kata-kata baru berdasarkan timbangan {$cleanBab} pada lembar kerja.\n4. Analisis Kata: Peserta didik mengidentifikasi kemunculan pola {$cleanBab} dari teks bacaan Arab sederhana.\n5. Ta'kid & Umpan Balik: Guru memeriksa ketepatan pola pembentukan kata dan mengoreksi kekeliruan secara interaktif.";
+            $penutup           = "1. Peserta didik bersama guru menyimpulkan rumus wazan materi {$cleanBab}.\n2. Guru memberikan latihan mandiri pembiasaan tashrif.\n3. Kelas diakhiri dengan doa kafaratul majelis dan salam penutup.";
+
+            $asesmenDiag       = "Pengecekan kelancaran membaca kosakata Arab dan pengenalan huruf asal tiga huruf (fa'-'ain-lam).";
+            $asesmenFormat     = 'Kuis lisan kelancaran tashrifan berirama dan lembar latihan pembentukan kata.';
+            $asesmenSumat      = "Ujian tulis pembentukan kata sesuai wazan dan tes lisan tashrif materi {$cleanBab}.";
+            $lkpdContent       = "LEMBAR KERJA SANTRI (LKS) - MORFOLOGI " . strtoupper($cleanBab) . ":\n1. Tuliskan wazan pokok materi {$cleanBab} beserta pola tashrifannya secara lengkap!\n2. Ubahlah 3 kata dasar (fi'il tsulatsi) berikut mengikuti rumus {$cleanBab}!\n3. Tentukan bentuk shighah dan arti perubahan kata yang terbentuk!";
+            $glosarium         = "Wazan: Rumus atau timbangan baku perubahan bentuk kata dalam morfologi bahasa Arab.\nMawzun: Kata bahasa Arab yang ditimbang atau dibentuk mengikuti wazan tertentu.\nShighah: Bentuk kata yang menunjukkan kategori gramatikal (misal: fi'il madhi, fi'il mudhari', isim fa'il).\nTashrif: Proses pengubahan suatu bentuk kata menjadi berbagai ragam bentuk turunan untuk melahirkan variasi makna.";
+            $daftarPustaka     = "1. Kitab Matan Al-Amtsilah At-Tashrifiyyah karya KH. Muhammad Ma'shum bin Ali.\n2. Kitab Qawa'id Ash-Shorf / Modul Morfologi Bahasa Arab Standar Madrasah.";
+
+        } elseif ($sub === 'nahwu') {
+            // Khusus Sintaksis Bahasa Arab (Nahwu / I'rab) - Tanpa Dalil Naqli Syariat
+            $modelPembelajaran = 'Metode Istiqra\'iyyah (Induktif) & Analisis Tarkib Kontekstual';
+            $profilPancasila   = ['Bernalar Kritis', 'Mandiri', 'Beriman & Bertakwa kepada Tuhan YME'];
+            $kompetensiAwal    = "Peserta didik memahami pembagian kalam (isim, fi'il, huruf) dan harakat dasar bahasa Arab.";
+            $pemahamanBermakna = "Memahami kaidah {$cleanBab} melatih ketelitian logika berpikir dalam membedah susunan kalimat Arab serta menjaga lisan dari kesalahan tata bahasa.";
+            $pertanyaanPemantik= "1. Mengapa tanda akhir kata pada materi {$cleanBab} bisa berubah ketika menduduki posisi tertentu dalam kalimat?\n2. Bagaimana cara membedakan peran kata pada topik ini dalam sebuah kalimat utuh?";
+            $saranaPrasarana   = 'Kitab Al-Ajurrumiyyah/Buku Nahwu, Papan Tulis, Lembar Kerja Tarkib, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa)';
+
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa presensi dan kerapian kelas.\n3. Apersepsi: Guru menyajikan contoh kalimat sederhana terkait topik {$cleanBab}.\n4. Guru menyampaikan tujuan pembelajaran hari ini.";
+            $kegiatanInti      = "1. Eksplorasi Contoh: Guru menuliskan beberapa kalimat model materi {$cleanBab} di papan tulis.\n2. Analisis Induktif: Peserta didik mengamati tanda akhir kata dan faktor penyebab perubahan i'rabnya.\n3. Perumusan Kaidah: Guru bersama santri menyimpulkan kaidah sintaksis dari materi {$cleanBab}.\n4. Latihan I'rab: Santri berlatih menentukan kedudukan kata (jabatan kalimat) pada contoh kalimat baru.\n5. Verifikasi & Penguatan: Guru memberikan bimbingan pada contoh tarkib yang membutuhkan penjelasan lebih mendalam.";
+            $penutup           = "1. Santri merangkum kaidah nahwu yang telah dibahas bersama guru.\n2. Guru memberikan tugas pembiasaan membaca kalimat berharakat secara mandiri.\n3. Pembelajaran ditutup dengan doa bersama dan salam.";
+
+            $asesmenDiag       = "Tanya jawab lisan penentuan jenis kata (isim/fi'il/huruf) pada kalimat acak.";
+            $asesmenFormat     = "Penilaian unjuk kerja analisis i'rab lisan dan pengerjaan lembar kerja tarkib.";
+            $asesmenSumat      = "Ujian tulis analisis struktur kalimat (i'rab) dan kaidah materi {$cleanBab}.";
+            $lkpdContent       = "LEMBAR KERJA SANTRI (LKS) TARKIB - " . strtoupper($cleanBab) . ":\n1. Bacalah kalimat-kalimat berikut dengan harakat yang tepat!\n2. Tentukan kedudukan (tarkib) dari kata yang digarisbawahi beserta tanda i'rabnya!\n3. Jelaskan amil yang memengaruhi perubahan tanda i'rab tersebut!";
+            $glosarium         = "Tarkib: Susunan hubungan antarkata dalam membentuk kalimat sempurna (kalam).\nAmil: Unsur kata yang memengaruhi dan mengubah tanda harakat akhir kata lainnya.\nI'rab: Perubahan tanda harakat akhir kata karena pengaruh perbedaan amil yang masuk.";
+            $daftarPustaka     = "1. Kitab Matan Al-Ajurrumiyyah karya Abu Abdillah Muhammad bin Dawud ash-Shanhaji.\n2. Buku Panduan Ilmu Nahwu Tingkat Menengah.";
+
+        } elseif ($sub === 'bahasa_arab') {
+            // Khusus Kemahiran Berbahasa Arab (Muhadatsah / Bahasa Arab)
+            $modelPembelajaran = 'Direct Method (Thariqah Mubasyarah) & Communicative Language Teaching (CLT)';
+            $profilPancasila   = ['Mandiri', 'Bernalar Kritis', 'Berkebinekaan Global'];
+            $kompetensiAwal    = "Peserta didik menguasai kosakata dasar (mufradat) harian bahasa Arab.";
+            $pemahamanBermakna = "Menguasai materi {$cleanBab} melatih kepercayaan diri dalam berkomunikasi aktif berbahasa Arab untuk keperluan ibadah dan pergaulan internasional.";
+            $pertanyaanPemantik= "1. Ungkapan apa yang paling sering kita gunakan saat berinteraksi pada tema {$cleanBab}?\n2. Bagaimana cara menyusun kalimat percakapan yang lugas dan tepat pada topik ini?";
+            $saranaPrasarana   = 'Buku Bahasa Arab Siswa, Kartu Mufradat/Flashcard, Audio Percakapan, Papan Tulis, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa)';
+
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa kehadiran dan kesiapan belajar siswa.\n3. Apersepsi: Guru menyapa menggunakan beberapa kosakata kunci materi {$cleanBab}.\n4. Guru menyampaikan tujuan pembelajaran hari ini.";
+            $kegiatanInti      = "1. Thariqah Mubasyarah: Guru memperdengarkan pelafalan kosakata dan contoh kalimat materi {$cleanBab}.\n2. Repetisi & Drill: Peserta didik menirukan intonasi dan pengucapan ungkapan Arab secara berkelompok.\n3. Praktik Percakapan (Hiwar): Peserta didik berpasangan mempraktikkan dialog bertema {$cleanBab}.\n4. Produksi Teks Sederhana: Peserta didik menulis kalimat ungkapan mandiri pada lembar kerja.\n5. Umpan Balik: Guru mengoreksi makhraj huruf dan kelayakan susunan bahasa.";
+            $penutup           = "1. Peserta didik merangkum mufradat esensial yang dipelajari hari ini.\n2. Guru memberikan tugas pembiasaan menyimak audio bahasa Arab.\n3. Kelas diakhiri dengan doa kafaratul majelis dan salam.";
+
+            $asesmenDiag       = 'Kuis lisan pemetaan mufradat dasar terkait topik.';
+            $asesmenFormat     = 'Observasi keaktifan percakapan lisan dan ketepatan pelafalan makhraj.';
+            $asesmenSumat      = "Tes unjuk kerja hiwar (percakapan lisan) dan tes tulis mufradat materi {$cleanBab}.";
+            $lkpdContent       = "LEMBAR KERJA BAHASA ARAB - TEMA " . strtoupper($cleanBab) . ":\n1. Pasangkan kosakata berikut dengan maknanya yang tepat!\n2. Lengkapilah rumpang dialog percakapan berikut bersama teman sebangkumu!\n3. Susunlah 2 kalimat sempurna menggunakan kosakata materi {$cleanBab}!";
+            $glosarium         = "Mufradat: Perbendaharaan kosakata bahasa Arab.\nHiwar: Percakapan atau dialog interaktif dua arah.\nFahmul Masmu': Keterampilan menyimak dan memahami pesan lisan bahasa Arab.";
+            $daftarPustaka     = "1. Buku Siswa Bahasa Arab MTs/SMP Islam Kemendikbudristek/Kemenag.\n2. Kamus Praktis Bahasa Arab Kontemporer.";
+
+        } elseif ($sub === 'tarikh') {
+            // Khusus Sejarah Kebudayaan Islam / SKI / Tarikh
+            $modelPembelajaran = 'Inquiry-Based Learning & Telaah Narasi Sejarah';
+            $profilPancasila   = ['Berkebinekaan Global', 'Akhlak Mulia', 'Bernalar Kritis'];
+            $kompetensiAwal    = "Peserta didik mengenal garis besar periodisasi sejarah kenabian.";
+            $pemahamanBermakna = "Mempelajari sejarah {$cleanBab} memberikan inspirasi keteladanan, memperluas wawasan peradaban, dan menumbuhkan kecintaan terhadap perjuangan dakwah Islam.";
+            $pertanyaanPemantik= "1. Nilai keteladanan apa yang dapat kita petik dari peristiwa {$cleanBab} untuk diterapkan di masa kini?\n2. Bagaimana latar belakang peristiwa tersebut membentuk arah perkembangan peradaban manusia?";
+            $saranaPrasarana   = 'Buku Siswa Sejarah Kebudayaan Islam, Garis Waktu/Peta Peradaban, Proyektor/Papan Tulis, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa)';
+
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa presensi dan suasana kelas.\n3. Apersepsi: Guru menampilkan gambar/peta peristiwa terkait materi {$cleanBab}.\n4. Guru menyampaikan tujuan pembelajaran dan alur aktivitas.";
+            $kegiatanInti      = "1. Telaah Sumber: Peserta didik mencermati uraian peristiwa materi {$cleanBab} dari buku referensi.\n2. Diskusi Kelompok: Peserta didik mendiskusikan sebab-akibat, tokoh kunci, dan dinamika peristiwa.\n3. Pemetaan Alur: Setiap kelompok menyusun garis waktu (timeline) perjalanan peristiwa {$cleanBab}.\n4. Presentasi Ibrah: Perwakilan kelompok memaparkan hikmah keteladanan di depan kelas.\n5. Ta'kid & Refleksi: Guru meluruskan fakta sejarah dan menegaskan pesan moral keteladanan.";
+            $penutup           = "1. Siswa menyimpulkan poin kronologis dan ibrah materi {$cleanBab}.\n2. Guru memberikan pesan refleksi keteladanan.\n3. Kelas ditutup dengan doa bersama dan salam.";
+
+            $asesmenDiag       = 'Tanya jawab pemantik wawasan awal siswa seputar latar belakang sejarah.';
+            $asesmenFormat     = 'Observasi keaktifan diskusi telaah sejarah dan lembar kerja garis waktu.';
+            $asesmenSumat      = "Tes tertulis pemahaman kronologi peristiwa dan analisis ibrah materi {$cleanBab}.";
+            $lkpdContent       = "LEMBAR KERJA TELAAH SEJARAH - " . strtoupper($cleanBab) . ":\n1. Susunlah urutan kronologis 3 peristiwa penting pada materi {$cleanBab}!\n2. Sebutkan tokoh kunci yang berperan serta jelaskan keteladanan sikapnya!\n3. Tuliskan 2 ibrah (hikmah berharga) yang relevan untuk kehidupan generasi muda saat ini!";
+            $glosarium         = "Ibrah: Pelajaran atau hikmah mendalam yang dipetik dari suatu peristiwa masa lalu.\nKronologi: Urutan runtut kejadian sejarah berdasarkan waktu terjadinya.\nPeradaban: Kemajuan kebudayaan lahiriah dan batiniah suatu umat.";
+            $daftarPustaka     = "1. Buku Guru & Siswa SKI / Sejarah Kebudayaan Islam MTs/SMP Kemenag.\n2. Kitab Tarikh Peradaban Islam Standar Madrasah.";
+
+        } elseif ($sub === 'quran_hadits') {
+            // Khusus Al-Qur'an Hadits / Tajwid / Tahfidz
+            $modelPembelajaran = 'Metode Talaqqi, Musyafahah, & Pembelajaran Kontekstual';
+            $profilPancasila   = ['Beriman & Bertakwa kepada Tuhan YME', 'Akhlak Mulia', 'Mandiri'];
+            $kompetensiAwal    = "Peserta didik mampu membaca ayat Al-Qur'an dan memahami huruf hijaiyah.";
+            $pemahamanBermakna = "Mempelajari {$cleanBab} menumbuhkan rasa cinta kepada kitab suci Al-Qur'an dan As-Sunnah, memperbaiki kualitas tilawah, serta menuntun perilaku berakhlak mulia.";
+            $pertanyaanPemantik= "1. Mengapa penerapan kaidah tajwid pada materi {$cleanBab} sangat menentukan ketepatan makna ayat?\n2. Bagaimana cara kita mengamalkan pesan moral dari materi ini dalam keseharian?";
+            $saranaPrasarana   = 'Mushaf Al-Qur\'an, Buku Teks Siswa, Papan Tulis, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa)';
+
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa presensi, kesiapan fisik, dan mushaf siswa.\n3. Apersepsi: Guru melantunkan cuplikan ayat/hadits terkait materi {$cleanBab}.\n4. Guru menyampaikan tujuan pembelajaran hari ini.";
+            $kegiatanInti      = "1. Talaqqi: Guru mencontohkan bacaan tartil sesuai kaidah tajwid materi {$cleanBab}.\n2. Musyafahah: Peserta didik membaca bergantian dengan bimbingan dan koreksi langsung dari guru.\n3. Telaah Kaidah: Peserta didik menandai contoh hukum bacaan dan mendiskusikan artinya pada lembar kerja.\n4. Pendalaman Makna: Peserta didik mengidentifikasi kandungan pesan utama dari ayat/hadits terkait.\n5. Penguatan: Guru memberikan apresiasi atas ketepatan makhraj dan penjelasan hikmah ayat.";
+            $penutup           = "1. Siswa bersama guru menyimpulkan kaidah dan pesan pokok materi {$cleanBab}.\n2. Guru berpesan untuk melatih tilawah secara istiqamah di rumah.\n3. Kelas diakhiri dengan doa kafaratul majelis dan salam.";
+
+            $asesmenDiag       = 'Pengecekan awal kelancaran tilawah dan makharijul huruf santri.';
+            $asesmenFormat     = 'Penilaian unjuk kerja tilawah berpasangan dan lembar identifikasi tajwid.';
+            $asesmenSumat      = "Ujian lisan membaca tartil dan tes tertulis pemahaman hukum kaidah materi {$cleanBab}.";
+            $lkpdContent       = "LEMBAR KERJA AL-QUR'AN HADITS - " . strtoupper($cleanBab) . ":\n1. Tuliskan kembali ayat/hadits pilihan terkait materi {$cleanBab} dengan khat yang rapi!\n2. Identifikasi 3 hukum kaidah yang terdapat pada ayat tersebut beserta alasannya!\n3. Tuliskan pesan kandungan utama dari ayat/hadits tersebut!";
+            $glosarium         = "Tartil: Membaca Al-Qur'an secara perlahan, tenang, dan tepat sesuai kaidah tajwid.\nTalaqqi: Metode belajar langsung berhadapan dengan guru yang ahli.\nMusyafahah: Belajar membaca secara lisan dengan memperhatikan gerakan bibir guru.";
+            $daftarPustaka     = "1. Mushaf Al-Qur'an Standar Indonesia.\n2. Buku Guru & Siswa Al-Qur'an Hadits MTs/SMP Kemendikbudristek/Kemenag.";
+
+        } elseif ($sub === 'fiqih') {
+            // Khusus Fiqih & Ibadah (Di sinilah Dalil Naqli, Rukun & Syarat Sah relevan)
+            $modelPembelajaran = 'Direct Instruction, Simulasi Praktik Amaliah, & Kajian Masail';
             $profilPancasila   = ['Beriman & Bertakwa kepada Tuhan YME', 'Akhlak Mulia', 'Mandiri', 'Bernalar Kritis'];
-            $kompetensiAwal    = "Peserta didik telah memiliki pembiasaan adab harian di madrasah/pesantren dan memahami dasar-dasar syariat Islam terkait thaharah dan ibadah.";
+            $kompetensiAwal    = "Peserta didik memahami dasar-dasar syariat Islam terkait thaharah dan ibadah harian.";
             $pemahamanBermakna = "Mempelajari {$cleanBab} menumbuhkan kesadaran bahwa ketaatan menjalankan syariat Allah secara benar mendatangkan ketenangan batin, keberkahan ilmu, dan keselamatan dunia-akhirat.";
-            $pertanyaanPemantik= "1. Mengapa materi {$cleanBab} sangat menentukan kualitas ibadah dan adab kita sehari-hari?\n2. Bagaimana cara kita membentengi diri agar tidak keliru dalam mengamalkan {$cleanBab} di tengah kesibukan zaman modern?";
-            $saranaPrasarana   = 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis';
-            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa dalam rombel belajar)';
-            
+            $pertanyaanPemantik= "1. Mengapa materi {$cleanBab} sangat menentukan keabsahan dan kualitas ibadah kita sehari-hari?\n2. Bagaimana cara kita membentengi diri agar tidak keliru dalam mengamalkan {$cleanBab} di era modern?";
+            $saranaPrasarana   = 'Kitab Rujukan Fiqih/Buku Pegangan Siswa, Papan Tulis, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa)';
+
             $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa presensi, kesiapan fisik, serta kerapian busana santri.\n3. Apersepsi: Guru mengaitkan materi {$cleanBab} dengan kebiasaan ibadah santri sehari-hari.\n4. Guru menyampaikan tujuan pembelajaran hari ini dan pentingnya menjaga niat ikhlas menuntut ilmu.";
-            $kegiatanInti      = "1. Stimulasi: Guru membacakan dalil pokok / memaparkan materi kunci {$cleanBab} di papan tulis.\n2. Organisasi Belajar: Peserta didik membentuk halaqah kecil (4-5 santri) untuk mendiskusikan studi kasus amaliah pada lembar kerja.\n3. Bimbingan Penyelidikan: Guru berkeliling memberikan tas-hih (arahan dan koreksi kaidah) pada halaqah yang membutuhkan penjelasan tambahan.\n4. Simulasi & Penyajian: Perwakilan halaqah memperagakan tata cara / mempresentasikan intisari pembahasan {$cleanBab} di depan kelas.\n5. Refleksi & Penguatan: Guru memberikan ta'qid (penguatan konsep hukum syariat) serta mengapresiasi keaktifan seluruh santri.";
+            $kegiatanInti      = "1. Stimulasi: Guru membacakan dalil naqli pokok dan memaparkan rukun materi {$cleanBab} di papan tulis.\n2. Telaah Kaidah: Peserta didik menelaah syarat sah, perkara yang membatalkan, dan sunnah-sunnah pada lembar kerja.\n3. Bimbingan Penyelidikan: Guru berkeliling memberikan tas-hih (koreksi kaidah) pada kelompok yang berdiskusi.\n4. Simulasi Amaliah: Perwakilan santri mendemonstrasikan tata cara amaliah materi {$cleanBab} di depan kelas.\n5. Refleksi & Penguatan: Guru memberikan ta'qid (penguatan konsep hukum syariat) serta mengapresiasi keaktifan seluruh santri.";
             $penutup           = "1. Peserta didik dibimbing guru menyimpulkan kaidah utama dari materi {$cleanBab}.\n2. Guru memberikan pesan mutaba'ah amaliah untuk dipraktikkan langsung di asrama/rumah.\n3. Guru menutup pembelajaran dengan membaca hamdalah dan doa kafaratul majelis.";
 
             $asesmenDiag       = 'Tanya jawab lisan tentang pengalaman santri mengamalkan materi pada hari-hari sebelumnya.';
-            $asesmenFormat     = 'Observasi keaktifan diskusi halaqah, penilaian unjuk kerja praktik syariat, dan lembar kerja santri.';
+            $asesmenFormat     = 'Observasi keaktifan diskusi, penilaian unjuk kerja simulasi praktik, dan lembar kerja santri.';
             $asesmenSumat      = "Ujian tulis pemahaman kaidah syariat dan tes lisan penguasaan dalil pokok materi {$cleanBab}.";
-            $lkpdContent       = "LEMBAR KERJA SANTRI (LKS) - " . strtoupper($cleanBab) . ":\n1. Tuliskan 1 dalil naqli utama yang mendasari materi {$cleanBab} beserta artinya!\n2. Selesaikan analisis kasus amaliah harian berikut bersama kelompok halaqahmu secara runtut!\n3. Tuliskan kesimpulan hukum dan hikmah yang kamu dapatkan!";
-            $glosarium         = "{$cleanBab}: Pembahasan materi pokok dalam mata pelajaran {$mapel}.\nDalil Naqli: Landasan hukum syariat bersumber dari Al-Qur'an atau As-Sunnah ash-Shahihah.\nAdab: Sikap batin dan lahiriah yang mencerminkan keluhuran budi pekerti santri.";
-            $daftarPustaka     = "1. Tim Kemenag RI. (2022). Buku Siswa & Guru {$mapel} Kelas {$kelas} MTs/SMP. Jakarta.\n2. Kitab Rujukan Fikih/Akidah Standar Madrasah & Pesantren.";
+            $lkpdContent       = "LEMBAR KERJA SANTRI (LKS) FIQIH - " . strtoupper($cleanBab) . ":\n1. Tuliskan 1 dalil naqli utama yang mendasari materi {$cleanBab} beserta artinya!\n2. Uraikan syarat sah dan rukun-rukun yang harus dipenuhi dalam materi {$cleanBab}!\n3. Selesaikan analisis kasus amaliah harian berikut bersama teman sekelompokmu!";
+            $glosarium         = "Dalil Naqli: Landasan hukum syariat yang bersumber dari Al-Qur'an atau As-Sunnah ash-Shahihah.\nRukun: Bagian pokok dari suatu ibadah yang wajib dikerjakan dan menentukan keabsahannya.\nSyarat Sah: Hal-hal yang harus terpenuhi sebelum atau saat ibadah dilakukan agar ibadah tersebut diterima secara syar'i.";
+            $daftarPustaka     = "1. Tim Kemenag RI. (2022). Buku Siswa & Guru Fikih Kelas {$kelas} MTs/SMP. Jakarta.\n2. Kitab Fikih Standar Madrasah & Pesantren (Safinatun Naja / Fathul Qarib).";
+
+        } elseif ($sub === 'aqidah') {
+            // Khusus Aqidah Akhlak
+            $modelPembelajaran = 'Discovery Learning & Pembiasaan Reflektif';
+            $profilPancasila   = ['Beriman & Bertakwa kepada Tuhan YME', 'Akhlak Mulia', 'Mandiri', 'Bernalar Kritis'];
+            $kompetensiAwal    = "Peserta didik mengenal rukun iman dan nilai-nilai akhlak terpuji dalam keluarga.";
+            $pemahamanBermakna = "Memahami materi {$cleanBab} memperkokoh keyakinan tauhid, membentengi diri dari keraguan akidah, dan membentuk pribadi yang berbudi pekerti luhur.";
+            $pertanyaanPemantik= "1. Mengapa keyakinan terhadap materi {$cleanBab} menjadi landasan utama dari semua perbuatan baik kita?\n2. Bagaimana keteladanan pada materi ini dapat kita wujudkan dalam interaksi bersama sesama teman?";
+            $saranaPrasarana   = 'Buku Siswa Aqidah Akhlak, Papan Tulis, Lembar Studi Kasus Kasih Sayang/Keimanan, dan alat tulis';
+            $targetSiswa       = 'Peserta didik reguler / santri (30 siswa)';
+
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa presensi dan kenyamanan ruang kelas.\n3. Apersepsi: Guru mengaitkan pokok materi {$cleanBab} dengan fenomena kebesaran ciptaan Allah SWT.\n4. Guru menyampaikan tujuan pembelajaran hari ini.";
+            $kegiatanInti      = "1. Eksplorasi Dalil: Guru menyajikan dalil pokok dan intisari materi {$cleanBab} di hadapan santri.\n2. Telaah Kelompok: Santri mendiskusikan bukti-bukti keimanan dan contoh sikap mulia pada lembar aktivitas.\n3. Dialog Reflektif: Guru memandu dialog interaktif tentang bagaimana menangkal keraguan akidah.\n4. Presentasi: Perwakilan santri menyampaikan komitmen keteladanan akhlak di depan kelas.\n5. Penguatan: Guru memberikan ta'kid nilai keimanan dan nasihat keluhuran budi pekerti.";
+            $penutup           = "1. Santri merumuskan intisari keyakinan dan sikap terpuji dari materi {$cleanBab}.\n2. Guru memberikan pesan pembiasaan akhlakul karimah di lingkungan asrama/rumah.\n3. Kelas ditutup dengan doa kafaratul majelis dan salam.";
+
+            $asesmenDiag       = 'Tanya jawab pemantik wawasan dasar tauhid dan adab santri.';
+            $asesmenFormat     = 'Observasi sikap santun dalam diskusi, lembar refleksi diri, dan keaktifan kelas.';
+            $asesmenSumat      = "Ujian tulis pemahaman dalil aqidah dan tes uraian keteladanan akhlak materi {$cleanBab}.";
+            $lkpdContent       = "LEMBAR KERJA SANTRI (LKS) AQIDAH - " . strtoupper($cleanBab) . ":\n1. Tuliskan dalil naqli/aqli yang melandasi materi {$cleanBab} beserta intisari artinya!\n2. Jelaskan 2 hikmah menanamkan keyakinan materi ini dalam kehidupan sehari-hari!\n3. Rumuskan 3 aksi nyata akhlak mulia yang akan kamu amalkan mulai pekan ini!";
+            $glosarium         = "Tauhid: Pengesaan Allah SWT dalam segala sifat ketuhanan dan peribadatan.\nAkhlakul Karimah: Perilaku terpuji yang bersumber dari dorongan jiwa yang bersih sesuai syariat.\nDalil Aqli: Landasan pemikiran rasional yang logis dan tidak bertentangan dengan wahyu.";
+            $daftarPustaka     = "1. Buku Siswa & Guru Akidah Akhlak MTs/SMP Kemendikbudristek/Kemenag.\n2. Kitab Rujukan Aqidah Standar Madrasah & Pesantren.";
+
+        } elseif ($sub === 'pjok' || $kategori === 'olahraga') {
+            // Khusus Olahraga / Penjas / PJOK
+            $modelPembelajaran = 'Direct Instruction Praktik Gerak & Game-Based Learning';
+            $profilPancasila   = ['Mandiri', 'Gotong Royong', 'Bernalar Kritis'];
+            $kompetensiAwal    = "Peserta didik memiliki kemampuan motorik dasar dan kondisi fisik yang siap beraktivitas jasmani.";
+            $pemahamanBermakna = "Mempraktikkan aktivitas {$cleanBab} melatih koordinasi fisik, disiplin mental, sportivitas, serta menanamkan pola hidup bugar sepanjang hayat.";
+            $pertanyaanPemantik= "1. Mengapa teknik dasar pada materi {$cleanBab} perlu dilakukan secara benar dan teratur?\n2. Bagaimana sikap sportivitas dan kerja sama menentukan keberhasilan aktivitas ini?";
+            $saranaPrasarana   = 'Lapangan Olahraga/Halaman Sekolah, Peluit, Stopwatch, Bola/Alat Praktik Terkait, Lembar Observasi Gerak';
+            $targetSiswa       = 'Peserta didik reguler / tipikal (30 siswa)';
+
+            $pendahuluan       = "1. Guru mengucapkan salam hangat kepada peserta ajar.\n2. Guru memeriksa kesiapan fisik, pakaian olahraga, dan presensi siswa.\n3. Apersepsi: Guru menjelaskan manfaat materi {$cleanBab} bagi kebugaran tubuh.\n4. Guru memimpin pemanasan statis dan dinamis bersama seluruh siswa.";
+            $kegiatanInti      = "1. Demonstrasi Gerak: Guru mencontohkan teknik gerak spesifik materi {$cleanBab} di hadapan siswa.\n2. Latihan Berulang: Siswa melakukan pengulangan teknik dasar secara bertahap dan teratur.\n3. Praktik Berpasangan/Kelompok: Siswa saling mengamati dan mengoreksi keterampilan gerak teman.\n4. Simulasi Permainan: Siswa menerapkan teknik yang dipelajari ke dalam situasi permainan sederhana bernuansa sportif.\n5. Penguatan: Guru memberikan apresiasi atas kedisiplinan dan perbaikan teknik gerak siswa.";
+            $penutup           = "1. Guru memimpin pendinginan (cooling down) bersama siswa.\n2. Refleksi: Siswa menyampaikan kendala gerak yang dirasakan saat latihan.\n3. Guru berpesan untuk menjaga hidrasi dan istirahat yang cukup, ditutup dengan doa bersama.";
+
+            $asesmenDiag       = 'Pengecekan kesiapan kondisi fisik dan riwayat kesehatan siswa sebelum praktik.';
+            $asesmenFormat     = 'Observasi rubrik ketepatan gerak dasar dan penilaian sikap sportivitas.';
+            $asesmenSumat      = "Tes unjuk kerja keterampilan gerak spesifik materi {$cleanBab}.";
+            $lkpdContent       = "LEMBAR OBSERVASI GERAK PJOK - " . strtoupper($cleanBab) . ":\n1. Amatilah teknik gerak yang dilakukan oleh pasangan latihanmu!\n2. Berikan tanda centang pada rubrik indikator gerak yang berhasil dieksekusi secara benar!\n3. Tuliskan 1 saran perbaikan untuk menyempurnakan teknik gerak temanmu!";
+            $glosarium         = "Biomekanika: Prinsip ilmu gerak tubuh manusia yang efisien dan aman dari cedera.\nKoordinasi Motorik: Keterpaduan kerja otot dan sistem saraf dalam menghasilkan gerakan yang presisi.\nSportivitas: Sikap ksatria, jujur, menghormati lawan, dan patuh pada aturan permainan.";
+            $daftarPustaka     = "1. Kemendikbudristek. (2022). Buku Panduan Guru PJOK SMP Kelas {$kelas}. Jakarta.\n2. Buku Standar Pelatihan Kebugaran Jasmani Remaja.";
 
         } elseif ($kategori === 'bahasa') {
             $modelPembelajaran = 'Genre-Based Approach (Pembelajaran Berbasis Teks) & Cooperative Learning';

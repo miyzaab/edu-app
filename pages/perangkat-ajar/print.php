@@ -551,15 +551,8 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
         $stempelSetting = getSetting('stempel_path', '');
         $stempelUrl = !empty($stempelSetting) ? (strpos($stempelSetting, 'http') === 0 ? $stempelSetting : '../../' . ltrim($stempelSetting, '/')) : '';
 
-        // Tentukan teks jabatan kepala sekolah dengan tepat dan luwes
+        // Jabatan resmi penandatanganan
         $jabatanKepsek = 'Kepala Sekolah';
-        if (!empty($namaSekolah)) {
-            if (stripos($namaSekolah, 'SMP') === 0 || stripos($namaSekolah, 'SMA') === 0 || stripos($namaSekolah, 'SD') === 0 || stripos($namaSekolah, 'MTs') === 0) {
-                $jabatanKepsek = 'Kepala ' . htmlspecialchars($namaSekolah);
-            } else {
-                $jabatanKepsek = 'Kepala ' . htmlspecialchars($namaSekolah);
-            }
-        }
         ?>
         <div class="ttd-container">
             <table class="ttd-table">

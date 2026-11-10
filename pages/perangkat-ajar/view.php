@@ -172,6 +172,38 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
     }
 }
 
+// PROSES UPDATE INFO UMUM MODUL (MODEL PEMBELAJARAN, TARGET SISWA, DAFTAR PUSTAKA)
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_info_modul' && $canEdit) {
+    $modelPem = trim($_POST['model_pembelajaran'] ?? '');
+    $targetS  = trim($_POST['target_siswa'] ?? '');
+    $pustaka  = trim($_POST['daftar_pustaka'] ?? '');
+    $applyAll = !empty($_POST['apply_all_babs']);
+
+    if (!empty($modelPem)) $modulData['model_pembelajaran'] = $modelPem;
+    if (!empty($targetS))  $modulData['target_siswa'] = $targetS;
+    if (!empty($pustaka))  $modulData['daftar_pustaka'] = $pustaka;
+
+    if ($applyAll) {
+        foreach (['semester_1', 'semester_2'] as $semKey) {
+            if (isset($modulData[$semKey]['bab_list']) && is_array($modulData[$semKey]['bab_list'])) {
+                foreach ($modulData[$semKey]['bab_list'] as &$bItem) {
+                    if (!isset($bItem['modul'])) $bItem['modul'] = [];
+                    if (!empty($modelPem)) $bItem['modul']['model_pembelajaran'] = $modelPem;
+                    if (!empty($targetS))  $bItem['modul']['target_siswa'] = $targetS;
+                    if (!empty($pustaka))  $bItem['modul']['daftar_pustaka'] = $pustaka;
+                }
+                unset($bItem);
+            }
+        }
+    }
+
+    $newJson = json_encode($modulData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    $stmtUp = $pdo->prepare("UPDATE perangkat_ajar SET modul_ajar_json = :j WHERE id = :id");
+    $stmtUp->execute([':j' => $newJson, ':id' => $id]);
+
+    redirect("view.php?id={$id}&tab=modul_sem1", 'success', 'Model Pembelajaran & Identitas Modul Ajar berhasil diperbarui!');
+}
+
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/subnav.php';
 
@@ -200,7 +232,10 @@ $activeTab = $_GET['tab'] ?? 'cp';
 
                     <?php if ($canEdit): ?>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="edit.php?id=<?= $id ?>" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold">
+                            <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalEditInfoModul">
+                                <i class="bi bi-sliders me-1"></i> Edit Model Pembelajaran
+                            </button>
+                            <a href="edit.php?id=<?= $id ?>" class="btn btn-sm btn-light text-dark rounded-pill px-3 fw-bold">
                                 <i class="bi bi-pencil-square me-1"></i> Edit Dokumen
                             </a>
                         </div>
@@ -831,6 +866,91 @@ $activeTab = $_GET['tab'] ?? 'cp';
                     <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
                         <i class="bi bi-save me-1"></i> Simpan Perubahan Bab
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDIT CEPAT MODEL PEMBELAJARAN & INFO MODUL -->
+<div class="modal fade" id="modalEditInfoModul" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="fw-bold modal-title text-dark" style="font-family: 'Outfit', sans-serif;">
+                        <i class="bi bi-sliders text-primary me-2"></i> Edit Model Pembelajaran &amp; Modul
+                    </h5>
+                    <small class="text-muted extra-small">Sesuaikan model dan rincian modul ajar untuk seluruh bab.</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form method="POST" action="view.php?id=<?= $id ?>">
+                <input type="hidden" name="action" value="update_info_modul">
+
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label class="form-label extra-small fw-bold text-muted mb-1">
+                            MODEL PEMBELAJARAN
+                        </label>
+                        <input type="text" name="model_pembelajaran" id="modalModelPem" list="listModalModel" 
+                               class="form-control rounded-3 py-2 fw-semibold" 
+                               value="<?= htmlspecialchars($modulData['model_pembelajaran'] ?? ($modulData['semester_1']['bab_list'][0]['modul']['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)')) ?>" required>
+                        <datalist id="listModalModel">
+                            <option value="Problem-Based Learning (PBL)">
+                            <option value="Project-Based Learning (PjBL)">
+                            <option value="Discovery Learning">
+                            <option value="Inquiry Learning">
+                            <option value="Metode Qiyasiyah (Deduktif-Drill), Latihan Tashrif Mandiri & Berpasangan">
+                            <option value="Metode Istiqra'iyyah (Induktif) & Analisis Tarkib Kontekstual">
+                            <option value="Direct Instruction, Simulasi Praktik Amaliah, & Kajian Masail">
+                            <option value="Direct Method (Thariqah Mubasyarah) & Communicative Language Teaching (CLT)">
+                            <option value="Metode Talaqqi, Musyafahah, & Pembelajaran Kontekstual">
+                            <option value="Direct Instruction Praktik Gerak & Game-Based Learning">
+                            <option value="Genre-Based Approach (Pembelajaran Berbasis Teks)">
+                            <option value="Cooperative Learning">
+                        </datalist>
+                        <div class="form-text extra-small text-muted">
+                            Pilih rekomendasi di atas atau ketik langsung model yang diinginkan.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label extra-small fw-bold text-muted mb-1">
+                            TARGET PESERTA DIDIK
+                        </label>
+                        <input type="text" name="target_siswa" 
+                               class="form-control rounded-3 py-2 fw-semibold" 
+                               value="<?= htmlspecialchars($modulData['target_siswa'] ?? ($modulData['semester_1']['bab_list'][0]['modul']['target_siswa'] ?? '26 Siswa (Kelas VII)')) ?>" required>
+                        <div class="form-text extra-small text-muted">
+                            Jumlah peserta didik dalam kelas (sesuai data kelas di aplikasi).
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label extra-small fw-bold text-muted mb-1">
+                            DAFTAR PUSTAKA
+                        </label>
+                        <input type="text" name="daftar_pustaka" 
+                               class="form-control rounded-3 py-2 fw-semibold" 
+                               value="<?= htmlspecialchars($modulData['daftar_pustaka'] ?? ($modulData['semester_1']['bab_list'][0]['modul']['daftar_pustaka'] ?? '')) ?>" 
+                               placeholder="Kitab Rujukan / Buku Pegangan Siswa">
+                    </div>
+
+                    <div class="form-check form-switch mt-3 pt-2 border-top">
+                        <input class="form-check-input" type="checkbox" name="apply_all_babs" id="checkApplyAll" value="1" checked>
+                        <label class="form-check-label extra-small fw-bold text-dark" for="checkApplyAll">
+                            Terapkan seragam ke seluruh Bab Semester 1 &amp; 2
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                        <i class="bi bi-save me-1"></i> Simpan Perubahan Modul
                     </button>
                 </div>
             </form>

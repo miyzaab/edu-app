@@ -70,6 +70,35 @@ if (empty($mapelOptions)) {
     }
 }
 
+// Ambil jumlah siswa riil per kelas (VII, VIII, IX) dari database aplikasi
+$targetSiswaPerKelas = [
+    'VII'  => '26 Siswa (Kelas VII)',
+    'VIII' => '34 Siswa (Kelas VIII)',
+    'IX'   => '30 Siswa (Kelas IX)'
+];
+try {
+    $stmtKelas = $pdo->query("
+        SELECT k.tingkat, k.nama_kelas, COUNT(s.id) AS total_siswa
+        FROM kelas k
+        LEFT JOIN siswa s ON s.kelas_id = k.id AND (s.status = 'aktif' OR s.status IS NULL)
+        GROUP BY k.id, k.tingkat, k.nama_kelas
+    ");
+    while ($rK = $stmtKelas->fetch(PDO::FETCH_ASSOC)) {
+        $t = strtoupper(trim($rK['tingkat'] ?? ''));
+        if (empty($t)) {
+            if (stripos($rK['nama_kelas'], 'VII') !== false && stripos($rK['nama_kelas'], 'VIII') === false) $t = 'VII';
+            elseif (stripos($rK['nama_kelas'], 'VIII') !== false) $t = 'VIII';
+            elseif (stripos($rK['nama_kelas'], 'IX') !== false) $t = 'IX';
+        }
+        if (in_array($t, ['VII', 'VIII', 'IX'])) {
+            $cnt = (int)$rK['total_siswa'];
+            if ($cnt > 0) {
+                $targetSiswaPerKelas[$t] = "{$cnt} Siswa ({$rK['nama_kelas']})";
+            }
+        }
+    }
+} catch (Exception $e) {}
+
 // PROSES SUBMIT GENERATE
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'generate_perangkat') {
     $mapel       = trim($_POST['mapel'] ?? '');
@@ -198,7 +227,7 @@ require_once __DIR__ . '/subnav.php';
                             <label class="form-label extra-small fw-bold text-muted mb-1">
                                 MATA PELAJARAN <span class="text-danger">*</span>
                             </label>
-                            <select name="mapel" id="selectMapel" class="form-select rounded-3 py-2.5 fw-semibold border-secondary-subtle" required>
+                            <select name="mapel" id="selectMapel" class="form-select rounded-3 py-2.5 fw-semibold border-secondary-subtle" onchange="autoSuggestModel(this.value)" required>
                                 <option value="" disabled selected>-- Pilih Mata Pelajaran --</option>
                                 <?php foreach ($mapelOptions as $m): ?>
                                     <option value="<?= htmlspecialchars($m) ?>" <?= (isset($_POST['mapel']) && $_POST['mapel'] === $m) ? 'selected' : '' ?>>
@@ -316,11 +345,11 @@ require_once __DIR__ . '/subnav.php';
                                 </span>
                                 <input type="text" name="target_siswa" id="inputTargetSiswa" 
                                        class="form-control rounded-end-3 py-2 fw-semibold border-secondary-subtle" 
-                                       placeholder="Contoh: 30 Siswa (Peserta Didik Reguler)" 
-                                       value="<?= htmlspecialchars($_POST['target_siswa'] ?? '30 Siswa (Peserta Didik Reguler)') ?>">
+                                       placeholder="Contoh: 26 Siswa (Kelas VII)" 
+                                       value="<?= htmlspecialchars($_POST['target_siswa'] ?? ($targetSiswaPerKelas[$selectedKelas] ?? '30 Siswa (Reguler)')) ?>">
                             </div>
                             <div class="form-text extra-small text-muted">
-                                Estimasi jumlah peserta didik dalam rombel belajar.
+                                Otomatis terisi sesuai data riil kelas di aplikasi (bisa diedit).
                             </div>
                         </div>
 
@@ -455,12 +484,16 @@ require_once __DIR__ . '/subnav.php';
 </div>
 
 <script>
-    // Update visual radio button pill kelas
+    const targetSiswaData = <?= json_encode($targetSiswaPerKelas) ?>;
+
+    // Update visual radio button pill kelas & sinkronkan target peserta didik
     function updateKelasPills() {
+        let activeVal = 'VII';
         const labels = document.querySelectorAll('.btn-kelas-option');
         labels.forEach(lbl => {
             const radio = lbl.querySelector('input[type="radio"]');
             if (radio && radio.checked) {
+                activeVal = radio.value;
                 lbl.classList.remove('bg-light', 'text-dark', 'border-secondary-subtle');
                 lbl.classList.add('bg-primary', 'text-white', 'border-primary', 'fw-bold', 'shadow-sm');
             } else {
@@ -468,6 +501,42 @@ require_once __DIR__ . '/subnav.php';
                 lbl.classList.remove('bg-primary', 'text-white', 'border-primary', 'fw-bold', 'shadow-sm');
             }
         });
+
+        const targetInput = document.getElementById('inputTargetSiswa');
+        if (targetInput && targetSiswaData[activeVal]) {
+            targetInput.value = targetSiswaData[activeVal];
+        }
+    }
+
+    // Rekomendasi otomatis model pembelajaran sesuai karakteristik mapel
+    function autoSuggestModel(mapelName) {
+        const m = (mapelName || '').toLowerCase();
+        const modelInput = document.getElementById('inputModelPembelajaran');
+        if (!modelInput) return;
+
+        if (m.includes('shorof') || m.includes('sharaf') || m.includes('tashrif')) {
+            modelInput.value = 'Metode Qiyasiyah (Deduktif-Drill), Latihan Tashrif Mandiri & Berpasangan';
+        } else if (m.includes('nahwu') || m.includes('jurumiyah')) {
+            modelInput.value = 'Metode Istiqra\'iyyah (Induktif) & Analisis Tarkib Kontekstual';
+        } else if (m.includes('arab') || m.includes('muhadatsah')) {
+            modelInput.value = 'Direct Method (Thariqah Mubasyarah) & Communicative Language Teaching (CLT)';
+        } else if (m.includes('fiqih') || m.includes('fikih')) {
+            modelInput.value = 'Direct Instruction, Simulasi Praktik Amaliah, & Kajian Masail';
+        } else if (m.includes('aqidah') || m.includes('akidah')) {
+            modelInput.value = 'Discovery Learning & Pembiasaan Reflektif';
+        } else if (m.includes('tarikh') || m.includes('ski') || m.includes('sejarah')) {
+            modelInput.value = 'Inquiry-Based Learning & Telaah Narasi Sejarah';
+        } else if (m.includes('quran') || m.includes('tajwid') || m.includes('tahfidz') || m.includes('hadits')) {
+            modelInput.value = 'Metode Talaqqi, Musyafahah, & Pembelajaran Kontekstual';
+        } else if (m.includes('pjok') || m.includes('olahraga') || m.includes('penjas')) {
+            modelInput.value = 'Direct Instruction Praktik Gerak & Game-Based Learning';
+        } else if (m.includes('matematika') || m.includes('ipa') || m.includes('fisika')) {
+            modelInput.value = 'Problem-Based Learning (PBL) & Discovery Learning';
+        } else if (m.includes('indonesia') || m.includes('inggris')) {
+            modelInput.value = 'Genre-Based Approach (Pembelajaran Berbasis Teks)';
+        } else {
+            modelInput.value = 'Problem-Based Learning (PBL)';
+        }
     }
 
     // Hitung estimasi alokasi waktu JP & Pertemuan secara dinamis

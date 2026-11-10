@@ -388,8 +388,7 @@ require_once __DIR__ . '/subnav.php';
                                 <tr>
                                     <td style="width: 50%; vertical-align: top;">
                                         Mengetahui,<br>
-                                        <span id="livePrevJabatanKepsek">Kepala Sekolah
-                                            <?= htmlspecialchars($namaSekolah) ?></span>
+                                        <span id="livePrevJabatanKepsek">Kepala Sekolah</span>
                                         <div style="height: 40px; position: relative; margin: 4px 0;">
                                             <img src="<?= !empty($stempelPath) ? BASE_URL . $stempelPath : '' ?>"
                                                 alt="Stempel" id="livePrevStempel"
@@ -478,7 +477,7 @@ require_once __DIR__ . '/subnav.php';
                 const val = elNamaSekolah.value.trim();
                 const jabPrev = document.getElementById('livePrevJabatanKepsek');
                 if (jabPrev) {
-                    jabPrev.textContent = val ? (val.toUpperCase().startsWith('SMP') || val.toUpperCase().startsWith('SMA') || val.toUpperCase().startsWith('SD') || val.toUpperCase().startsWith('MTS') ? 'Kepala ' + val : 'Kepala ' + val) : 'Kepala Sekolah';
+                    jabPrev.textContent = 'Kepala Sekolah';
                 }
             });
         }
