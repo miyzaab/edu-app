@@ -41,7 +41,7 @@ $nipKepsek  = !empty($modulData['nip_kepsek']) ? $modulData['nip_kepsek'] : getS
 $jpPerPekan = (int)($doc['jp_per_pekan'] ?? ($modulData['jp_per_pekan'] ?? 4));
 
 // PROSES UPDATE CEPAT BAB TERTENTU VIA MODAL EDIT
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_bab_detail' && $canEdit) {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_bab_detail' && $canEdit) {
     $semNum  = (int)($_POST['semester_num'] ?? 1);
     $babIdx  = (int)($_POST['bab_index'] ?? 0);
 
@@ -688,3 +688,4 @@ $activeTab = $_GET['tab'] ?? 'cp';
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
+

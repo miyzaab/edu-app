@@ -22,11 +22,24 @@ $defaultNipKepsek   = getSetting('nip_kepsek', '—');
 $defaultTahun       = date('Y') . '/' . (date('Y') + 1);
 
 // Dapatkan data guru login
-$stmtUser = $pdo->prepare("SELECT nama_lengkap, nip FROM users WHERE id = :id LIMIT 1");
-$stmtUser->execute([':id' => $userId]);
-$userData = $stmtUser->fetch();
-$guruNama = $userData['nama_lengkap'] ?? $_SESSION['nama_lengkap'];
-$guruNip  = !empty($userData['nip']) ? $userData['nip'] : '—';
+$guruNama = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
+$guruNip  = '—';
+try {
+    $stmtUser = $pdo->prepare("
+        SELECT u.nama_lengkap, gd.nip 
+        FROM users u 
+        LEFT JOIN guru_detail gd ON u.id = gd.user_id 
+        WHERE u.id = :id LIMIT 1
+    ");
+    $stmtUser->execute([':id' => $userId]);
+    $userData = $stmtUser->fetch();
+    if ($userData) {
+        $guruNama = $userData['nama_lengkap'] ?? $guruNama;
+        $guruNip  = !empty($userData['nip']) ? $userData['nip'] : '—';
+    }
+} catch (Exception $e) {
+    // Fallback jika guru_detail tidak ada
+}
 
 // Plotting Mata Pelajaran Guru jika role Guru
 $assignedMapels = [];
@@ -55,7 +68,7 @@ if (empty($mapelOptions)) {
 }
 
 // PROSES SUBMIT GENERATE
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'generate_perangkat') {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'generate_perangkat') {
     $mapel       = trim($_POST['mapel'] ?? '');
     $kelas       = trim($_POST['kelas'] ?? 'VII');
     $jpPerPekan  = max(1, min(10, (int)($_POST['jp_per_pekan'] ?? 4)));

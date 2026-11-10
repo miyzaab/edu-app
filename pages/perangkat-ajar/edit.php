@@ -28,7 +28,7 @@ if ($userRole !== 'admin' && $doc['user_id'] != $userId) {
 $modulData = json_decode($doc['modul_ajar_json'] ?? '{}', true) ?: [];
 
 // Submit Edit
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
     $mapel       = trim($_POST['mapel'] ?? $doc['mapel']);
     $kelas       = trim($_POST['kelas'] ?? $doc['kelas']);
     $fase        = trim($_POST['fase'] ?? 'D');
