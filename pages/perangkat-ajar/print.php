@@ -45,16 +45,47 @@ $allBabList = array_merge(
     $smt2['bab_list'] ?? []
 );
 
-// Fallback & Setting Sekolah
-$namaSekolah    = !empty($modul['nama_sekolah']) ? $modul['nama_sekolah'] : getSetting('nama_sekolah', SCHOOL_NAME);
-$alamatSekolah  = getSetting('alamat_sekolah', 'Jl. Nakula No. 1, Kota / Kabupaten');
-$teleponSekolah = getSetting('telepon_sekolah', '021-0000000');
-$emailSekolah   = getSetting('email_sekolah', 'info@sekolah.sch.id');
+// Fallback & Setting Sekolah Resmi
+$settingNamaSekolah = getSetting('nama_sekolah', '');
+if (empty($settingNamaSekolah)) {
+    $settingNamaSekolah = getSetting('identitas_nama_sekolah', '');
+}
+$namaSekolah = !empty($settingNamaSekolah) ? $settingNamaSekolah : (!empty($modul['nama_sekolah']) ? $modul['nama_sekolah'] : SCHOOL_NAME);
+
+$alamatSekolah  = getSetting('alamat_sekolah', 'Jl. Nakula 1, Harjamukti, Cimanggis, Depok, Jawa Barat');
+$teleponSekolah = getSetting('telepon_sekolah', '');
+$emailSekolah   = getSetting('email_sekolah', '');
 
 $namaGuru   = !empty($modul['nama_guru']) ? $modul['nama_guru'] : ($doc['nama_guru_user'] ?? $_SESSION['nama_lengkap']);
 $nipGuru    = !empty($modul['nip_guru']) ? $modul['nip_guru'] : '—';
-$namaKepsek = !empty($modul['nama_kepsek']) ? $modul['nama_kepsek'] : getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd');
-$nipKepsek  = !empty($modul['nip_kepsek']) ? $modul['nip_kepsek'] : getSetting('nip_kepsek', '—');
+
+// Prioritas Kepala Sekolah dari Settings Admin Resmi (Bukan Dummy Placeholder)
+$settingNamaKepsek = getSetting('nama_kepsek', '');
+if (empty($settingNamaKepsek)) {
+    $settingNamaKepsek = getSetting('nama_kepala_sekolah', '');
+}
+
+if (!empty($settingNamaKepsek) && $settingNamaKepsek !== 'Kepala Sekolah, M.Pd') {
+    $namaKepsek = $settingNamaKepsek;
+} elseif (!empty($modul['nama_kepsek']) && $modul['nama_kepsek'] !== 'Kepala Sekolah, M.Pd') {
+    $namaKepsek = $modul['nama_kepsek'];
+} elseif (!empty($settingNamaKepsek)) {
+    $namaKepsek = $settingNamaKepsek;
+} else {
+    $namaKepsek = 'Kepala Sekolah';
+}
+
+$settingNipKepsek = getSetting('nip_kepsek', '');
+if ($settingNipKepsek !== '' && $settingNipKepsek !== null && $settingNipKepsek !== '—' && $settingNipKepsek !== '-') {
+    $nipKepsek = $settingNipKepsek;
+} elseif (!empty($modul['nip_kepsek']) && $modul['nip_kepsek'] !== '—' && $modul['nip_kepsek'] !== '-') {
+    $nipKepsek = $modul['nip_kepsek'];
+} elseif ($settingNipKepsek !== '') {
+    $nipKepsek = $settingNipKepsek;
+} else {
+    $nipKepsek = '—';
+}
+
 $jpPerPekan = (int)($doc['jp_per_pekan'] ?? ($modul['jp_per_pekan'] ?? 4));
 
 $docTitles = [
@@ -168,43 +199,64 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
             position: relative;
         }
 
-        /* KOP SURAT */
+        /* KOP SURAT RESMI & SIMETRIS */
         .kop-table {
             width: 100%;
-            border-bottom: 3px double #000;
-            padding-bottom: 12px;
-            margin-bottom: 18px;
+            border-collapse: collapse;
+            margin-bottom: 0;
         }
         .kop-table td {
             vertical-align: middle;
+            padding: 0;
         }
-        .kop-logo {
-            width: 75px;
-            text-align: center;
+        .kop-logo-left {
+            width: 90px;
+            text-align: left;
         }
-        .kop-logo img {
-            max-width: 65px;
-            height: auto;
+        .kop-logo-left img {
+            width: 78px;
+            height: 78px;
+            object-fit: contain;
+            display: block;
+        }
+        .kop-logo-right {
+            width: 90px;
         }
         .kop-text {
             text-align: center;
-        }
-        .kop-instansi {
-            font-size: 11pt;
-            font-weight: bold;
-            letter-spacing: 0.5px;
+            vertical-align: middle;
+            padding: 0 10px;
         }
         .kop-nama-sekolah {
             font-size: 15pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin: 2px 0;
+            margin: 0 0 3px 0;
             letter-spacing: 0.8px;
+            line-height: 1.25;
+            color: #000;
         }
         .kop-alamat {
+            font-size: 9.5pt;
+            color: #111;
+            line-height: 1.35;
+        }
+        .kop-kontak {
             font-size: 9pt;
-            color: #333;
-            font-style: italic;
+            color: #222;
+            line-height: 1.35;
+            margin-top: 2px;
+        }
+        .kop-garis {
+            margin-top: 10px;
+            margin-bottom: 18px;
+        }
+        .kop-garis .line-thick {
+            border-top: 2.5px solid #000;
+            margin-bottom: 1.5px;
+        }
+        .kop-garis .line-thin {
+            border-top: 0.8px solid #000;
         }
 
         /* HEADER JUDUL DOKUMEN */
@@ -213,7 +265,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
             font-size: 13pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin: 15px 0 20px 0;
+            margin: 14px 0 18px 0;
             line-height: 1.35;
             letter-spacing: 0.5px;
         }
@@ -222,23 +274,39 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
         .meta-info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
-            font-size: 10.5pt;
+            margin-bottom: 18px;
+            font-size: 10pt;
+            line-height: 1.45;
         }
         .meta-info-table td {
-            padding: 3px 0;
+            padding: 3.5px 0;
             vertical-align: top;
         }
-        .meta-info-table .label-col {
-            width: 20%;
+        .meta-info-table tr td:nth-child(1), .meta-info-table .label-col {
+            width: 18%;
             font-weight: bold;
+            white-space: nowrap;
         }
-        .meta-info-table .colon-col {
+        .meta-info-table tr td:nth-child(2), .meta-info-table .colon-col {
             width: 2%;
             text-align: center;
         }
-        .meta-info-table .value-col {
-            width: 28%;
+        .meta-info-table tr td:nth-child(3), .meta-info-table .value-col {
+            width: 38%;
+            word-wrap: break-word;
+        }
+        .meta-info-table tr td:nth-child(4), .meta-info-table .label-col-r {
+            width: 16%;
+            font-weight: bold;
+            white-space: nowrap;
+            padding-left: 10px;
+        }
+        .meta-info-table tr td:nth-child(5), .meta-info-table .colon-col-r {
+            width: 2%;
+            text-align: center;
+        }
+        .meta-info-table tr td:nth-child(6), .meta-info-table .value-col-r {
+            width: 24%;
         }
 
         /* SECTION TITLE */
@@ -343,27 +411,36 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
     </div>
 
     <?php
-    // Helper Render Kop Surat
+    // Helper Render Kop Surat Resmi & Simetris
     function renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah) {
         $logoSetting = getSetting('logo_path', '');
         $logoUrl = !empty($logoSetting) ? (strpos($logoSetting, 'http') === 0 ? $logoSetting : '../../' . ltrim($logoSetting, '/')) : '../../assets/img/logo.png';
         ?>
         <table class="kop-table">
             <tr>
-                <td class="kop-logo">
+                <td class="kop-logo-left">
                     <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo" onerror="this.src='../../assets/img/logo.png'">
                 </td>
                 <td class="kop-text">
                     <div class="kop-nama-sekolah"><?= htmlspecialchars($namaSekolah) ?></div>
-                    <div class="kop-alamat">
-                        <?= htmlspecialchars($alamatSekolah) ?>
-                        <?php if (!empty($teleponSekolah) || !empty($emailSekolah)): ?>
-                            <br>Telp: <?= htmlspecialchars($teleponSekolah) ?> | Email: <?= htmlspecialchars($emailSekolah) ?>
-                        <?php endif; ?>
-                    </div>
+                    <div class="kop-alamat"><?= htmlspecialchars($alamatSekolah) ?></div>
+                    <?php if (!empty($teleponSekolah) || !empty($emailSekolah)): ?>
+                        <div class="kop-kontak">
+                            <?php if (!empty($teleponSekolah)): ?>Telp: <?= htmlspecialchars($teleponSekolah) ?><?php endif; ?>
+                            <?php if (!empty($teleponSekolah) && !empty($emailSekolah)): ?> &nbsp;|&nbsp; <?php endif; ?>
+                            <?php if (!empty($emailSekolah)): ?>Email: <?= htmlspecialchars($emailSekolah) ?><?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                </td>
+                <td class="kop-logo-right">
+                    <!-- Penyeimbang visual agar nama sekolah tepat di tengah kertas -->
                 </td>
             </tr>
         </table>
+        <div class="kop-garis">
+            <div class="line-thick"></div>
+            <div class="line-thin"></div>
+        </div>
         <?php
     }
 
@@ -404,27 +481,37 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
 
         $stempelSetting = getSetting('stempel_path', '');
         $stempelUrl = !empty($stempelSetting) ? (strpos($stempelSetting, 'http') === 0 ? $stempelSetting : '../../' . ltrim($stempelSetting, '/')) : '';
+
+        // Tentukan teks jabatan kepala sekolah dengan tepat dan luwes
+        $jabatanKepsek = 'Kepala Sekolah';
+        if (!empty($namaSekolah)) {
+            if (stripos($namaSekolah, 'SMP') === 0 || stripos($namaSekolah, 'SMA') === 0 || stripos($namaSekolah, 'SD') === 0 || stripos($namaSekolah, 'MTs') === 0) {
+                $jabatanKepsek = 'Kepala ' . htmlspecialchars($namaSekolah);
+            } else {
+                $jabatanKepsek = 'Kepala ' . htmlspecialchars($namaSekolah);
+            }
+        }
         ?>
         <div class="ttd-container">
             <table class="ttd-table">
                 <tr>
                     <td>
                         Mengetahui,<br>
-                        Kepala Sekolah <?= htmlspecialchars($namaSekolah) ?>
+                        <?= $jabatanKepsek ?>
                         <div class="ttd-space" style="position: relative;">
                             <?php if (!empty($stempelUrl)): ?>
-                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height: 60px; position: absolute; left: 15px; top: 2px; opacity: 0.85;">
+                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height: 65px; position: absolute; left: 15px; top: 0px; opacity: 0.85;">
                             <?php endif; ?>
                         </div>
                         <strong><u><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
-                        NIP. <?= htmlspecialchars($nipKepsek) ?>
+                        NIP. <?= !empty($nipKepsek) && $nipKepsek !== '—' && $nipKepsek !== '-' ? htmlspecialchars($nipKepsek) : '—' ?>
                     </td>
                     <td style="text-align: right;">
                         <?= htmlspecialchars($city) ?>, <?= $indonesianDate ?><br>
                         Guru Mata Pelajaran
                         <div class="ttd-space"></div>
                         <strong><u><?= htmlspecialchars($namaGuru) ?></u></strong><br>
-                        NIP. <?= htmlspecialchars($nipGuru) ?>
+                        NIP. <?= !empty($nipGuru) && $nipGuru !== '—' && $nipGuru !== '-' ? htmlspecialchars($nipGuru) : '—' ?>
                     </td>
                 </tr>
             </table>
@@ -506,30 +593,30 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                     KURIKULUM MERDEKA — FASE <?= htmlspecialchars($doc['fase']) ?> (KELAS <?= htmlspecialchars($doc['kelas']) ?>)
                 </div>
 
-                <table class="meta-info-table" style="border-bottom: 1px solid #000; padding-bottom: 8px;">
+                <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
                     <tr>
                         <td class="label-col">Satuan Pendidikan</td>
                         <td class="colon-col">:</td>
                         <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
-                        <td class="label-col">Fase / Kelas</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+                        <td class="label-col-r">Fase / Kelas</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
                     </tr>
                     <tr>
                         <td class="label-col">Mata Pelajaran</td>
                         <td class="colon-col">:</td>
                         <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
-                        <td class="label-col">Tahun Ajaran</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($doc['tahun_ajaran']) ?></td>
+                        <td class="label-col-r">Tahun Ajaran</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r"><?= htmlspecialchars($doc['tahun_ajaran']) ?></td>
                     </tr>
                     <tr>
                         <td class="label-col">Beban Belajar</td>
                         <td class="colon-col">:</td>
                         <td class="value-col"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
-                        <td class="label-col">Guru Pengampu</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($namaGuru) ?></td>
+                        <td class="label-col-r">Guru Pengampu</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r"><?= htmlspecialchars($namaGuru) ?></td>
                     </tr>
                 </table>
 
@@ -587,22 +674,22 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                     KURIKULUM MERDEKA — TAHUN AJARAN <?= htmlspecialchars($doc['tahun_ajaran']) ?>
                 </div>
 
-                <table class="meta-info-table" style="border-bottom: 1px solid #000; padding-bottom: 8px;">
+                <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
                     <tr>
                         <td class="label-col">Satuan Pendidikan</td>
                         <td class="colon-col">:</td>
                         <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
-                        <td class="label-col">Fase / Kelas</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+                        <td class="label-col-r">Fase / Kelas</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
                     </tr>
                     <tr>
                         <td class="label-col">Mata Pelajaran</td>
                         <td class="colon-col">:</td>
                         <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
-                        <td class="label-col">Alokasi Waktu</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
+                        <td class="label-col-r">Alokasi Waktu</td>
+                        <td class="colon-col-r">:</td>
+                        <td class="value-col-r"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
                     </tr>
                 </table>
 
@@ -682,30 +769,30 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                     </div>
 
                     <div class="section-title">I. INFORMASI UMUM</div>
-                    <table class="meta-info-table">
+                    <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
                         <tr>
                             <td class="label-col">Satuan Pendidikan</td>
                             <td class="colon-col">:</td>
                             <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
-                            <td class="label-col">Fase / Kelas</td>
-                            <td class="colon-col">:</td>
-                            <td class="value-col">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+                            <td class="label-col-r">Fase / Kelas</td>
+                            <td class="colon-col-r">:</td>
+                            <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
                         </tr>
                         <tr>
                             <td class="label-col">Mata Pelajaran</td>
                             <td class="colon-col">:</td>
                             <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
-                            <td class="label-col">Alokasi Waktu</td>
-                            <td class="colon-col">:</td>
-                            <td class="value-col"><strong><?= htmlspecialchars($m['alokasi_waktu'] ?? "{$b['alokasi_jp']} JP") ?></strong></td>
+                            <td class="label-col-r">Alokasi Waktu</td>
+                            <td class="colon-col-r">:</td>
+                            <td class="value-col-r"><strong><?= htmlspecialchars($m['alokasi_waktu'] ?? "{$b['alokasi_jp']} JP") ?></strong></td>
                         </tr>
                         <tr>
                             <td class="label-col">Guru Pengampu</td>
                             <td class="colon-col">:</td>
                             <td class="value-col"><?= htmlspecialchars($namaGuru) ?></td>
-                            <td class="label-col">Model Pembelajaran</td>
-                            <td class="colon-col">:</td>
-                            <td class="value-col"><?= htmlspecialchars($m['model_pembelajaran'] ?? 'PBL') ?></td>
+                            <td class="label-col-r">Model Pembelajaran</td>
+                            <td class="colon-col-r">:</td>
+                            <td class="value-col-r"><?= htmlspecialchars($m['model_pembelajaran'] ?? 'PBL') ?></td>
                         </tr>
                     </table>
 

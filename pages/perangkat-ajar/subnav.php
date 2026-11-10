@@ -8,13 +8,13 @@ $docId = isset($_GET['id']) ? (int) $_GET['id'] : (isset($_GET['cp_id']) ? (int)
 $userRole = strtolower($_SESSION['role'] ?? 'guru');
 
 $navItems = [
-    'index.php'  => ['icon' => 'bi-speedometer2', 'label' => 'Dashboard'],
-    'create.php' => ['icon' => 'bi-plus-circle-fill', 'label' => '✨ Buat Perangkat Ajar Baru (1 Pintu)'],
+    'index.php' => ['icon' => 'bi-speedometer2', 'label' => 'Dashboard'],
+    'create.php' => ['icon' => 'bi-plus-circle-fill', 'label' => 'Buat Perangkat Ajar Baru (1 Pintu)'],
 ];
 
 // Khusus Admin: Menu Edit Identitas Dokumen & Kop Surat
 if ($userRole === 'admin') {
-    $navItems['identitas.php'] = ['icon' => 'bi-gear-fill', 'label' => '⚙️ Edit Identitas Dokumen'];
+    $navItems['identitas.php'] = ['icon' => 'bi-gear-fill', 'label' => 'Edit Identitas Dokumen'];
 }
 
 if ($docId > 0) {
@@ -78,9 +78,9 @@ if ($docId > 0) {
 
 <div class="perangkat-nav-wrapper d-flex align-items-center justify-content-between flex-wrap gap-2">
     <div class="perangkat-nav-container">
-        <?php foreach ($navItems as $url => $item): 
+        <?php foreach ($navItems as $url => $item):
             $isActive = ($currentPage === explode('?', $url)[0]);
-        ?>
+            ?>
             <a href="<?= htmlspecialchars($url) ?>" class="perangkat-nav-link <?= $isActive ? 'active' : '' ?>">
                 <i class="bi <?= $item['icon'] ?>"></i>
                 <span><?= htmlspecialchars($item['label']) ?></span>

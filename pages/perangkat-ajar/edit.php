@@ -161,11 +161,11 @@ require_once __DIR__ . '/subnav.php';
                         </div>
                         <div class="col-md-6 col-12">
                             <label class="form-label extra-small fw-bold text-muted mb-1">KEPALA SEKOLAH</label>
-                            <input type="text" name="nama_kepsek" class="form-control rounded-3" value="<?= htmlspecialchars($modulData['nama_kepsek'] ?? '') ?>" required>
+                            <input type="text" name="nama_kepsek" class="form-control rounded-3" value="<?= htmlspecialchars((!empty($modulData['nama_kepsek']) && $modulData['nama_kepsek'] !== 'Kepala Sekolah, M.Pd') ? $modulData['nama_kepsek'] : getSetting('nama_kepsek', 'Kepala Sekolah')) ?>" required>
                         </div>
                         <div class="col-md-6 col-12">
                             <label class="form-label extra-small fw-bold text-muted mb-1">NIP KEPALA SEKOLAH</label>
-                            <input type="text" name="nip_kepsek" class="form-control rounded-3" value="<?= htmlspecialchars($modulData['nip_kepsek'] ?? '') ?>">
+                            <input type="text" name="nip_kepsek" class="form-control rounded-3" value="<?= htmlspecialchars((!empty($modulData['nip_kepsek']) && $modulData['nip_kepsek'] !== '—' && $modulData['nip_kepsek'] !== '-') ? $modulData['nip_kepsek'] : getSetting('nip_kepsek', '—')) ?>">
                         </div>
                     </div>
                 </div>

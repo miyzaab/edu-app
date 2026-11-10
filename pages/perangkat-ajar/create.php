@@ -15,11 +15,14 @@ $userId = (int)$_SESSION['user_id'];
 $userRole = strtolower($_SESSION['role'] ?? '');
 $isGuruRole = ($userRole === 'guru');
 
-// Default Values dari Setting Sekolah
-$defaultNamaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
-$defaultNamaKepsek  = getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd');
-$defaultNipKepsek   = getSetting('nip_kepsek', '—');
-$defaultTahun       = date('Y') . '/' . (date('Y') + 1);
+// Default Values dari Setting Sekolah Resmi
+$defaultNamaSekolah = getSetting('nama_sekolah', '');
+if (empty($defaultNamaSekolah)) $defaultNamaSekolah = getSetting('identitas_nama_sekolah', SCHOOL_NAME);
+
+$defaultNamaKepsek = getSetting('nama_kepsek', '');
+if (empty($defaultNamaKepsek)) $defaultNamaKepsek = getSetting('nama_kepala_sekolah', 'Kepala Sekolah');
+$defaultNipKepsek  = getSetting('nip_kepsek', '—');
+$defaultTahun      = date('Y') . '/' . (date('Y') + 1);
 
 // Dapatkan data guru login
 $guruNama = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';

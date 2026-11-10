@@ -74,7 +74,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
         }
     }
 
-    redirect('identitas.php', 'success', 'Alhamdulillah! Identitas Dokumen & Kop Sekolah berhasil diperbarui dan berlaku untuk seluruh cetak PDF!');
+    // 4. Sinkronisasi Otomatis ke Seluruh Data Dokumen Tersimpan di Database
+    try {
+        $stmtAll = $pdo->query("SELECT id, modul_ajar_json FROM perangkat_ajar");
+        $updateStmt = $pdo->prepare("UPDATE perangkat_ajar SET modul_ajar_json = :json WHERE id = :id");
+        while ($row = $stmtAll->fetch(PDO::FETCH_ASSOC)) {
+            $j = json_decode($row['modul_ajar_json'] ?? '{}', true);
+            if (is_array($j)) {
+                $j['nama_sekolah'] = $namaSekolah;
+                $j['nama_kepsek']  = $namaKepsek;
+                $j['nip_kepsek']   = $nipKepsek;
+                $updateStmt->execute([':json' => json_encode($j, JSON_UNESCAPED_UNICODE), ':id' => $row['id']]);
+            }
+        }
+    } catch (Exception $e) {
+        // Lewati jika belum ada dokumen
+    }
+
+    redirect('identitas.php', 'success', 'Alhamdulillah! Identitas Dokumen & Kop Sekolah berhasil diperbarui dan disinkronkan ke seluruh dokumen cetak PDF!');
 }
 
 // Ambil data settings aktif
@@ -288,49 +305,56 @@ require_once __DIR__ . '/subnav.php';
                     <div class="card border rounded-4 shadow-sm p-4 bg-white" 
                          style="border-color: #cbd5e1 !important; font-family: 'Times New Roman', Times, serif; color: #000; font-size: 10.5pt; line-height: 1.35;">
                         
-                        <!-- PREVIEW KOP SURAT -->
-                        <div style="border-bottom: 2.5px double #000; padding-bottom: 8px; margin-bottom: 12px;">
+                        <!-- PREVIEW KOP SURAT SIMETRIS -->
+                        <div>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
-                                    <td style="width: 55px; vertical-align: middle; text-align: center; padding-right: 8px;">
+                                    <td style="width: 60px; vertical-align: middle; text-align: left; padding: 0;">
                                         <img src="<?= !empty($logoPath) ? BASE_URL . $logoPath : '../../assets/img/logo.png' ?>" 
-                                             alt="Logo" id="livePrevLogo" style="max-width: 50px; max-height: 50px; object-fit: contain;"
+                                             alt="Logo" id="livePrevLogo" style="width: 55px; height: 55px; object-fit: contain; display: block;"
                                              onerror="this.src='../../assets/img/logo.png'">
                                     </td>
-                                    <td style="vertical-align: middle; text-align: center;">
-                                        <div style="font-size: 12.5pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px;" id="livePrevNamaSekolah">
+                                    <td style="vertical-align: middle; text-align: center; padding: 0 8px;">
+                                        <div style="font-size: 11pt; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; line-height: 1.25;" id="livePrevNamaSekolah">
                                             <?= htmlspecialchars($namaSekolah) ?>
                                         </div>
-                                        <div style="font-size: 8pt; color: #333; font-style: italic; line-height: 1.3;" id="livePrevAlamat">
+                                        <div style="font-size: 7.5pt; color: #111; line-height: 1.3;" id="livePrevAlamat">
                                             <?= htmlspecialchars($alamatSekolah) ?>
                                         </div>
-                                        <div style="font-size: 8pt; color: #333; line-height: 1.3;" id="livePrevKontak">
+                                        <div style="font-size: 7.5pt; color: #333; line-height: 1.3; margin-top: 2px;" id="livePrevKontak">
                                             Telp: <?= htmlspecialchars($teleponSekolah) ?> | Email: <?= htmlspecialchars($emailSekolah) ?>
                                         </div>
                                     </td>
+                                    <td style="width: 60px; padding: 0;">
+                                        <!-- Penyeimbang visual -->
+                                    </td>
                                 </tr>
                             </table>
+                            <div style="margin-top: 8px; margin-bottom: 12px;">
+                                <div style="border-top: 2.5px solid #000; margin-bottom: 1.5px;"></div>
+                                <div style="border-top: 0.8px solid #000;"></div>
+                            </div>
                         </div>
 
                         <!-- BODY CONTOH PREVIEW -->
-                        <div style="text-align: center; font-weight: bold; font-size: 11pt; text-transform: uppercase; margin: 8px 0 12px 0;">
+                        <div style="text-align: center; font-weight: bold; font-size: 10pt; text-transform: uppercase; margin: 8px 0 10px 0;">
                             MODUL AJAR KURIKULUM MERDEKA
                         </div>
-                        <div style="font-size: 9pt; color: #555; text-align: justify; margin-bottom: 20px; font-style: italic;">
+                        <div style="font-size: 8pt; color: #555; text-align: justify; margin-bottom: 15px; font-style: italic;">
                             [... Isi Capaian Pembelajaran, Alur Tujuan (ATP), Sintaks Pembelajaran, dan Asesmen ...]
                         </div>
 
                         <!-- PREVIEW LEMBAR TANDA TANGAN -->
-                        <div style="margin-top: 25px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
+                        <div style="margin-top: 20px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 8.5pt;">
                                 <tr>
                                     <td style="width: 50%; vertical-align: top;">
                                         Mengetahui,<br>
-                                        Kepala Sekolah<br>
-                                        <div style="height: 45px; position: relative; margin: 4px 0;">
+                                        <span id="livePrevJabatanKepsek">Kepala <?= htmlspecialchars($namaSekolah) ?></span>
+                                        <div style="height: 40px; position: relative; margin: 4px 0;">
                                             <img src="<?= !empty($stempelPath) ? BASE_URL . $stempelPath : '' ?>" 
                                                  alt="Stempel" id="livePrevStempel" 
-                                                 style="max-height: 45px; position: absolute; left: 10px; top: -5px; opacity: 0.85; <?= empty($stempelPath) ? 'display:none;' : '' ?>">
+                                                 style="max-height: 40px; position: absolute; left: 10px; top: -5px; opacity: 0.85; <?= empty($stempelPath) ? 'display:none;' : '' ?>">
                                         </div>
                                         <strong><u id="livePrevNamaKepsek"><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
                                         NIP. <span id="livePrevNipKepsek"><?= htmlspecialchars($nipKepsek) ?></span>
@@ -338,8 +362,8 @@ require_once __DIR__ . '/subnav.php';
                                     <td style="width: 50%; vertical-align: top; text-align: right;">
                                         <span id="livePrevKota"><?= htmlspecialchars($kotaSekolah) ?></span>, 
                                         <span id="livePrevTanggal"><?= !empty($titimangsa) ? htmlspecialchars($titimangsa) : date('j F Y') ?></span><br>
-                                        Guru Mata Pelajaran<br>
-                                        <div style="height: 45px; margin: 4px 0;"></div>
+                                        Guru Mata Pelajaran
+                                        <div style="height: 40px; margin: 4px 0;"></div>
                                         <strong><u>[Nama Guru Pengampu]</u></strong><br>
                                         NIP. [NIP Guru]
                                     </td>
@@ -405,6 +429,18 @@ require_once __DIR__ . '/subnav.php';
         syncText('inputKotaSekolah', 'livePrevKota');
         syncText('inputNamaKepsek', 'livePrevNamaKepsek');
         syncText('inputNipKepsek', 'livePrevNipKepsek');
+
+        // Update jabatan kepsek preview
+        const elNamaSekolah = document.getElementById('inputNamaSekolah');
+        if (elNamaSekolah) {
+            elNamaSekolah.addEventListener('input', () => {
+                const val = elNamaSekolah.value.trim();
+                const jabPrev = document.getElementById('livePrevJabatanKepsek');
+                if (jabPrev) {
+                    jabPrev.textContent = val ? (val.toUpperCase().startsWith('SMP') || val.toUpperCase().startsWith('SMA') || val.toUpperCase().startsWith('SD') || val.toUpperCase().startsWith('MTS') ? 'Kepala ' + val : 'Kepala ' + val) : 'Kepala Sekolah';
+                }
+            });
+        }
 
         // Update kontak bar
         const updateKontak = () => {

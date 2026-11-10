@@ -36,8 +36,29 @@ $smt2 = $modulData['semester_2'] ?? ['bab_list' => []];
 
 $namaGuru   = !empty($modulData['nama_guru']) ? $modulData['nama_guru'] : ($doc['nama_guru_user'] ?? $_SESSION['nama_lengkap']);
 $nipGuru    = !empty($modulData['nip_guru']) ? $modulData['nip_guru'] : '—';
-$namaKepsek = !empty($modulData['nama_kepsek']) ? $modulData['nama_kepsek'] : getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd');
-$nipKepsek  = !empty($modulData['nip_kepsek']) ? $modulData['nip_kepsek'] : getSetting('nip_kepsek', '—');
+$settingNamaKepsek = getSetting('nama_kepsek', '');
+if (empty($settingNamaKepsek)) $settingNamaKepsek = getSetting('nama_kepala_sekolah', '');
+
+if (!empty($settingNamaKepsek) && $settingNamaKepsek !== 'Kepala Sekolah, M.Pd') {
+    $namaKepsek = $settingNamaKepsek;
+} elseif (!empty($modulData['nama_kepsek']) && $modulData['nama_kepsek'] !== 'Kepala Sekolah, M.Pd') {
+    $namaKepsek = $modulData['nama_kepsek'];
+} elseif (!empty($settingNamaKepsek)) {
+    $namaKepsek = $settingNamaKepsek;
+} else {
+    $namaKepsek = 'Kepala Sekolah';
+}
+
+$settingNipKepsek = getSetting('nip_kepsek', '');
+if ($settingNipKepsek !== '' && $settingNipKepsek !== null && $settingNipKepsek !== '—' && $settingNipKepsek !== '-') {
+    $nipKepsek = $settingNipKepsek;
+} elseif (!empty($modulData['nip_kepsek']) && $modulData['nip_kepsek'] !== '—' && $modulData['nip_kepsek'] !== '-') {
+    $nipKepsek = $modulData['nip_kepsek'];
+} elseif ($settingNipKepsek !== '') {
+    $nipKepsek = $settingNipKepsek;
+} else {
+    $nipKepsek = '—';
+}
 $jpPerPekan = (int)($doc['jp_per_pekan'] ?? ($modulData['jp_per_pekan'] ?? 4));
 
 // PROSES UPDATE CEPAT BAB TERTENTU VIA MODAL EDIT

@@ -67,7 +67,7 @@ require_once __DIR__ . '/subnav.php';
             class="btn btn-emerald px-4 py-3 fw-extrabold rounded-pill text-white shadow-lg d-inline-flex align-items-center gap-2"
             style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; font-size: 1rem;">
             <i class="bi bi-magic fs-5"></i>
-            <span>✨ Buat Perangkat Ajar Baru</span>
+            <span>Buat Perangkat Ajar Baru</span>
         </a>
     </div>
 </div>
