@@ -348,20 +348,27 @@ $paperSections = [];
 
 // 1. COVER PAGE (DOC_TYPE == ALL)
 if ($docType === 'all') {
+    $coverLogoUrl = resolveAssetSrc(getSetting('logo_path', ''), $isPdfDownload, 'assets/img/logo.png');
+    $coverFallbackUrl = $isPdfDownload ? '' : '../../assets/img/logo.png';
     ob_start();
     ?>
-    <div style="text-align:center; padding-top:26mm;">
+    <div style="text-align:center; padding-top:16mm;">
+        <?php if ($coverLogoUrl !== ''): ?>
+            <div style="margin-bottom:18px;">
+                <img src="<?= htmlspecialchars($coverLogoUrl) ?>" alt="Logo Sekolah"<?= $coverFallbackUrl !== '' ? ' onerror="this.src=\'' . htmlspecialchars($coverFallbackUrl, ENT_QUOTES) . '\'"' : '' ?> style="width:96px; height:96px; object-fit:contain;">
+            </div>
+        <?php endif; ?>
         <div style="font-size:18pt; font-weight:bold; margin-bottom:6px; letter-spacing:1px;">
             PERANGKAT AJAR LENGKAP
         </div>
         <div style="font-size:24pt; font-weight:bold; margin-bottom:12px; text-transform:uppercase;">
             KURIKULUM MERDEKA
         </div>
-        <div style="font-size:13pt; font-weight:bold; color:#333333; margin-bottom:24px;">
+        <div style="font-size:13pt; font-weight:bold; color:#333333; margin-bottom:20px;">
             FASE D — KELAS <?= htmlspecialchars($doc['kelas']) ?> (SMP/MTS)
         </div>
 
-        <table style="width:140px; margin:0 auto 28px auto; border-collapse:collapse;">
+        <table style="width:140px; margin:0 auto 24px auto; border-collapse:collapse;">
             <tr><td style="border-top:3px solid #000000; height:2px; font-size:1px; line-height:1px; padding:0;">&nbsp;</td></tr>
         </table>
 
@@ -373,7 +380,7 @@ if ($docType === 'all') {
         </div>
     </div>
 
-    <table style="width:76%; margin:28mm auto 34mm auto; border:1.5px solid #000000; border-collapse:collapse; font-size:11pt; text-align:left;">
+    <table style="width:76%; margin:22mm auto 26mm auto; border:1.5px solid #000000; border-collapse:collapse; font-size:11pt; text-align:left;">
         <tr>
             <td style="width:38%; font-weight:bold; padding:7px 12px;">Satuan Pendidikan</td>
             <td style="width:5%; padding:7px 4px;">:</td>
@@ -396,7 +403,7 @@ if ($docType === 'all') {
         </tr>
     </table>
 
-    <div style="text-align:center; font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin-top:20mm;">
+    <div style="text-align:center; font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin-top:16mm;">
         <?= htmlspecialchars($namaSekolah) ?><br>
         <?= htmlspecialchars($alamatSekolah) ?>
     </div>
