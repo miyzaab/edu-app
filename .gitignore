@@ -20,3 +20,6 @@ Thumbs.db
 
 # VS Code (opsional, bisa di-include kalau mau share settings tim)
 .vscode/sftp.json
+
+# Composer dependencies (uploaded separately to production)
+/vendor/

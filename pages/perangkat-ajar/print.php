@@ -187,6 +187,678 @@ foreach (['capaian_pembelajaran', 'tujuan_pembelajaran', 'alur_tujuan_pembelajar
 
 $rawFilename = $titleText . '_' . ($doc['mapel'] ?? 'Mapel') . '_Kelas_' . ($doc['kelas'] ?? '');
 $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') . '.pdf';
+
+$autoloadPath  = __DIR__ . '/../../vendor/autoload.php';
+$hasMpdf       = file_exists($autoloadPath);
+$isPdfDownload = $hasMpdf && (($_GET['download'] ?? '') === 'pdf');
+
+// Helper resolve URL atau path file lokal untuk logo/stempel
+function resolveAssetSrc(string $settingPath, bool $forMpdf, string $fallbackRel = ''): string
+{
+    $rootDir = realpath(__DIR__ . '/../../') ?: (__DIR__ . '/../..');
+    $clean   = ltrim(trim($settingPath), '/');
+
+    if ($forMpdf) {
+        if ($clean !== '' && stripos($clean, 'http') !== 0) {
+            $local = $rootDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $clean);
+            if (is_file($local)) {
+                return $local;
+            }
+        }
+        if ($fallbackRel !== '') {
+            $fbLocal = $rootDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($fallbackRel, '/'));
+            if (is_file($fbLocal)) {
+                return $fbLocal;
+            }
+        }
+        return '';
+    }
+
+    if ($clean !== '') {
+        return stripos($clean, 'http') === 0 ? $settingPath : '../../' . $clean;
+    }
+    return $fallbackRel !== '' ? '../../' . ltrim($fallbackRel, '/') : '';
+}
+
+// Helper Render Kop Surat Resmi & Simetris
+function renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, bool $forMpdf = false) {
+    $logoUrl     = resolveAssetSrc(getSetting('logo_path', ''), $forMpdf, 'assets/img/logo.png');
+    $fallbackUrl = $forMpdf ? '' : '../../assets/img/logo.png';
+    ?>
+    <table class="kop-table">
+        <tr>
+            <td class="kop-logo-left">
+                <?php if ($logoUrl !== ''): ?>
+                    <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo"<?= $fallbackUrl !== '' ? ' onerror="this.src=\'' . htmlspecialchars($fallbackUrl, ENT_QUOTES) . '\'"' : '' ?> style="width:74px; height:74px; object-fit:contain;">
+                <?php endif; ?>
+            </td>
+            <td class="kop-text">
+                <div class="kop-nama-sekolah"><?= htmlspecialchars($namaSekolah) ?></div>
+                <div class="kop-alamat"><?= htmlspecialchars($alamatSekolah) ?></div>
+                <?php if (!empty($teleponSekolah) || !empty($emailSekolah)): ?>
+                    <div class="kop-kontak">
+                        <?php if (!empty($teleponSekolah)): ?>Telp: <?= htmlspecialchars($teleponSekolah) ?><?php endif; ?>
+                        <?php if (!empty($teleponSekolah) && !empty($emailSekolah)): ?> &nbsp;|&nbsp; <?php endif; ?>
+                        <?php if (!empty($emailSekolah)): ?>Email: <?= htmlspecialchars($emailSekolah) ?><?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </td>
+            <td class="kop-logo-right">&nbsp;</td>
+        </tr>
+    </table>
+    <table style="width:100%; border-collapse:collapse; margin:8px 0 14px 0;">
+        <tr>
+            <td style="border-top:2.5px solid #000; border-bottom:0.8px solid #000; height:2px; font-size:1px; line-height:1px; padding:0;">&nbsp;</td>
+        </tr>
+    </table>
+    <?php
+}
+
+// Helper Render Tanda Tangan
+function renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah, bool $forMpdf = false) {
+    $citySetting = getSetting('kota_sekolah', '');
+    if (!empty($citySetting)) {
+        $city = $citySetting;
+    } else {
+        $city = 'Kota / Kabupaten';
+        if (!empty($alamatSekolah)) {
+            $parts = explode(',', $alamatSekolah);
+            if (count($parts) > 1) {
+                $possibleCity = trim(end($parts));
+                $possibleCity = preg_replace('/\b\d{5}\b/', '', $possibleCity);
+                $possibleCity = trim($possibleCity);
+                if (!empty($possibleCity) && $possibleCity !== 'Kota / Kabupaten') {
+                    $city = $possibleCity;
+                }
+            }
+        }
+    }
+
+    $customDate = getSetting('titimangsa_dokumen', '');
+    if (!empty($customDate)) {
+        $indonesianDate = $customDate;
+    } else {
+        $months = [
+            1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ];
+        $indonesianDate = date('j') . ' ' . $months[(int)date('n')] . ' ' . date('Y');
+    }
+
+    $stempelUrl    = resolveAssetSrc(getSetting('stempel_path', ''), $forMpdf);
+    $jabatanKepsek = 'Kepala Sekolah';
+    ?>
+    <div class="ttd-container">
+        <table class="ttd-table">
+            <tr>
+                <td style="width:50%; text-align:left; vertical-align:top;">
+                    Mengetahui,<br>
+                    <?= $jabatanKepsek ?>
+                    <div class="ttd-space"<?= $forMpdf ? '' : ' style="position:relative;"' ?>>
+                        <?php if ($stempelUrl !== ''): ?>
+                            <?php if ($forMpdf): ?>
+                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:56px; margin-top:4px;">
+                            <?php else: ?>
+                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height:65px; position:absolute; left:15px; top:0; opacity:0.85;">
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                    <strong><u><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
+                    NIP. <?= !empty($nipKepsek) && $nipKepsek !== '—' && $nipKepsek !== '-' ? htmlspecialchars($nipKepsek) : '—' ?>
+                </td>
+                <td style="width:50%; text-align:right; vertical-align:top;">
+                    <?= htmlspecialchars($city) ?>, <?= $indonesianDate ?><br>
+                    Guru Mata Pelajaran
+                    <div class="ttd-space">&nbsp;</div>
+                    <strong><u><?= htmlspecialchars($namaGuru) ?></u></strong><br>
+                    NIP. <?= !empty($nipGuru) && $nipGuru !== '—' && $nipGuru !== '-' ? htmlspecialchars($nipGuru) : '—' ?>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <?php
+}
+
+// Bangun potongan HTML per dokumen/bab sekali saja (digunakan baik untuk Preview HTML maupun mPDF Vektor)
+$paperSections = [];
+
+// 1. COVER PAGE (DOC_TYPE == ALL)
+if ($docType === 'all') {
+    ob_start();
+    ?>
+    <div style="text-align:center; padding-top:26mm;">
+        <div style="font-size:18pt; font-weight:bold; margin-bottom:6px; letter-spacing:1px;">
+            PERANGKAT AJAR LENGKAP
+        </div>
+        <div style="font-size:24pt; font-weight:bold; margin-bottom:12px; text-transform:uppercase;">
+            KURIKULUM MERDEKA
+        </div>
+        <div style="font-size:13pt; font-weight:bold; color:#333333; margin-bottom:24px;">
+            FASE D — KELAS <?= htmlspecialchars($doc['kelas']) ?> (SMP/MTS)
+        </div>
+
+        <table style="width:140px; margin:0 auto 28px auto; border-collapse:collapse;">
+            <tr><td style="border-top:3px solid #000000; height:2px; font-size:1px; line-height:1px; padding:0;">&nbsp;</td></tr>
+        </table>
+
+        <div style="font-size:15pt; font-weight:bold; text-transform:uppercase; margin-bottom:8px;">
+            MATA PELAJARAN: <?= htmlspecialchars($doc['mapel']) ?>
+        </div>
+        <div style="font-size:12pt; color:#444444;">
+            Tahun Ajaran <?= htmlspecialchars($doc['tahun_ajaran']) ?> | Beban Belajar: <?= htmlspecialchars($doc['alokasi_waktu']) ?>
+        </div>
+    </div>
+
+    <table style="width:76%; margin:28mm auto 34mm auto; border:1.5px solid #000000; border-collapse:collapse; font-size:11pt; text-align:left;">
+        <tr>
+            <td style="width:38%; font-weight:bold; padding:7px 12px;">Satuan Pendidikan</td>
+            <td style="width:5%; padding:7px 4px;">:</td>
+            <td style="padding:7px 12px;"><?= htmlspecialchars($namaSekolah) ?></td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold; padding:5px 12px;">Guru Pengampu</td>
+            <td style="padding:5px 4px;">:</td>
+            <td style="padding:5px 12px;"><?= htmlspecialchars($namaGuru) ?></td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold; padding:5px 12px;">NIP Guru</td>
+            <td style="padding:5px 4px;">:</td>
+            <td style="padding:5px 12px;"><?= htmlspecialchars($nipGuru) ?></td>
+        </tr>
+        <tr>
+            <td style="font-weight:bold; padding:7px 12px;">Kepala Sekolah</td>
+            <td style="padding:7px 4px;">:</td>
+            <td style="padding:7px 12px;"><?= htmlspecialchars($namaKepsek) ?></td>
+        </tr>
+    </table>
+
+    <div style="text-align:center; font-size:10.5pt; font-weight:bold; text-transform:uppercase; margin-top:20mm;">
+        <?= htmlspecialchars($namaSekolah) ?><br>
+        <?= htmlspecialchars($alamatSekolah) ?>
+    </div>
+    <?php
+    $paperSections[] = ['class' => 'paper paper-cover', 'html' => ob_get_clean()];
+}
+
+// 2. DOKUMEN CAPAIAN PEMBELAJARAN (CP)
+if ($docType === 'cp' || $docType === 'all') {
+    ob_start();
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    ?>
+    <div class="title-header-center">
+        CAPAIAN PEMBELAJARAN (CP)<br>
+        MATA PELAJARAN: <?= strtoupper(htmlspecialchars($doc['mapel'])) ?><br>
+        KURIKULUM MERDEKA — FASE <?= htmlspecialchars($doc['fase']) ?> (KELAS <?= htmlspecialchars($doc['kelas']) ?>)
+    </div>
+
+    <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
+        <tr>
+            <td class="label-col">Satuan Pendidikan</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
+            <td class="label-col-r">Fase / Kelas</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+        </tr>
+        <tr>
+            <td class="label-col">Mata Pelajaran</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
+            <td class="label-col-r">Tahun Ajaran</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r"><?= htmlspecialchars($doc['tahun_ajaran']) ?></td>
+        </tr>
+        <tr>
+            <td class="label-col">Beban Belajar</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
+            <td class="label-col-r">Guru Pengampu</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r"><?= htmlspecialchars($namaGuru) ?></td>
+        </tr>
+    </table>
+
+    <div class="section-title">A. Deskripsi Capaian Pembelajaran Akhir Fase <?= htmlspecialchars($doc['fase']) ?></div>
+    <div style="text-align: justify; margin-bottom: 15px; line-height: 1.6;">
+        <?= nl2br(htmlspecialchars($modul['cp_global'] ?? $doc['capaian_pembelajaran'])) ?>
+    </div>
+
+    <div class="section-title">B. Matriks Capaian Pembelajaran Per Bab Pembahasan</div>
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th style="width: 28%;">Bab / Materi Pokok</th>
+                <th style="width: 15%;">Semester</th>
+                <th style="width: 57%;">Rumusan Capaian Pembelajaran (CP)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($allBabList)): ?>
+                <?php foreach ($allBabList as $b): ?>
+                    <tr>
+                        <td style="font-weight: bold;">
+                            Bab <?= htmlspecialchars($b['nomor']) ?>: <?= htmlspecialchars($b['judul_bersih']) ?>
+                        </td>
+                        <td style="text-align: center;">
+                            Semester <?= $b['semester'] ?>
+                        </td>
+                        <td style="text-align: justify; line-height: 1.5;">
+                            <?= htmlspecialchars($b['cp_teks']) ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="3" style="text-align: center;">Tidak ada data bab.</td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <?php
+    renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah, $isPdfDownload);
+    $paperSections[] = ['class' => 'paper', 'html' => ob_get_clean()];
+}
+
+// 3. DOKUMEN TUJUAN PEMBELAJARAN (TP)
+if ($docType === 'tp' || $docType === 'all') {
+    ob_start();
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    ?>
+    <div class="title-header-center">
+        TUJUAN PEMBELAJARAN (TP)<br>
+        MATA PELAJARAN: <?= strtoupper(htmlspecialchars($doc['mapel'])) ?><br>
+        KURIKULUM MERDEKA — TAHUN AJARAN <?= htmlspecialchars($doc['tahun_ajaran']) ?>
+    </div>
+
+    <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
+        <tr>
+            <td class="label-col">Satuan Pendidikan</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
+            <td class="label-col-r">Fase / Kelas</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+        </tr>
+        <tr>
+            <td class="label-col">Mata Pelajaran</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
+            <td class="label-col-r">Tahun Ajaran</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r"><?= htmlspecialchars($doc['tahun_ajaran']) ?></td>
+        </tr>
+        <tr>
+            <td class="label-col">Beban Belajar</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
+            <td class="label-col-r">Guru Pengampu</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r"><?= htmlspecialchars($namaGuru) ?></td>
+        </tr>
+    </table>
+
+    <div class="section-title">Matriks Rumusan Tujuan Pembelajaran (TP) Per Bab Pembahasan</div>
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th style="width: 20%;">Bab / Materi Pokok</th>
+                <th style="width: 13%; text-align: center;">Semester</th>
+                <th style="width: 53%;">Rumusan Tujuan Pembelajaran (TP)</th>
+                <th style="width: 14%; text-align: center;">Alokasi JP</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($allBabList)): ?>
+                <?php foreach ($allBabList as $b): ?>
+                    <tr>
+                        <td>
+                            <strong>Bab <?= htmlspecialchars($b['nomor']) ?></strong><br>
+                            <?= htmlspecialchars($b['judul_bersih']) ?>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            Semester <?= $b['semester'] ?><br>
+                            <small style="color: #555;"><?= $b['semester'] == 1 ? '(Ganjil)' : '(Genap)' ?></small>
+                        </td>
+                        <td>
+                            <ul class="tp-ul" style="margin: 0; padding-left: 16px; line-height: 1.55;">
+                                <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
+                                    <li style="margin-bottom: 4px; text-align: justify;"><?= htmlspecialchars($tpItem) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </td>
+                        <td style="text-align: center; vertical-align: middle; font-weight: bold;">
+                            <?= htmlspecialchars($b['alokasi_jp']) ?> JP<br>
+                            <small style="font-weight: normal; color: #555;">(<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan)</small>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px; color: #888;">
+                        Belum ada data Tujuan Pembelajaran.
+                    </td>
+                </tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <?php
+    renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah, $isPdfDownload);
+    $paperSections[] = ['class' => 'paper', 'html' => ob_get_clean()];
+}
+
+// 4. DOKUMEN ALUR TUJUAN PEMBELAJARAN (ATP)
+if ($docType === 'atp' || $docType === 'all') {
+    ob_start();
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    ?>
+    <div class="title-header-center">
+        ALUR TUJUAN PEMBELAJARAN (ATP)<br>
+        MATA PELAJARAN: <?= strtoupper(htmlspecialchars($doc['mapel'])) ?><br>
+        KURIKULUM MERDEKA — TAHUN AJARAN <?= htmlspecialchars($doc['tahun_ajaran']) ?>
+    </div>
+
+    <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
+        <tr>
+            <td class="label-col">Satuan Pendidikan</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
+            <td class="label-col-r">Fase / Kelas</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+        </tr>
+        <tr>
+            <td class="label-col">Mata Pelajaran</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
+            <td class="label-col-r">Alokasi Waktu</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
+        </tr>
+    </table>
+
+    <div class="section-title">Matriks Alur Tujuan Pembelajaran (ATP) 1 Tahun Ajaran</div>
+    <table class="table-custom">
+        <thead>
+            <tr>
+                <th style="width: 20%;">Bab &amp; Semester</th>
+                <th style="width: 38%;">Tujuan Pembelajaran (TP)</th>
+                <th style="width: 27%;">Alur Aktivitas Pembelajaran</th>
+                <th style="width: 15%; text-align: center;">Alokasi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (!empty($allBabList)): ?>
+                <?php foreach ($allBabList as $b): ?>
+                    <tr>
+                        <td>
+                            <strong>Bab <?= htmlspecialchars($b['nomor']) ?></strong><br>
+                            <?= htmlspecialchars($b['judul_bersih']) ?><br>
+                            <small style="font-style: italic; color: #444;">Semester <?= $b['semester'] ?></small>
+                        </td>
+                        <td>
+                            <ul class="tp-ul" style="margin: 0; padding-left: 16px; line-height: 1.5;">
+                                <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
+                                    <li><?= htmlspecialchars($tpItem) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </td>
+                        <td style="text-align: justify; line-height: 1.45;">
+                            <?= htmlspecialchars($b['atp_teks']) ?>
+                        </td>
+                        <td style="text-align: center; font-weight: bold;">
+                            <?= htmlspecialchars($b['alokasi_jp']) ?> JP<br>
+                            <small style="font-weight: normal; color: #444;">(<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan)</small>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <?php
+    renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah, $isPdfDownload);
+    $paperSections[] = ['class' => 'paper', 'html' => ob_get_clean()];
+}
+
+// 5. DOKUMEN MODUL AJAR
+$renderModulList = [];
+if ($docType === 'all') {
+    $renderModulList = $allBabList;
+} elseif ($docType === 'modul_sem1') {
+    $renderModulList = $smt1['bab_list'] ?? [];
+} elseif ($docType === 'modul_sem2') {
+    $renderModulList = $smt2['bab_list'] ?? [];
+} elseif ($docType === 'modul_bab') {
+    $targetSemList = ($semParam === 2) ? ($smt2['bab_list'] ?? []) : ($smt1['bab_list'] ?? []);
+    if (isset($targetSemList[$babIdxParam])) {
+        $renderModulList = [$targetSemList[$babIdxParam]];
+    }
+}
+
+foreach ($renderModulList as $b) {
+    $m = $b['modul'] ?? [];
+    ob_start();
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    ?>
+    <div class="title-header-center">
+        MODUL AJAR KURIKULUM MERDEKA<br>
+        BAB <?= htmlspecialchars($b['nomor']) ?>: <?= strtoupper(htmlspecialchars($b['judul_bersih'])) ?><br>
+        SEMESTER <?= $b['semester'] ?> (<?= $b['semester'] === 1 ? 'GANJIL' : 'GENAP' ?>)
+    </div>
+
+    <div class="section-title">I. INFORMASI UMUM</div>
+    <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
+        <tr>
+            <td class="label-col">Satuan Pendidikan</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
+            <td class="label-col-r">Fase / Kelas</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
+        </tr>
+        <tr>
+            <td class="label-col">Mata Pelajaran</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
+            <td class="label-col-r">Alokasi Waktu</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r"><strong><?= htmlspecialchars($m['alokasi_waktu'] ?? "{$b['alokasi_jp']} JP") ?></strong></td>
+        </tr>
+        <tr>
+            <td class="label-col">Guru Pengampu</td>
+            <td class="colon-col">:</td>
+            <td class="value-col"><?= htmlspecialchars($namaGuru) ?></td>
+            <td class="label-col-r">Model Pembelajaran</td>
+            <td class="colon-col-r">:</td>
+            <td class="value-col-r"><?= htmlspecialchars(!empty($m['model_pembelajaran']) ? $m['model_pembelajaran'] : ($modul['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)')) ?></td>
+        </tr>
+    </table>
+
+    <table class="table-custom" style="margin-top: 5px;">
+        <tr>
+            <th style="width: 25%; text-align: left;">Kompetensi Awal</th>
+            <td style="text-align: justify;"><?= htmlspecialchars($m['kompetensi_awal'] ?? '—') ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Profil Pelajar Pancasila</th>
+            <td><?php
+                $profilText = is_array($m['profil_pancasila'] ?? null)
+                    ? implode(', ', $m['profil_pancasila'])
+                    : ($m['profil_pancasila'] ?? 'Bernalar Kritis, Mandiri');
+                $profilText = str_replace(
+                    ['Beriman & Bertakwa kepada Tuhan YME, Akhlak Mulia, Mandiri, Bernalar Kritis', 'Beriman & Bertakwa kepada Tuhan YME'],
+                    ["Beriman & Bertakwa kepada Allah Ta'ala, berakhlak mulia, mandiri dan bernalar kritis", "Beriman & Bertakwa kepada Allah Ta'ala"],
+                    $profilText
+                );
+                echo htmlspecialchars($profilText);
+            ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Sarana &amp; Prasarana</th>
+            <td><?php
+                $saranaText = $m['sarana_prasarana'] ?? 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis';
+                $saranaText = str_replace('Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, Lembar Studi Kasus Amaliah, Alat Peraga Praktik Ibadah.', 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis', $saranaText);
+                echo htmlspecialchars($saranaText);
+            ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Target Peserta Didik</th>
+            <td><?= htmlspecialchars(!empty($m['target_siswa']) ? $m['target_siswa'] : ($modul['target_siswa'] ?? 'Peserta didik reguler / santri (30 siswa)')) ?></td>
+        </tr>
+    </table>
+
+    <div class="section-title">II. KOMPONEN INTI</div>
+    <table class="table-custom">
+        <tr>
+            <th style="width: 25%; text-align: left;">Tujuan Pembelajaran</th>
+            <td>
+                <ul class="tp-ul" style="margin: 0; padding-left: 16px; line-height: 1.5;">
+                    <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
+                        <li><?= htmlspecialchars($tpItem) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Pemahaman Bermakna</th>
+            <td style="text-align: justify;"><?= nl2br(htmlspecialchars($m['pemahaman_bermakna'] ?? '—')) ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Pertanyaan Pemantik</th>
+            <td style="text-align: justify;"><?= nl2br(htmlspecialchars($m['pertanyaan_pemantik'] ?? '—')) ?></td>
+        </tr>
+    </table>
+
+    <div class="section-subtitle" style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Rencana Kegiatan Pembelajaran:</div>
+    <table class="table-custom">
+        <tr>
+            <th style="width: 25%; text-align: left;">1. Pendahuluan</th>
+            <td style="text-align: justify; line-height: 1.5;"><?php
+                $pendTeks = $m['kegiatan_pendahuluan'] ?? '—';
+                $pendTeks = str_replace('Guru mengucapkan salam hangat dan mengajak peserta didik berdoa bersama/membaca shalawat thibil qulub.', 'Guru mengucapkan salam hangat kepada peserta ajar.', $pendTeks);
+                echo nl2br(htmlspecialchars($pendTeks));
+            ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">2. Kegiatan Inti</th>
+            <td style="text-align: justify; line-height: 1.5;"><?= nl2br(htmlspecialchars($m['kegiatan_inti'] ?? '—')) ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">3. Penutup</th>
+            <td style="text-align: justify; line-height: 1.5;"><?= nl2br(htmlspecialchars($m['kegiatan_penutup'] ?? '—')) ?></td>
+        </tr>
+    </table>
+
+    <div class="section-subtitle" style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Asesmen Pembelajaran:</div>
+    <table class="table-custom">
+        <tr>
+            <th style="width: 25%; text-align: left;">Asesmen Diagnostik</th>
+            <td><?= htmlspecialchars($m['asesmen_diagnostik'] ?? 'Tanya jawab pemantik awal pertemuan.') ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Asesmen Formatif</th>
+            <td><?= htmlspecialchars($m['asesmen_formatif'] ?? 'Observasi keaktifan diskusi dan pengerjaan LKPD.') ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Asesmen Sumatif</th>
+            <td><?= htmlspecialchars($m['asesmen_sumatif'] ?? 'Ujian pemecahan masalah / tes tertulis akhir bab.') ?></td>
+        </tr>
+    </table>
+
+    <div class="section-title">III. LAMPIRAN (LKPD &amp; GLOSARIUM)</div>
+    <div class="lkpd-box" style="border: 1px solid #000; padding: 10px 14px; background: #fafafa; margin-bottom: 10px; font-size: 9.5pt; line-height: 1.5;">
+        <strong style="text-transform: uppercase;">Lembar Kerja Peserta Didik (LKPD):</strong><br>
+        <?= nl2br(htmlspecialchars($m['lkpd_content'] ?? 'Tersedia pada lampiran terpisah.')) ?>
+    </div>
+
+    <table class="table-custom" style="font-size: 9.5pt;">
+        <tr>
+            <th style="width: 25%; text-align: left;">Glosarium</th>
+            <td><?= nl2br(htmlspecialchars($m['glosarium'] ?? '—')) ?></td>
+        </tr>
+        <tr>
+            <th style="text-align: left;">Daftar Pustaka</th>
+            <td><?= nl2br(htmlspecialchars(!empty($m['daftar_pustaka']) ? $m['daftar_pustaka'] : ($modul['daftar_pustaka'] ?? '—'))) ?></td>
+        </tr>
+    </table>
+
+    <?php
+    renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah, $isPdfDownload);
+    $paperSections[] = ['class' => 'paper', 'html' => ob_get_clean()];
+}
+
+// ============================================================================
+// EXPORT LANGSUNG KE PDF VEKTOR (TAJAM, UKURAN KECIL, PROSES CEPAT) VIA MPDF
+// ============================================================================
+if ($isPdfDownload && !empty($paperSections)) {
+    @ini_set('pcre.backtrack_limit', '10000000');
+    @ini_set('memory_limit', '512M');
+    require_once $autoloadPath;
+
+    $mpdfCss = "
+        body { font-family: freeserif; font-size: 10.5pt; line-height: 1.42; color: #000000; }
+        .kop-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+        .kop-table td { vertical-align: middle; padding: 0; }
+        .kop-logo-left { width: 82px; text-align: left; }
+        .kop-logo-right { width: 82px; }
+        .kop-text { text-align: center; vertical-align: middle; padding: 0 8px; }
+        .kop-nama-sekolah { font-size: 14.5pt; font-weight: bold; text-transform: uppercase; margin: 0 0 2px 0; line-height: 1.25; color: #000; }
+        .kop-alamat { font-size: 9.5pt; color: #111; line-height: 1.35; }
+        .kop-kontak { font-size: 9pt; color: #222; line-height: 1.35; margin-top: 2px; }
+        .title-header-center { text-align: center; font-size: 12.5pt; font-weight: bold; text-transform: uppercase; margin: 10px 0 14px 0; line-height: 1.35; }
+        .meta-info-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 9.8pt; line-height: 1.4; }
+        .meta-info-table td { padding: 3px 0; vertical-align: top; }
+        .meta-info-table .label-col { width: 18%; font-weight: bold; white-space: nowrap; }
+        .meta-info-table .colon-col { width: 2%; text-align: center; }
+        .meta-info-table .value-col { width: 38%; }
+        .meta-info-table .label-col-r { width: 16%; font-weight: bold; white-space: nowrap; padding-left: 8px; }
+        .meta-info-table .colon-col-r { width: 2%; text-align: center; }
+        .meta-info-table .value-col-r { width: 24%; }
+        .section-title { font-size: 10.5pt; font-weight: bold; text-transform: uppercase; border-bottom: 1.5px solid #000; padding-bottom: 3px; margin-top: 14px; margin-bottom: 8px; page-break-after: avoid; }
+        .section-subtitle { page-break-after: avoid; }
+        .table-custom { width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 12px; font-size: 9.8pt; }
+        .table-custom tr { page-break-inside: avoid; }
+        .table-custom th, .table-custom td { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }
+        .table-custom th { background-color: #f1f5f9; text-align: center; font-weight: bold; text-transform: uppercase; }
+        .lkpd-box { page-break-inside: avoid; }
+        .ttd-container { width: 100%; margin-top: 22px; page-break-inside: avoid; }
+        .ttd-table { width: 100%; border-collapse: collapse; }
+        .ttd-table td { width: 50%; vertical-align: top; font-size: 10pt; }
+        .ttd-space { height: 60px; }
+        ul.tp-ul { margin: 0; padding-left: 15px; }
+        ul.tp-ul li { margin-bottom: 3px; }
+    ";
+
+    $mpdf = new \Mpdf\Mpdf([
+        'mode'          => 'utf-8',
+        'format'        => 'A4',
+        'margin_left'   => 11,
+        'margin_right'  => 11,
+        'margin_top'    => 12,
+        'margin_bottom' => 13,
+        'default_font'  => 'freeserif',
+        'tempDir'       => sys_get_temp_dir(),
+    ]);
+    $mpdf->autoScriptToLang = true;
+    $mpdf->autoLangToFont   = true;
+    $mpdf->SetTitle($titleText . ' — ' . ($doc['mapel'] ?? ''));
+    $mpdf->WriteHTML($mpdfCss, \Mpdf\HTMLParserMode::HEADER_CSS);
+
+    foreach ($paperSections as $idx => $sec) {
+        if ($idx > 0) {
+            $mpdf->AddPage();
+        }
+        $mpdf->WriteHTML($sec['html'], \Mpdf\HTMLParserMode::HTML_BODY);
+    }
+
+    if (ob_get_length()) {
+        @ob_end_clean();
+    }
+    $mpdf->Output($pdfFilename, \Mpdf\Output\Destination::DOWNLOAD);
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -538,592 +1210,24 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             </select>
         </div>
 
-        <button type="button" id="btnDownloadPdf" onclick="downloadPdf()" class="btn-print">
-            <i class="bi bi-file-earmark-arrow-down-fill"></i> <span id="btnDownloadLabel">Download PDF</span>
-        </button>
+        <?php if ($hasMpdf): ?>
+            <a href="print.php?id=<?= $id ?>&doc_type=<?= urlencode($docType) ?>&sem=<?= $semParam ?>&bab_idx=<?= $babIdxParam ?>&download=pdf"
+               class="btn-print">
+                <i class="bi bi-file-earmark-arrow-down-fill"></i> <span>Download PDF</span>
+            </a>
+        <?php else: ?>
+            <button type="button" id="btnDownloadPdf" onclick="downloadPdf()" class="btn-print">
+                <i class="bi bi-file-earmark-arrow-down-fill"></i> <span id="btnDownloadLabel">Download PDF</span>
+            </button>
+        <?php endif; ?>
     </div>
 
-    <?php
-    // Helper Render Kop Surat Resmi & Simetris
-    function renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah) {
-        $logoSetting = getSetting('logo_path', '');
-        $logoUrl = !empty($logoSetting) ? (strpos($logoSetting, 'http') === 0 ? $logoSetting : '../../' . ltrim($logoSetting, '/')) : '../../assets/img/logo.png';
-        ?>
-        <table class="kop-table">
-            <tr>
-                <td class="kop-logo-left">
-                    <img src="<?= htmlspecialchars($logoUrl) ?>" alt="Logo" onerror="this.src='../../assets/img/logo.png'">
-                </td>
-                <td class="kop-text">
-                    <div class="kop-nama-sekolah"><?= htmlspecialchars($namaSekolah) ?></div>
-                    <div class="kop-alamat"><?= htmlspecialchars($alamatSekolah) ?></div>
-                    <?php if (!empty($teleponSekolah) || !empty($emailSekolah)): ?>
-                        <div class="kop-kontak">
-                            <?php if (!empty($teleponSekolah)): ?>Telp: <?= htmlspecialchars($teleponSekolah) ?><?php endif; ?>
-                            <?php if (!empty($teleponSekolah) && !empty($emailSekolah)): ?> &nbsp;|&nbsp; <?php endif; ?>
-                            <?php if (!empty($emailSekolah)): ?>Email: <?= htmlspecialchars($emailSekolah) ?><?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                </td>
-                <td class="kop-logo-right">
-                    <!-- Penyeimbang visual agar nama sekolah tepat di tengah kertas -->
-                </td>
-            </tr>
-        </table>
-        <div class="kop-garis">
-            <div class="line-thick"></div>
-            <div class="line-thin"></div>
-        </div>
-        <?php
-    }
-
-    // Helper Render Tanda Tangan
-    function renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah) {
-        $citySetting = getSetting('kota_sekolah', '');
-        if (!empty($citySetting)) {
-            $city = $citySetting;
-        } else {
-            $city = 'Kota / Kabupaten';
-            if (!empty($alamatSekolah)) {
-                $parts = explode(',', $alamatSekolah);
-                if (count($parts) > 1) {
-                    $possibleCity = trim(end($parts));
-                    $possibleCity = preg_replace('/\b\d{5}\b/', '', $possibleCity);
-                    $possibleCity = trim($possibleCity);
-                    if (!empty($possibleCity) && $possibleCity !== 'Kota / Kabupaten') {
-                        $city = $possibleCity;
-                    }
-                }
-            }
-        }
-
-        // Cek apakah ada titimangsa tanggal khusus
-        $customDate = getSetting('titimangsa_dokumen', '');
-        if (!empty($customDate)) {
-            $indonesianDate = $customDate;
-        } else {
-            $months = [
-                1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-            ];
-            $day = date('j');
-            $monthNum = date('n');
-            $year = date('Y');
-            $indonesianDate = $day . ' ' . $months[$monthNum] . ' ' . $year;
-        }
-
-        $stempelSetting = getSetting('stempel_path', '');
-        $stempelUrl = !empty($stempelSetting) ? (strpos($stempelSetting, 'http') === 0 ? $stempelSetting : '../../' . ltrim($stempelSetting, '/')) : '';
-
-        // Jabatan resmi penandatanganan
-        $jabatanKepsek = 'Kepala Sekolah';
-        ?>
-        <div class="ttd-container">
-            <table class="ttd-table">
-                <tr>
-                    <td>
-                        Mengetahui,<br>
-                        <?= $jabatanKepsek ?>
-                        <div class="ttd-space" style="position: relative;">
-                            <?php if (!empty($stempelUrl)): ?>
-                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height: 65px; position: absolute; left: 15px; top: 0px; opacity: 0.85;">
-                            <?php endif; ?>
-                        </div>
-                        <strong><u><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
-                        NIP. <?= !empty($nipKepsek) && $nipKepsek !== '—' && $nipKepsek !== '-' ? htmlspecialchars($nipKepsek) : '—' ?>
-                    </td>
-                    <td style="text-align: right;">
-                        <?= htmlspecialchars($city) ?>, <?= $indonesianDate ?><br>
-                        Guru Mata Pelajaran
-                        <div class="ttd-space"></div>
-                        <strong><u><?= htmlspecialchars($namaGuru) ?></u></strong><br>
-                        NIP. <?= !empty($nipGuru) && $nipGuru !== '—' && $nipGuru !== '-' ? htmlspecialchars($nipGuru) : '—' ?>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        <?php
-    }
-    ?>
-
     <div class="paper-wrapper">
-
-        <!-- ==================================================================== -->
-        <!-- 1. COVER PAGE JIKA DOKUMEN BUNDEL 1 TAHUN (DOC_TYPE == ALL) -->
-        <!-- ==================================================================== -->
-        <?php if ($docType === 'all'): ?>
-            <div class="paper paper-cover">
-                <div>
-                    <h2 style="font-size: 18pt; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px;">
-                        PERANGKAT AJAR LENGKAP
-                    </h2>
-                    <h1 style="font-size: 24pt; font-weight: bold; margin-bottom: 12px; text-transform: uppercase;">
-                        KURIKULUM MERDEKA
-                    </h1>
-                    <div style="font-size: 13pt; font-weight: bold; color: #333; margin-bottom: 30px;">
-                        FASE D — KELAS <?= htmlspecialchars($doc['kelas']) ?> (SMP/MTS)
-                    </div>
-
-                    <div style="width: 140px; height: 3px; background: #000; margin: 0 auto 35px auto;"></div>
-
-                    <div style="font-size: 15pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px;">
-                        MATA PELAJARAN: <?= htmlspecialchars($doc['mapel']) ?>
-                    </div>
-                    <div style="font-size: 12pt; color: #444;">
-                        Tahun Ajaran <?= htmlspecialchars($doc['tahun_ajaran']) ?> | Beban Belajar: <?= htmlspecialchars($doc['alokasi_waktu']) ?>
-                    </div>
-                </div>
-
-                <div style="margin: 40px auto; max-width: 480px; text-align: left; border: 1.5px solid #000; padding: 18px 24px; font-size: 11pt;">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="width: 40%; font-weight: bold;">Satuan Pendidikan</td>
-                            <td style="width: 5%;">:</td>
-                            <td><?= htmlspecialchars($namaSekolah) ?></td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">Guru Pengampu</td>
-                            <td>:</td>
-                            <td><?= htmlspecialchars($namaGuru) ?></td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">NIP Guru</td>
-                            <td>:</td>
-                            <td><?= htmlspecialchars($nipGuru) ?></td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: bold;">Kepala Sekolah</td>
-                            <td>:</td>
-                            <td><?= htmlspecialchars($namaKepsek) ?></td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div style="font-size: 10.5pt; font-weight: bold; text-transform: uppercase;">
-                    <?= htmlspecialchars($namaSekolah) ?><br>
-                    <?= htmlspecialchars($alamatSekolah) ?>
-                </div>
+        <?php foreach ($paperSections as $sec): ?>
+            <div class="<?= htmlspecialchars($sec['class']) ?>">
+                <?= $sec['html'] ?>
             </div>
-        <?php endif; ?>
-
-        <!-- ==================================================================== -->
-        <!-- 2. DOKUMEN CAPAIAN PEMBELAJARAN (CP) -->
-        <!-- ==================================================================== -->
-        <?php if ($docType === 'cp' || $docType === 'all'): ?>
-            <div class="paper">
-                <?php renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah); ?>
-
-                <div class="title-header-center">
-                    CAPAIAN PEMBELAJARAN (CP)<br>
-                    MATA PELAJARAN: <?= strtoupper(htmlspecialchars($doc['mapel'])) ?><br>
-                    KURIKULUM MERDEKA — FASE <?= htmlspecialchars($doc['fase']) ?> (KELAS <?= htmlspecialchars($doc['kelas']) ?>)
-                </div>
-
-                <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
-                    <tr>
-                        <td class="label-col">Satuan Pendidikan</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
-                        <td class="label-col-r">Fase / Kelas</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
-                    </tr>
-                    <tr>
-                        <td class="label-col">Mata Pelajaran</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
-                        <td class="label-col-r">Tahun Ajaran</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r"><?= htmlspecialchars($doc['tahun_ajaran']) ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-col">Beban Belajar</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
-                        <td class="label-col-r">Guru Pengampu</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r"><?= htmlspecialchars($namaGuru) ?></td>
-                    </tr>
-                </table>
-
-                <div class="section-title">A. Deskripsi Capaian Pembelajaran Akhir Fase <?= htmlspecialchars($doc['fase']) ?></div>
-                <div style="text-align: justify; margin-bottom: 15px; line-height: 1.6;">
-                    <?= nl2br(htmlspecialchars($modul['cp_global'] ?? $doc['capaian_pembelajaran'])) ?>
-                </div>
-
-                <div class="section-title">B. Matriks Capaian Pembelajaran Per Bab Pembahasan</div>
-                <table class="table-custom">
-                    <thead>
-                        <tr>
-                            <th style="width: 28%;">Bab / Materi Pokok</th>
-                            <th style="width: 15%;">Semester</th>
-                            <th style="width: 57%;">Rumusan Capaian Pembelajaran (CP)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($allBabList)): ?>
-                            <?php foreach ($allBabList as $b): ?>
-                                <tr>
-                                    <td style="font-weight: bold;">
-                                        Bab <?= htmlspecialchars($b['nomor']) ?>: <?= htmlspecialchars($b['judul_bersih']) ?>
-                                    </td>
-                                    <td style="text-align: center;">
-                                        Semester <?= $b['semester'] ?>
-                                    </td>
-                                    <td style="text-align: justify; line-height: 1.5;">
-                                        <?= htmlspecialchars($b['cp_teks']) ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="3" style="text-align: center;">Tidak ada data bab.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-
-                <?php renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah); ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- ==================================================================== -->
-        <!-- 3. DOKUMEN TUJUAN PEMBELAJARAN (TP) 1 TAHUN AJARAN -->
-        <!-- ==================================================================== -->
-        <?php if ($docType === 'tp' || $docType === 'all'): ?>
-            <div class="paper">
-                <?php renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah); ?>
-
-                <div class="title-header-center">
-                    TUJUAN PEMBELAJARAN (TP)<br>
-                    MATA PELAJARAN: <?= strtoupper(htmlspecialchars($doc['mapel'])) ?><br>
-                    KURIKULUM MERDEKA — TAHUN AJARAN <?= htmlspecialchars($doc['tahun_ajaran']) ?>
-                </div>
-
-                <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
-                    <tr>
-                        <td class="label-col">Satuan Pendidikan</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
-                        <td class="label-col-r">Fase / Kelas</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
-                    </tr>
-                    <tr>
-                        <td class="label-col">Mata Pelajaran</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
-                        <td class="label-col-r">Tahun Ajaran</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r"><?= htmlspecialchars($doc['tahun_ajaran']) ?></td>
-                    </tr>
-                    <tr>
-                        <td class="label-col">Beban Belajar</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
-                        <td class="label-col-r">Guru Pengampu</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r"><?= htmlspecialchars($namaGuru) ?></td>
-                    </tr>
-                </table>
-
-                <div class="section-title">Matriks Rumusan Tujuan Pembelajaran (TP) Per Bab Pembahasan</div>
-                <table class="table-custom">
-                    <thead>
-                        <tr>
-                            <th style="width: 20%;">Bab / Materi Pokok</th>
-                            <th style="width: 13%; text-align: center;">Semester</th>
-                            <th style="width: 53%;">Rumusan Tujuan Pembelajaran (TP)</th>
-                            <th style="width: 14%; text-align: center;">Alokasi JP</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($allBabList)): ?>
-                            <?php foreach ($allBabList as $b): ?>
-                                <tr>
-                                    <td>
-                                        <strong>Bab <?= htmlspecialchars($b['nomor']) ?></strong><br>
-                                        <?= htmlspecialchars($b['judul_bersih']) ?>
-                                    </td>
-                                    <td style="text-align: center; vertical-align: middle;">
-                                        Semester <?= $b['semester'] ?><br>
-                                        <small style="color: #555;"><?= $b['semester'] == 1 ? '(Ganjil)' : '(Genap)' ?></small>
-                                    </td>
-                                    <td>
-                                        <ul style="margin: 0; padding-left: 18px; line-height: 1.55;">
-                                            <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
-                                                <li style="margin-bottom: 4px; text-align: justify;"><?= htmlspecialchars($tpItem) ?></li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    </td>
-                                    <td style="text-align: center; vertical-align: middle; font-weight: bold;">
-                                        <?= htmlspecialchars($b['alokasi_jp']) ?> JP<br>
-                                        <small style="font-weight: normal; color: #555;">(<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan)</small>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="4" style="text-align: center; padding: 20px; color: #888;">
-                                    Belum ada data Tujuan Pembelajaran.
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-
-                <?php renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah); ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- ==================================================================== -->
-        <!-- 4. DOKUMEN ALUR TUJUAN PEMBELAJARAN (ATP) -->
-        <!-- ==================================================================== -->
-        <?php if ($docType === 'atp' || $docType === 'all'): ?>
-            <div class="paper">
-                <?php renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah); ?>
-
-                <div class="title-header-center">
-                    ALUR TUJUAN PEMBELAJARAN (ATP)<br>
-                    MATA PELAJARAN: <?= strtoupper(htmlspecialchars($doc['mapel'])) ?><br>
-                    KURIKULUM MERDEKA — TAHUN AJARAN <?= htmlspecialchars($doc['tahun_ajaran']) ?>
-                </div>
-
-                <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
-                    <tr>
-                        <td class="label-col">Satuan Pendidikan</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
-                        <td class="label-col-r">Fase / Kelas</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
-                    </tr>
-                    <tr>
-                        <td class="label-col">Mata Pelajaran</td>
-                        <td class="colon-col">:</td>
-                        <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
-                        <td class="label-col-r">Alokasi Waktu</td>
-                        <td class="colon-col-r">:</td>
-                        <td class="value-col-r"><?= htmlspecialchars($doc['alokasi_waktu']) ?></td>
-                    </tr>
-                </table>
-
-                <div class="section-title">Matriks Alur Tujuan Pembelajaran (ATP) 1 Tahun Ajaran</div>
-                <table class="table-custom">
-                    <thead>
-                        <tr>
-                            <th style="width: 20%;">Bab &amp; Semester</th>
-                            <th style="width: 38%;">Tujuan Pembelajaran (TP)</th>
-                            <th style="width: 27%;">Alur Aktivitas Pembelajaran</th>
-                            <th style="width: 15%; text-align: center;">Alokasi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($allBabList)): ?>
-                            <?php foreach ($allBabList as $b): ?>
-                                <tr>
-                                    <td>
-                                        <strong>Bab <?= htmlspecialchars($b['nomor']) ?></strong><br>
-                                        <?= htmlspecialchars($b['judul_bersih']) ?><br>
-                                        <small style="font-style: italic; color: #444;">Semester <?= $b['semester'] ?></small>
-                                    </td>
-                                    <td>
-                                        <ul style="margin: 0; padding-left: 16px; line-height: 1.5;">
-                                            <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
-                                                <li><?= htmlspecialchars($tpItem) ?></li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    </td>
-                                    <td style="text-align: justify; line-height: 1.45;">
-                                        <?= htmlspecialchars($b['atp_teks']) ?>
-                                    </td>
-                                    <td style="text-align: center; font-weight: bold;">
-                                        <?= htmlspecialchars($b['alokasi_jp']) ?> JP<br>
-                                        <small style="font-weight: normal; color: #444;">(<?= htmlspecialchars($b['jumlah_pertemuan']) ?> Pertemuan)</small>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-
-                <?php renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah); ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- ==================================================================== -->
-        <!-- 4. DOKUMEN MODUL AJAR (SEMESTER 1, SEMESTER 2, ATAU BAB SPESIFIK) -->
-        <!-- ==================================================================== -->
-        <?php
-        $renderModulList = [];
-
-        if ($docType === 'all') {
-            $renderModulList = $allBabList;
-        } elseif ($docType === 'modul_sem1') {
-            $renderModulList = $smt1['bab_list'] ?? [];
-        } elseif ($docType === 'modul_sem2') {
-            $renderModulList = $smt2['bab_list'] ?? [];
-        } elseif ($docType === 'modul_bab') {
-            $targetSemList = ($semParam === 2) ? ($smt2['bab_list'] ?? []) : ($smt1['bab_list'] ?? []);
-            if (isset($targetSemList[$babIdxParam])) {
-                $renderModulList = [$targetSemList[$babIdxParam]];
-            }
-        }
-        ?>
-
-        <?php if (!empty($renderModulList)): ?>
-            <?php foreach ($renderModulList as $b): ?>
-                <?php $m = $b['modul'] ?? []; ?>
-                <div class="paper">
-                    <?php renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah); ?>
-
-                    <div class="title-header-center">
-                        MODUL AJAR KURIKULUM MERDEKA<br>
-                        BAB <?= htmlspecialchars($b['nomor']) ?>: <?= strtoupper(htmlspecialchars($b['judul_bersih'])) ?><br>
-                        SEMESTER <?= $b['semester'] ?> (<?= $b['semester'] === 1 ? 'GANJIL' : 'GENAP' ?>)
-                    </div>
-
-                    <div class="section-title">I. INFORMASI UMUM</div>
-                    <table class="meta-info-table" style="border-bottom: 1.5px solid #000; padding-bottom: 8px;">
-                        <tr>
-                            <td class="label-col">Satuan Pendidikan</td>
-                            <td class="colon-col">:</td>
-                            <td class="value-col"><?= htmlspecialchars($namaSekolah) ?></td>
-                            <td class="label-col-r">Fase / Kelas</td>
-                            <td class="colon-col-r">:</td>
-                            <td class="value-col-r">Fase <?= htmlspecialchars($doc['fase']) ?> (Kelas <?= htmlspecialchars($doc['kelas']) ?>)</td>
-                        </tr>
-                        <tr>
-                            <td class="label-col">Mata Pelajaran</td>
-                            <td class="colon-col">:</td>
-                            <td class="value-col"><strong><?= htmlspecialchars($doc['mapel']) ?></strong></td>
-                            <td class="label-col-r">Alokasi Waktu</td>
-                            <td class="colon-col-r">:</td>
-                            <td class="value-col-r"><strong><?= htmlspecialchars($m['alokasi_waktu'] ?? "{$b['alokasi_jp']} JP") ?></strong></td>
-                        </tr>
-                        <tr>
-                            <td class="label-col">Guru Pengampu</td>
-                            <td class="colon-col">:</td>
-                            <td class="value-col"><?= htmlspecialchars($namaGuru) ?></td>
-                            <td class="label-col-r">Model Pembelajaran</td>
-                            <td class="colon-col-r">:</td>
-                            <td class="value-col-r"><?= htmlspecialchars(!empty($m['model_pembelajaran']) ? $m['model_pembelajaran'] : ($modul['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)')) ?></td>
-                        </tr>
-                    </table>
-
-                    <table class="table-custom" style="margin-top: 5px;">
-                        <tr>
-                            <th style="width: 25%; text-align: left;">Kompetensi Awal</th>
-                            <td style="text-align: justify;"><?= htmlspecialchars($m['kompetensi_awal'] ?? '—') ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Profil Pelajar Pancasila</th>
-                            <td><?php
-                                $profilText = is_array($m['profil_pancasila'] ?? null)
-                                    ? implode(', ', $m['profil_pancasila'])
-                                    : ($m['profil_pancasila'] ?? 'Bernalar Kritis, Mandiri');
-                                $profilText = str_replace(
-                                    ['Beriman & Bertakwa kepada Tuhan YME, Akhlak Mulia, Mandiri, Bernalar Kritis', 'Beriman & Bertakwa kepada Tuhan YME'],
-                                    ["Beriman & Bertakwa kepada Allah Ta'ala, berakhlak mulia, mandiri dan bernalar kritis", "Beriman & Bertakwa kepada Allah Ta'ala"],
-                                    $profilText
-                                );
-                                echo htmlspecialchars($profilText);
-                            ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Sarana &amp; Prasarana</th>
-                            <td><?php
-                                $saranaText = $m['sarana_prasarana'] ?? 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis';
-                                $saranaText = str_replace('Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, Lembar Studi Kasus Amaliah, Alat Peraga Praktik Ibadah.', 'Kitab Rujukan/Buku Pegangan Siswa, Papan Tulis, dan alat tulis', $saranaText);
-                                echo htmlspecialchars($saranaText);
-                            ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Target Peserta Didik</th>
-                            <td><?= htmlspecialchars(!empty($m['target_siswa']) ? $m['target_siswa'] : ($modul['target_siswa'] ?? 'Peserta didik reguler / santri (30 siswa)')) ?></td>
-                        </tr>
-                    </table>
-
-                    <div class="section-title">II. KOMPONEN INTI</div>
-                    <table class="table-custom">
-                        <tr>
-                            <th style="width: 25%; text-align: left;">Tujuan Pembelajaran</th>
-                            <td>
-                                <ul style="margin: 0; padding-left: 16px; line-height: 1.5;">
-                                    <?php foreach ($b['tp_list'] ?? [] as $tpItem): ?>
-                                        <li><?= htmlspecialchars($tpItem) ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Pemahaman Bermakna</th>
-                            <td style="text-align: justify;"><?= nl2br(htmlspecialchars($m['pemahaman_bermakna'] ?? '—')) ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Pertanyaan Pemantik</th>
-                            <td style="text-align: justify;"><?= nl2br(htmlspecialchars($m['pertanyaan_pemantik'] ?? '—')) ?></td>
-                        </tr>
-                    </table>
-
-                    <div class="section-subtitle" style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Rencana Kegiatan Pembelajaran:</div>
-                    <table class="table-custom">
-                        <tr>
-                            <th style="width: 25%; text-align: left;">1. Pendahuluan</th>
-                            <td style="text-align: justify; line-height: 1.5;"><?php
-                                $pendTeks = $m['kegiatan_pendahuluan'] ?? '—';
-                                $pendTeks = str_replace('Guru mengucapkan salam hangat dan mengajak peserta didik berdoa bersama/membaca shalawat thibil qulub.', 'Guru mengucapkan salam hangat kepada peserta ajar.', $pendTeks);
-                                echo nl2br(htmlspecialchars($pendTeks));
-                            ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">2. Kegiatan Inti</th>
-                            <td style="text-align: justify; line-height: 1.5;"><?= nl2br(htmlspecialchars($m['kegiatan_inti'] ?? '—')) ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">3. Penutup</th>
-                            <td style="text-align: justify; line-height: 1.5;"><?= nl2br(htmlspecialchars($m['kegiatan_penutup'] ?? '—')) ?></td>
-                        </tr>
-                    </table>
-
-                    <div class="section-subtitle" style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Asesmen Pembelajaran:</div>
-                    <table class="table-custom">
-                        <tr>
-                            <th style="width: 25%; text-align: left;">Asesmen Diagnostik</th>
-                            <td><?= htmlspecialchars($m['asesmen_diagnostik'] ?? 'Tanya jawab pemantik awal pertemuan.') ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Asesmen Formatif</th>
-                            <td><?= htmlspecialchars($m['asesmen_formatif'] ?? 'Observasi keaktifan diskusi dan pengerjaan LKPD.') ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Asesmen Sumatif</th>
-                            <td><?= htmlspecialchars($m['asesmen_sumatif'] ?? 'Ujian pemecahan masalah / tes tertulis akhir bab.') ?></td>
-                        </tr>
-                    </table>
-
-                    <div class="section-title">III. LAMPIRAN (LKPD &amp; GLOSARIUM)</div>
-                    <div class="lkpd-box" style="border: 1px solid #000; padding: 10px 14px; background: #fafafa; margin-bottom: 10px; font-size: 9.5pt; line-height: 1.5;">
-                        <strong style="text-transform: uppercase;">Lembar Kerja Peserta Didik (LKPD):</strong><br>
-                        <?= nl2br(htmlspecialchars($m['lkpd_content'] ?? 'Tersedia pada lampiran terpisah.')) ?>
-                    </div>
-
-                    <table class="table-custom" style="font-size: 9.5pt;">
-                        <tr>
-                            <th style="width: 25%; text-align: left;">Glosarium</th>
-                            <td><?= nl2br(htmlspecialchars($m['glosarium'] ?? '—')) ?></td>
-                        </tr>
-                        <tr>
-                            <th style="text-align: left;">Daftar Pustaka</th>
-                            <td><?= nl2br(htmlspecialchars(!empty($m['daftar_pustaka']) ? $m['daftar_pustaka'] : ($modul['daftar_pustaka'] ?? '—'))) ?></td>
-                        </tr>
-                    </table>
-
-                    <?php renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $alamatSekolah); ?>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-
+        <?php endforeach; ?>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
