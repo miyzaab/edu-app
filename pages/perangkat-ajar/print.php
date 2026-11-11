@@ -291,25 +291,35 @@ function renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $
     <div class="ttd-container">
         <table class="ttd-table">
             <tr>
-                <td style="width:50%; text-align:left; vertical-align:top;">
+                <td style="width:50%; text-align:left; vertical-align:top; padding:0;">
                     Mengetahui,<br>
                     <?= $jabatanKepsek ?>
-                    <div class="ttd-space"<?= $forMpdf ? '' : ' style="position:relative;"' ?>>
-                        <?php if ($stempelUrl !== ''): ?>
-                            <?php if ($forMpdf): ?>
-                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:56px; margin-top:4px;">
-                            <?php else: ?>
-                                <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height:65px; position:absolute; left:15px; top:0; opacity:0.85;">
-                            <?php endif; ?>
+                </td>
+                <td style="width:50%; text-align:right; vertical-align:top; padding:0;">
+                    <?= htmlspecialchars($city) ?>, <?= $indonesianDate ?><br>
+                    Guru Mata Pelajaran
+                </td>
+            </tr>
+            <tr>
+                <td class="ttd-space-cell" style="height:18mm; text-align:left; vertical-align:middle; padding:0;<?= $forMpdf ? '' : ' position:relative;' ?>">
+                    <?php if ($stempelUrl !== ''): ?>
+                        <?php if ($forMpdf): ?>
+                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:56px;">
+                        <?php else: ?>
+                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height:65px; position:absolute; left:15px; top:2px; opacity:0.85;">
                         <?php endif; ?>
-                    </div>
+                    <?php else: ?>
+                        &nbsp;
+                    <?php endif; ?>
+                </td>
+                <td class="ttd-space-cell" style="height:18mm; text-align:right; vertical-align:middle; padding:0;">&nbsp;</td>
+            </tr>
+            <tr>
+                <td style="text-align:left; vertical-align:top; padding:0;">
                     <strong><u><?= htmlspecialchars($namaKepsek) ?></u></strong><br>
                     NIP. <?= !empty($nipKepsek) && $nipKepsek !== '—' && $nipKepsek !== '-' ? htmlspecialchars($nipKepsek) : '—' ?>
                 </td>
-                <td style="width:50%; text-align:right; vertical-align:top;">
-                    <?= htmlspecialchars($city) ?>, <?= $indonesianDate ?><br>
-                    Guru Mata Pelajaran
-                    <div class="ttd-space">&nbsp;</div>
+                <td style="text-align:right; vertical-align:top; padding:0;">
                     <strong><u><?= htmlspecialchars($namaGuru) ?></u></strong><br>
                     NIP. <?= !empty($nipGuru) && $nipGuru !== '—' && $nipGuru !== '-' ? htmlspecialchars($nipGuru) : '—' ?>
                 </td>
@@ -823,10 +833,9 @@ if ($isPdfDownload && !empty($paperSections)) {
         .table-custom th, .table-custom td { border: 1px solid #000; padding: 6px 8px; vertical-align: top; }
         .table-custom th { background-color: #f1f5f9; text-align: center; font-weight: bold; text-transform: uppercase; }
         .lkpd-box { page-break-inside: avoid; }
-        .ttd-container { width: 100%; margin-top: 22px; page-break-inside: avoid; }
-        .ttd-table { width: 100%; border-collapse: collapse; }
-        .ttd-table td { width: 50%; vertical-align: top; font-size: 10pt; }
-        .ttd-space { height: 60px; }
+        .ttd-container { width: 100%; margin-top: 8mm; page-break-inside: avoid; }
+        .ttd-table { width: 100%; border-collapse: collapse; margin-top: 8mm; page-break-inside: avoid; }
+        .ttd-table td { width: 50%; vertical-align: top; font-size: 10pt; border: none; padding: 0; }
         ul.tp-ul { margin: 0; padding-left: 15px; }
         ul.tp-ul li { margin-bottom: 3px; }
     ";
