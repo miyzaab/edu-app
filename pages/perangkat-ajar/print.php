@@ -310,20 +310,26 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             z-index: -1;
         }
 
-        .paper.paper-pdf-clean {
-            width: 100% !important;
-            min-height: auto !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            background: #ffffff !important;
+        .pdf-page-box {
+            width: 190mm;
+            padding: 2px 4px;
+            box-sizing: border-box;
+            background: #ffffff;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
         }
 
-        .paper.paper-cover.paper-pdf-clean {
-            height: 269mm !important;
-            min-height: 269mm !important;
-            padding: 14mm 4mm !important;
-            overflow: hidden !important;
+        .pdf-page-box.pdf-page-cover {
+            height: 271mm;
+            padding: 20mm 10mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+        }
+
+        .pdf-page-box > :first-child {
+            margin-top: 0 !important;
         }
 
         /* KOP SURAT RESMI & SIMETRIS */
@@ -1050,7 +1056,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
                         </tr>
                     </table>
 
-                    <div style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Rencana Kegiatan Pembelajaran:</div>
+                    <div class="section-subtitle" style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Rencana Kegiatan Pembelajaran:</div>
                     <table class="table-custom">
                         <tr>
                             <th style="width: 25%; text-align: left;">1. Pendahuluan</th>
@@ -1070,7 +1076,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
                         </tr>
                     </table>
 
-                    <div style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Asesmen Pembelajaran:</div>
+                    <div class="section-subtitle" style="font-weight: bold; margin-top: 10px; margin-bottom: 4px;">Asesmen Pembelajaran:</div>
                     <table class="table-custom">
                         <tr>
                             <th style="width: 25%; text-align: left;">Asesmen Diagnostik</th>
@@ -1110,8 +1116,8 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
 
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         const PDF_FILENAME = <?= json_encode($pdfFilename, JSON_UNESCAPED_UNICODE) ?>;
 
@@ -1126,6 +1132,98 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             }));
         }
 
+        function paginatePaperElement(paperEl, stage, maxHeightPx) {
+            const createdPages = [];
+
+            const startNewPage = (isCover = false) => {
+                const pageBox = document.createElement('div');
+                pageBox.className = isCover ? 'pdf-page-box pdf-page-cover' : 'pdf-page-box';
+                stage.appendChild(pageBox);
+                createdPages.push(pageBox);
+                return pageBox;
+            };
+
+            if (paperEl.classList.contains('paper-cover')) {
+                const coverPage = startNewPage(true);
+                Array.from(paperEl.children).forEach((child) => {
+                    coverPage.appendChild(child.cloneNode(true));
+                });
+                return createdPages;
+            }
+
+            let currentPage = startNewPage(false);
+            const children = Array.from(paperEl.children);
+
+            for (let idx = 0; idx < children.length; idx++) {
+                const child = children[idx];
+
+                if (child.tagName === 'TABLE' && child.classList.contains('table-custom')) {
+                    const thead = child.querySelector('thead');
+                    let rows = Array.from(child.querySelectorAll(':scope > tbody > tr'));
+                    if (!rows.length) {
+                        rows = Array.from(child.querySelectorAll(':scope > tr'));
+                    }
+                    if (!rows.length) continue;
+
+                    const makeTableShell = () => {
+                        const tbl = child.cloneNode(false);
+                        if (thead) tbl.appendChild(thead.cloneNode(true));
+                        const tb = document.createElement('tbody');
+                        tbl.appendChild(tb);
+                        return { tbl, tb };
+                    };
+
+                    let { tbl, tb } = makeTableShell();
+                    currentPage.appendChild(tbl);
+
+                    for (const row of rows) {
+                        const rowClone = row.cloneNode(true);
+                        tb.appendChild(rowClone);
+
+                        if (currentPage.scrollHeight > maxHeightPx) {
+                            const hasEarlierContent = currentPage.children.length > 1 || tb.children.length > 1;
+                            if (hasEarlierContent) {
+                                rowClone.remove();
+                                let orphanHeading = null;
+                                if (tb.children.length === 0) {
+                                    tbl.remove();
+                                    const prev = currentPage.lastElementChild;
+                                    if (prev && (prev.classList.contains('section-title') || prev.classList.contains('section-subtitle')) && currentPage.children.length > 1) {
+                                        orphanHeading = prev;
+                                        orphanHeading.remove();
+                                    }
+                                }
+                                currentPage = startNewPage(false);
+                                if (orphanHeading) currentPage.appendChild(orphanHeading);
+                                ({ tbl, tb } = makeTableShell());
+                                currentPage.appendChild(tbl);
+                                tb.appendChild(rowClone);
+                            }
+                        }
+                    }
+
+                    if (tb.children.length === 0) {
+                        tbl.remove();
+                    }
+                } else {
+                    const clone = child.cloneNode(true);
+                    const isHeading = clone.classList.contains('section-title') || clone.classList.contains('section-subtitle');
+                    currentPage.appendChild(clone);
+
+                    const overflowed = currentPage.scrollHeight > maxHeightPx;
+                    const headingTooLow = isHeading && (currentPage.scrollHeight + 70 > maxHeightPx);
+
+                    if ((overflowed || headingTooLow) && currentPage.children.length > 1) {
+                        clone.remove();
+                        currentPage = startNewPage(false);
+                        currentPage.appendChild(clone);
+                    }
+                }
+            }
+
+            return createdPages.filter((p) => p.children.length > 0);
+        }
+
         async function downloadPdf() {
             const btn = document.getElementById('btnDownloadPdf');
             const lbl = document.getElementById('btnDownloadLabel');
@@ -1135,66 +1233,61 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
                 alert('Tidak ada halaman dokumen untuk diunduh.');
                 return;
             }
-            if (typeof html2pdf === 'undefined' || typeof PDFLib === 'undefined') {
+            if (typeof html2canvas === 'undefined' || !window.jspdf || typeof window.jspdf.jsPDF !== 'function') {
                 alert('Pustaka PDF gagal dimuat. Pastikan koneksi internet aktif lalu muat ulang halaman.');
                 return;
             }
 
             btn.disabled = true;
             btn.style.opacity = '0.75';
+            lbl.textContent = 'Menyiapkan tata letak A4...';
 
             const stage = document.createElement('div');
             stage.className = 'pdf-export-stage';
             document.body.appendChild(stage);
 
             try {
-                const mergedPdf = await PDFLib.PDFDocument.create();
+                await waitForImages(document.querySelector('.paper-wrapper'));
 
-                for (let i = 0; i < papers.length; i++) {
-                    lbl.textContent = `Menyiapkan PDF (${i + 1}/${papers.length})...`;
+                // Rasio area cetak bersih A4: lebar 190mm (margin kiri/kanan 10mm), tinggi 273mm (margin atas/bawah 12mm)
+                const stageWidthPx = stage.clientWidth || 718;
+                const maxHeightPx = Math.floor(stageWidthPx * (271 / 190));
 
-                    stage.innerHTML = '';
-                    const clone = papers[i].cloneNode(true);
-                    clone.classList.add('paper-pdf-clean');
-                    stage.appendChild(clone);
-                    await waitForImages(stage);
+                const allPages = [];
+                papers.forEach((paperEl) => {
+                    const pagesForSection = paginatePaperElement(paperEl, stage, maxHeightPx);
+                    pagesForSection.forEach((pg) => allPages.push(pg));
+                });
 
-                    const opt = {
-                        margin: [12, 10],
-                        filename: PDF_FILENAME,
-                        image: { type: 'jpeg', quality: 0.96 },
-                        html2canvas: {
-                            scale: 2,
-                            useCORS: true,
-                            letterRendering: true,
-                            scrollY: 0,
-                            backgroundColor: '#ffffff'
-                        },
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                        pagebreak: {
-                            mode: ['css', 'legacy'],
-                            avoid: ['tr', '.ttd-container', '.section-title', '.lkpd-box', '.meta-info-table']
-                        }
-                    };
+                await waitForImages(stage);
 
-                    const buf = await html2pdf().set(opt).from(clone).outputPdf('arraybuffer');
-                    const srcDoc = await PDFLib.PDFDocument.load(buf);
-                    const pages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
-                    pages.forEach((p) => mergedPdf.addPage(p));
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+
+                for (let i = 0; i < allPages.length; i++) {
+                    lbl.textContent = `Menyiapkan PDF (${i + 1}/${allPages.length})...`;
+
+                    const pageEl = allPages[i];
+                    const canvas = await html2canvas(pageEl, {
+                        scale: 2,
+                        useCORS: true,
+                        letterRendering: true,
+                        scrollY: 0,
+                        backgroundColor: '#ffffff'
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const imgW = 190;
+                    const imgH = Math.min(273, (canvas.height / canvas.width) * imgW);
+
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
+                    pdf.addImage(imgData, 'JPEG', 10, 12, imgW, imgH, undefined, 'FAST');
                 }
 
                 lbl.textContent = 'Mengunduh PDF...';
-                const pdfBytes = await mergedPdf.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const url = URL.createObjectURL(blob);
-
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = PDF_FILENAME;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                pdf.save(PDF_FILENAME);
             } catch (err) {
                 console.error(err);
                 alert('Terjadi kendala saat membuat PDF. Silakan muat ulang halaman dan coba lagi.');
