@@ -40,8 +40,60 @@ function uploadFotoGuru($fileInputKey, $existingFoto = '')
     return $existingFoto;
 }
 
+// ===== HELPER UPSERT GURU DETAIL =====
+function upsertGuruDetail(PDO $pdo, int $uid, array $data): void
+{
+    $stmtDet = $pdo->prepare("
+        INSERT INTO guru_detail
+        (user_id, nip, gelar_depan, gelar_belakang, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, no_hp, foto, status_kepegawaian, pendidikan_jenjang, pendidikan_jurusan, pendidikan_kampus, spesialisasi, jabatan_sekolah)
+        VALUES
+        (:uid, :nip, :gdepan, :gbelakang, :tlahir, :tgl, :jk, :alamat, :hp, :foto, :st, :pjenjang, :pjurusan, :pkampus, :spesial, :jabatan)
+        ON DUPLICATE KEY UPDATE
+        nip = :nip2, gelar_depan = :gdepan2, gelar_belakang = :gbelakang2, tempat_lahir = :tlahir2, tanggal_lahir = :tgl2,
+        jenis_kelamin = :jk2, alamat = :alamat2, no_hp = :hp2, foto = :foto2, status_kepegawaian = :st2,
+        pendidikan_jenjang = :pjenjang2, pendidikan_jurusan = :pjurusan2, pendidikan_kampus = :pkampus2,
+        spesialisasi = :spesial2, jabatan_sekolah = :jabatan2
+    ");
+    $stmtDet->execute([
+        ':uid'       => $uid,
+        ':nip'       => $data['nip'],
+        ':gdepan'    => $data['gelar_depan'],
+        ':gbelakang' => $data['gelar_belakang'],
+        ':tlahir'    => $data['tempat_lahir'],
+        ':tgl'       => $data['tanggal_lahir'],
+        ':jk'        => $data['jenis_kelamin'],
+        ':alamat'    => $data['alamat'],
+        ':hp'        => $data['no_hp'],
+        ':foto'      => $data['foto'],
+        ':st'        => $data['status_kepegawaian'],
+        ':pjenjang'  => $data['pendidikan_jenjang'],
+        ':pjurusan'  => $data['pendidikan_jurusan'],
+        ':pkampus'   => $data['pendidikan_kampus'],
+        ':spesial'   => $data['spesialisasi'],
+        ':jabatan'   => $data['jabatan_sekolah'],
+        ':nip2'      => $data['nip'],
+        ':gdepan2'   => $data['gelar_depan'],
+        ':gbelakang2'=> $data['gelar_belakang'],
+        ':tlahir2'   => $data['tempat_lahir'],
+        ':tgl2'      => $data['tanggal_lahir'],
+        ':jk2'       => $data['jenis_kelamin'],
+        ':alamat2'   => $data['alamat'],
+        ':hp2'       => $data['no_hp'],
+        ':foto2'     => $data['foto'],
+        ':st2'       => $data['status_kepegawaian'],
+        ':pjenjang2' => $data['pendidikan_jenjang'],
+        ':pjurusan2' => $data['pendidikan_jurusan'],
+        ':pkampus2'  => $data['pendidikan_kampus'],
+        ':spesial2'  => $data['spesialisasi'],
+        ':jabatan2'  => $data['jabatan_sekolah'],
+    ]);
+}
+
 // ===== PROSES TAMBAH GURU =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add') {
+    $addMode = ($_POST['add_mode'] ?? 'new') === 'existing' ? 'existing' : 'new';
+    $existingUserId = (int) ($_POST['existing_user_id'] ?? 0);
+
     $nama = trim($_POST['nama_lengkap'] ?? '');
     $gelarDepan = trim($_POST['gelar_depan'] ?? '');
     $gelarBelakang = trim($_POST['gelar_belakang'] ?? '');
@@ -50,19 +102,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add')
     $password = $_POST['password'] ?? '';
     $isActive = isset($_POST['is_active']) ? 1 : 0;
 
-    $tempatLahir = trim($_POST['tempat_lahir'] ?? '');
-    $tglLahir = !empty($_POST['tanggal_lahir']) ? $_POST['tanggal_lahir'] : null;
-    $jk = $_POST['jenis_kelamin'] ?? 'L';
-    $alamat = trim($_POST['alamat'] ?? '');
-    $noHp = trim($_POST['no_hp'] ?? '');
-    $statusKpeg = trim($_POST['status_kepegawaian'] ?? 'GTY (Guru Tetap Yayasan)');
-    $jenjang = trim($_POST['pendidikan_jenjang'] ?? 'S1');
-    $jurusan = trim($_POST['pendidikan_jurusan'] ?? '');
-    $kampus = trim($_POST['pendidikan_kampus'] ?? '');
-    $spesialisasi = trim($_POST['spesialisasi'] ?? '');
-    $jabatan = trim($_POST['jabatan_sekolah'] ?? 'Guru Mata Pelajaran');
+    $detailData = [
+        'nip'                => $nip,
+        'gelar_depan'        => $gelarDepan,
+        'gelar_belakang'     => $gelarBelakang,
+        'tempat_lahir'       => trim($_POST['tempat_lahir'] ?? ''),
+        'tanggal_lahir'      => !empty($_POST['tanggal_lahir']) ? $_POST['tanggal_lahir'] : null,
+        'jenis_kelamin'      => $_POST['jenis_kelamin'] ?? 'L',
+        'alamat'             => trim($_POST['alamat'] ?? ''),
+        'no_hp'              => trim($_POST['no_hp'] ?? ''),
+        'foto'               => uploadFotoGuru('foto', ''),
+        'status_kepegawaian' => trim($_POST['status_kepegawaian'] ?? 'GTY (Guru Tetap Yayasan)'),
+        'pendidikan_jenjang' => trim($_POST['pendidikan_jenjang'] ?? 'S1'),
+        'pendidikan_jurusan' => trim($_POST['pendidikan_jurusan'] ?? ''),
+        'pendidikan_kampus'  => trim($_POST['pendidikan_kampus'] ?? ''),
+        'spesialisasi'       => trim($_POST['spesialisasi'] ?? ''),
+        'jabatan_sekolah'    => trim($_POST['jabatan_sekolah'] ?? 'Guru Mata Pelajaran'),
+    ];
 
-    $fotoPath = uploadFotoGuru('foto', '');
+    if ($addMode === 'existing') {
+        if ($existingUserId <= 0) {
+            redirect('index.php', 'warning', 'Silakan pilih akun yang akan ditambahkan ke Data Guru.');
+        }
+
+        try {
+            $stmtUser = $pdo->prepare("SELECT id, nama_lengkap, username, role FROM users WHERE id = :id LIMIT 1");
+            $stmtUser->execute([':id' => $existingUserId]);
+            $targetUser = $stmtUser->fetch();
+
+            if (!$targetUser) {
+                redirect('index.php', 'danger', 'Akun pengguna tidak ditemukan.');
+            }
+
+            $pdo->beginTransaction();
+
+            // Perbarui nama lengkap bila diisi, tanpa mengubah role akun (Admin/Operator/Bendahara tetap aman)
+            if ($nama !== '' && $nama !== $targetUser['nama_lengkap']) {
+                $pdo->prepare("UPDATE users SET nama_lengkap = :n WHERE id = :id")->execute([':n' => $nama, ':id' => $existingUserId]);
+                if ($existingUserId === (int) ($_SESSION['user_id'] ?? 0)) {
+                    $_SESSION['nama_lengkap'] = $nama;
+                }
+            }
+
+            upsertGuruDetail($pdo, $existingUserId, $detailData);
+
+            // Assign Wali Kelas jika dipilih
+            $waliKelasId = !empty($_POST['wali_kelas_id']) ? (int) $_POST['wali_kelas_id'] : 0;
+            if ($waliKelasId > 0) {
+                $pdo->prepare("UPDATE kelas SET wali_kelas_id = NULL WHERE wali_kelas_id = :uid AND id != :kid")->execute([':uid' => $existingUserId, ':kid' => $waliKelasId]);
+                $pdo->prepare("UPDATE kelas SET wali_kelas_id = :uid WHERE id = :kid")->execute([':uid' => $existingUserId, ':kid' => $waliKelasId]);
+            }
+
+            $pdo->commit();
+            $displayName = $nama !== '' ? $nama : $targetUser['nama_lengkap'];
+            redirect('index.php', 'success', "Akun '{$displayName}' ({$targetUser['role']}) berhasil ditambahkan ke Data Guru tanpa mengubah hak aksesnya.");
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            redirect('index.php', 'danger', 'Gagal menautkan akun ke Data Guru: ' . $e->getMessage());
+        }
+    }
 
     if ($nama && $username && $password) {
         try {
@@ -71,33 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add')
             $hash = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("INSERT INTO users (username, password, nama_lengkap, role, is_active) VALUES (:u, :p, :n, 'guru', :a)");
             $stmt->execute([':u' => $username, ':p' => $hash, ':n' => $nama, ':a' => $isActive]);
-            $newGuruId = $pdo->lastInsertId();
+            $newGuruId = (int) $pdo->lastInsertId();
 
-            // Insert detail guru
-            $stmtDet = $pdo->prepare("
-                INSERT INTO guru_detail 
-                (user_id, nip, gelar_depan, gelar_belakang, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, no_hp, foto, status_kepegawaian, pendidikan_jenjang, pendidikan_jurusan, pendidikan_kampus, spesialisasi, jabatan_sekolah)
-                VALUES 
-                (:uid, :nip, :gdepan, :gbelakang, :tlahir, :tgl, :jk, :alamat, :hp, :foto, :st, :pjenjang, :pjurusan, :pkampus, :spesial, :jabatan)
-            ");
-            $stmtDet->execute([
-                ':uid' => $newGuruId,
-                ':nip' => $nip,
-                ':gdepan' => $gelarDepan,
-                ':gbelakang' => $gelarBelakang,
-                ':tlahir' => $tempatLahir,
-                ':tgl' => $tglLahir,
-                ':jk' => $jk,
-                ':alamat' => $alamat,
-                ':hp' => $noHp,
-                ':foto' => $fotoPath,
-                ':st' => $statusKpeg,
-                ':pjenjang' => $jenjang,
-                ':pjurusan' => $jurusan,
-                ':pkampus' => $kampus,
-                ':spesial' => $spesialisasi,
-                ':jabatan' => $jabatan
-            ]);
+            upsertGuruDetail($pdo, $newGuruId, $detailData);
 
             // Set permission default untuk guru
             $defaults = getDefaultPermissions('guru');
@@ -117,8 +193,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add')
             $pdo->commit();
             redirect('index.php', 'success', "Data Guru '{$nama}' berhasil ditambahkan secara lengkap.");
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             if ($e->getCode() == 23000) {
+                $stmtDup = $pdo->prepare("SELECT u.role, d.user_id AS has_detail FROM users u LEFT JOIN guru_detail d ON u.id = d.user_id WHERE u.username = :u LIMIT 1");
+                $stmtDup->execute([':u' => $username]);
+                $dupRow = $stmtDup->fetch();
+                if ($dupRow && $dupRow['role'] !== 'guru' && empty($dupRow['has_detail'])) {
+                    redirect('index.php', 'danger', "Username '{$username}' sudah terdaftar sebagai akun {$dupRow['role']}. Klik Tambah Data Guru lalu pilih opsi 'Pilih dari Akun yang Sudah Ada' untuk menambahkan akun tersebut sebagai Guru.");
+                }
                 redirect('index.php', 'danger', "Username '{$username}' sudah digunakan oleh akun lain.");
             } else {
                 redirect('index.php', 'danger', "Gagal menambah data guru: " . $e->getMessage());
@@ -139,33 +223,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $isActive = isset($_POST['is_active']) ? 1 : 0;
-
-    $tempatLahir = trim($_POST['tempat_lahir'] ?? '');
-    $tglLahir = !empty($_POST['tanggal_lahir']) ? $_POST['tanggal_lahir'] : null;
-    $jk = $_POST['jenis_kelamin'] ?? 'L';
-    $alamat = trim($_POST['alamat'] ?? '');
-    $noHp = trim($_POST['no_hp'] ?? '');
-    $statusKpeg = trim($_POST['status_kepegawaian'] ?? 'GTY (Guru Tetap Yayasan)');
-    $jenjang = trim($_POST['pendidikan_jenjang'] ?? 'S1');
-    $jurusan = trim($_POST['pendidikan_jurusan'] ?? '');
-    $kampus = trim($_POST['pendidikan_kampus'] ?? '');
-    $spesialisasi = trim($_POST['spesialisasi'] ?? '');
-    $jabatan = trim($_POST['jabatan_sekolah'] ?? 'Guru Mata Pelajaran');
+    if ($id === (int) ($_SESSION['user_id'] ?? 0)) {
+        $isActive = 1;
+    }
 
     if ($id > 0 && $nama && $username) {
         try {
             $pdo->beginTransaction();
 
+            // Pertahankan role akun (jangan menimpa role Admin/Operator/Bendahara menjadi 'guru')
             if (!empty($password)) {
                 $hash = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("UPDATE users SET nama_lengkap = :n, username = :u, password = :p, role = 'guru', is_active = :a WHERE id = :id");
+                $stmt = $pdo->prepare("UPDATE users SET nama_lengkap = :n, username = :u, password = :p, is_active = :a WHERE id = :id");
                 $stmt->execute([':n' => $nama, ':u' => $username, ':p' => $hash, ':a' => $isActive, ':id' => $id]);
                 if ($id === (int) ($_SESSION['user_id'] ?? 0)) {
                     $_SESSION['auth_password_hash'] = $hash;
                 }
             } else {
-                $stmt = $pdo->prepare("UPDATE users SET nama_lengkap = :n, username = :u, role = 'guru', is_active = :a WHERE id = :id");
+                $stmt = $pdo->prepare("UPDATE users SET nama_lengkap = :n, username = :u, is_active = :a WHERE id = :id");
                 $stmt->execute([':n' => $nama, ':u' => $username, ':a' => $isActive, ':id' => $id]);
+            }
+
+            if ($id === (int) ($_SESSION['user_id'] ?? 0)) {
+                $_SESSION['nama_lengkap'] = $nama;
             }
 
             // Ambil foto lama
@@ -173,53 +253,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
             $stmtOld->execute([':uid' => $id]);
             $oldFoto = $stmtOld->fetchColumn() ?: '';
 
-            $newFoto = uploadFotoGuru('foto', $oldFoto);
-
-            // Upsert detail guru
-            $stmtDet = $pdo->prepare("
-                INSERT INTO guru_detail 
-                (user_id, nip, gelar_depan, gelar_belakang, tempat_lahir, tanggal_lahir, jenis_kelamin, alamat, no_hp, foto, status_kepegawaian, pendidikan_jenjang, pendidikan_jurusan, pendidikan_kampus, spesialisasi, jabatan_sekolah)
-                VALUES 
-                (:uid, :nip, :gdepan, :gbelakang, :tlahir, :tgl, :jk, :alamat, :hp, :foto, :st, :pjenjang, :pjurusan, :pkampus, :spesial, :jabatan)
-                ON DUPLICATE KEY UPDATE
-                nip = :nip2, gelar_depan = :gdepan2, gelar_belakang = :gbelakang2, tempat_lahir = :tlahir2, tanggal_lahir = :tgl2,
-                jenis_kelamin = :jk2, alamat = :alamat2, no_hp = :hp2, foto = :foto2, status_kepegawaian = :st2,
-                pendidikan_jenjang = :pjenjang2, pendidikan_jurusan = :pjurusan2, pendidikan_kampus = :pkampus2,
-                spesialisasi = :spesial2, jabatan_sekolah = :jabatan2
-            ");
-            $stmtDet->execute([
-                ':uid' => $id,
-                ':nip' => $nip,
-                ':gdepan' => $gelarDepan,
-                ':gbelakang' => $gelarBelakang,
-                ':tlahir' => $tempatLahir,
-                ':tgl' => $tglLahir,
-                ':jk' => $jk,
-                ':alamat' => $alamat,
-                ':hp' => $noHp,
-                ':foto' => $newFoto,
-                ':st' => $statusKpeg,
-                ':pjenjang' => $jenjang,
-                ':pjurusan' => $jurusan,
-                ':pkampus' => $kampus,
-                ':spesial' => $spesialisasi,
-                ':jabatan' => $jabatan,
-
-                ':nip2' => $nip,
-                ':gdepan2' => $gelarDepan,
-                ':gbelakang2' => $gelarBelakang,
-                ':tlahir2' => $tempatLahir,
-                ':tgl2' => $tglLahir,
-                ':jk2' => $jk,
-                ':alamat2' => $alamat,
-                ':hp2' => $noHp,
-                ':foto2' => $newFoto,
-                ':st2' => $statusKpeg,
-                ':pjenjang2' => $jenjang,
-                ':pjurusan2' => $jurusan,
-                ':pkampus2' => $kampus,
-                ':spesial2' => $spesialisasi,
-                ':jabatan2' => $jabatan
+            upsertGuruDetail($pdo, $id, [
+                'nip'                => $nip,
+                'gelar_depan'        => $gelarDepan,
+                'gelar_belakang'     => $gelarBelakang,
+                'tempat_lahir'       => trim($_POST['tempat_lahir'] ?? ''),
+                'tanggal_lahir'      => !empty($_POST['tanggal_lahir']) ? $_POST['tanggal_lahir'] : null,
+                'jenis_kelamin'      => $_POST['jenis_kelamin'] ?? 'L',
+                'alamat'             => trim($_POST['alamat'] ?? ''),
+                'no_hp'              => trim($_POST['no_hp'] ?? ''),
+                'foto'               => uploadFotoGuru('foto', $oldFoto),
+                'status_kepegawaian' => trim($_POST['status_kepegawaian'] ?? 'GTY (Guru Tetap Yayasan)'),
+                'pendidikan_jenjang' => trim($_POST['pendidikan_jenjang'] ?? 'S1'),
+                'pendidikan_jurusan' => trim($_POST['pendidikan_jurusan'] ?? ''),
+                'pendidikan_kampus'  => trim($_POST['pendidikan_kampus'] ?? ''),
+                'spesialisasi'       => trim($_POST['spesialisasi'] ?? ''),
+                'jabatan_sekolah'    => trim($_POST['jabatan_sekolah'] ?? 'Guru Mata Pelajaran'),
             ]);
 
             // Update penugasan Wali Kelas
@@ -252,9 +301,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'edit'
 // AMBIL LIST KELAS UNTUK DROPDOWN WALI KELAS
 $allKelas = $pdo->query("SELECT id, nama_kelas, tingkat FROM kelas ORDER BY tingkat, nama_kelas")->fetchAll();
 
-// AMBIL LIST DATA GURU LENGKAP WITH LEFT JOIN
+// AMBIL AKUN ADMIN / STAFF YANG BELUM MASUK DATA GURU
+$existingStaffUsers = $pdo->query("
+    SELECT u.id, u.username, u.nama_lengkap, u.role
+    FROM users u
+    LEFT JOIN guru_detail d ON u.id = d.user_id
+    WHERE u.role != 'guru' AND d.user_id IS NULL AND u.is_active = 1
+    ORDER BY u.nama_lengkap ASC
+")->fetchAll();
+
+// AMBIL LIST DATA GURU LENGKAP WITH LEFT JOIN (termasuk Admin/Staff yang bertindak juga sebagai Guru)
 $guruList = $pdo->query("
-    SELECT u.id, u.username, u.nama_lengkap, u.is_active, u.created_at,
+    SELECT u.id, u.username, u.nama_lengkap, u.role, u.is_active, u.created_at,
            d.nip, d.gelar_depan, d.gelar_belakang, d.tempat_lahir, d.tanggal_lahir,
            d.jenis_kelamin, d.alamat, d.no_hp, d.foto, d.status_kepegawaian,
            d.pendidikan_jenjang, d.pendidikan_jurusan, d.pendidikan_kampus,
@@ -263,7 +321,7 @@ $guruList = $pdo->query("
            (SELECT k.id FROM kelas k WHERE k.wali_kelas_id = u.id LIMIT 1) AS kelas_wali_id
     FROM users u
     LEFT JOIN guru_detail d ON u.id = d.user_id
-    WHERE u.role = 'guru'
+    WHERE (u.role = 'guru' OR d.user_id IS NOT NULL)
     ORDER BY u.nama_lengkap ASC
 ")->fetchAll();
 
@@ -404,9 +462,11 @@ require_once __DIR__ . '/../../includes/header.php';
                                     ?>
                                     <tr class="guru-row">
                                         <td class="ps-3 text-center">
-                                            <input type="checkbox" name="ids[]" value="<?= $g['id'] ?>"
-                                                class="bulk-checkbox bulk-item-check"
-                                                data-name="<?= htmlspecialchars($g['nama_lengkap']) ?>">
+                                            <?php if ($g['role'] === 'guru'): ?>
+                                                <input type="checkbox" name="ids[]" value="<?= $g['id'] ?>"
+                                                    class="bulk-checkbox bulk-item-check"
+                                                    data-name="<?= htmlspecialchars($g['nama_lengkap']) ?>">
+                                            <?php endif; ?>
                                         </td>
                                         <td class="fw-bold text-muted font-monospace"><?= $idx + 1 ?></td>
                                         <td>
@@ -426,7 +486,11 @@ require_once __DIR__ . '/../../includes/header.php';
                                                         <?= htmlspecialchars($namaLengkapGelar) ?>
                                                     </div>
                                                     <small class="text-muted">Username: <span
-                                                            class="font-monospace text-primary fw-semibold"><?= htmlspecialchars($g['username']) ?></span></small>
+                                                            class="font-monospace text-primary fw-semibold"><?= htmlspecialchars($g['username']) ?></span>
+                                                        <?php if ($g['role'] !== 'guru'): ?>
+                                                            <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle rounded-pill ms-1 text-capitalize"><?= htmlspecialchars($g['role']) ?></span>
+                                                        <?php endif; ?>
+                                                    </small>
                                                 </div>
                                             </div>
                                         </td>
@@ -482,9 +546,11 @@ require_once __DIR__ . '/../../includes/header.php';
                                                     onclick='editGuru(<?= htmlspecialchars(json_encode($g, JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>)'>
                                                     <i class="bi bi-pencil-square"></i>
                                                 </button>
-                                                <a href="delete.php?id=<?= $g['id'] ?>" class="btn btn-outline-<?= ($g['is_active'] ?? 1) ? 'warning' : 'success' ?>" title="<?= ($g['is_active'] ?? 1) ? 'Nonaktifkan Guru' : 'Aktifkan Kembali Guru' ?>" onclick="return confirm('Apakah Anda yakin ingin <?= ($g['is_active'] ?? 1) ? 'menonaktifkan' : 'mengaktifkan kembali' ?> akun guru <?= htmlspecialchars(addslashes($namaLengkapGelar), ENT_QUOTES) ?>?')">
-                                                    <i class="bi <?= ($g['is_active'] ?? 1) ? 'bi-person-slash' : 'bi-person-check-fill' ?>"></i>
-                                                </a>
+                                                <?php if ($g['role'] === 'guru' && (int) $g['id'] !== (int) ($_SESSION['user_id'] ?? 0)): ?>
+                                                    <a href="delete.php?id=<?= $g['id'] ?>" class="btn btn-outline-<?= ($g['is_active'] ?? 1) ? 'warning' : 'success' ?>" title="<?= ($g['is_active'] ?? 1) ? 'Nonaktifkan Guru' : 'Aktifkan Kembali Guru' ?>" onclick="return confirm('Apakah Anda yakin ingin <?= ($g['is_active'] ?? 1) ? 'menonaktifkan' : 'mengaktifkan kembali' ?> akun guru <?= htmlspecialchars(addslashes($namaLengkapGelar), ENT_QUOTES) ?>?')">
+                                                        <i class="bi <?= ($g['is_active'] ?? 1) ? 'bi-person-slash' : 'bi-person-check-fill' ?>"></i>
+                                                    </a>
+                                                <?php endif; ?>
                                             </div>
                                         </td>
                                     </tr>
@@ -534,6 +600,47 @@ require_once __DIR__ . '/../../includes/header.php';
                     <input type="hidden" name="action" value="add">
                     <div class="modal-body p-4 fs-7">
 
+                        <?php if (!empty($existingStaffUsers)): ?>
+                        <div class="alert alert-info border-info-subtle rounded-3 p-3 mb-3">
+                            <div class="fw-bold text-dark mb-2 small">
+                                <i class="bi bi-person-check-fill text-primary me-1"></i> Jenis Penambahan Data Guru
+                            </div>
+                            <div class="d-flex flex-wrap gap-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="add_mode" id="addModeNew" value="new" checked onchange="toggleAddGuruMode()">
+                                    <label class="form-check-label fw-semibold" for="addModeNew">
+                                        Buat Akun Guru Baru
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="add_mode" id="addModeExisting" value="existing" onchange="toggleAddGuruMode()">
+                                    <label class="form-check-label fw-semibold" for="addModeExisting">
+                                        Pilih dari Akun yang Sudah Ada (Admin / Staff)
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="existingUserPickerBox" class="mt-2" style="display: none;">
+                                <label class="form-label fw-bold text-dark small mb-1">Pilih Akun Terdaftar <span class="text-danger">*</span></label>
+                                <select name="existing_user_id" id="selectExistingUser" class="form-select border-2" onchange="onSelectExistingUser(this)">
+                                    <option value="">-- Pilih Akun Admin / Staff --</option>
+                                    <?php foreach ($existingStaffUsers as $eu): ?>
+                                        <option value="<?= (int) $eu['id'] ?>"
+                                                data-nama="<?= htmlspecialchars($eu['nama_lengkap']) ?>"
+                                                data-username="<?= htmlspecialchars($eu['username']) ?>"
+                                                data-role="<?= htmlspecialchars($eu['role']) ?>">
+                                            <?= htmlspecialchars($eu['nama_lengkap']) ?> — <?= strtoupper(htmlspecialchars($eu['role'])) ?> (@<?= htmlspecialchars($eu['username']) ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted d-block mt-1">
+                                    Hak akses akun (sebagai Admin/Staff) tetap terjaga, hanya ditambahkan profil kepegawaian &amp; NIP guru.
+                                </small>
+                            </div>
+                        </div>
+                        <?php else: ?>
+                        <input type="hidden" name="add_mode" value="new">
+                        <?php endif; ?>
+
                         <h6 class="fw-bold text-primary mb-3 border-bottom pb-2"><i
                                 class="bi bi-person-badge-fill me-1"></i> Identitas & Akun Login</h6>
                         <div class="row g-3 mb-3">
@@ -545,7 +652,7 @@ require_once __DIR__ . '/../../includes/header.php';
                             <div class="col-md-6">
                                 <label class="form-label fw-bold text-dark">Nama Lengkap <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="nama_lengkap" class="form-control border-2"
+                                <input type="text" name="nama_lengkap" id="addNamaLengkap" class="form-control border-2"
                                     placeholder="Ahmad Syauqi" required>
                             </div>
                             <div class="col-md-3">
@@ -561,16 +668,22 @@ require_once __DIR__ . '/../../includes/header.php';
                                 <input type="text" name="nip" class="form-control border-2"
                                     placeholder="Nomor Induk Pegawai">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 new-account-field">
                                 <label class="form-label fw-bold text-dark">Username Akun <span
                                         class="text-danger">*</span></label>
-                                <input type="text" name="username" class="form-control border-2"
+                                <input type="text" name="username" id="addUsernameInput" class="form-control border-2"
                                     placeholder="guru_ahmad" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4 new-account-field">
                                 <label class="form-label fw-bold text-dark">Password <span
                                         class="text-danger">*</span></label>
-                                <input type="password" name="password" class="form-control border-2" required>
+                                <input type="password" name="password" id="addPasswordInput" class="form-control border-2" required>
+                            </div>
+                            <div class="col-md-8 existing-account-note" style="display: none;">
+                                <label class="form-label fw-bold text-dark">Akun Login Terhubung</label>
+                                <div class="form-control bg-light border-2 text-muted" id="existingAccountSummary">
+                                    Pilih akun terdaftar di atas. Username &amp; password mengikuti akun yang sudah ada.
+                                </div>
                             </div>
                         </div>
 
@@ -945,6 +1058,45 @@ require_once __DIR__ . '/../../includes/header.php';
     </div>
 
     <script>
+        function toggleAddGuruMode() {
+            const existingRadio = document.getElementById('addModeExisting');
+            const isExisting = existingRadio && existingRadio.checked;
+
+            const pickerBox = document.getElementById('existingUserPickerBox');
+            const pickerSelect = document.getElementById('selectExistingUser');
+            const usernameInput = document.getElementById('addUsernameInput');
+            const passwordInput = document.getElementById('addPasswordInput');
+
+            if (pickerBox) pickerBox.style.display = isExisting ? 'block' : 'none';
+            if (pickerSelect) pickerSelect.required = isExisting;
+
+            document.querySelectorAll('#modalTambahGuru .new-account-field').forEach(el => {
+                el.style.display = isExisting ? 'none' : '';
+            });
+            document.querySelectorAll('#modalTambahGuru .existing-account-note').forEach(el => {
+                el.style.display = isExisting ? '' : 'none';
+            });
+
+            if (usernameInput) usernameInput.required = !isExisting;
+            if (passwordInput) passwordInput.required = !isExisting;
+        }
+
+        function onSelectExistingUser(sel) {
+            const opt = sel.options[sel.selectedIndex];
+            const namaInput = document.getElementById('addNamaLengkap');
+            const summary = document.getElementById('existingAccountSummary');
+            if (opt && opt.value) {
+                if (namaInput && opt.dataset.nama) {
+                    namaInput.value = opt.dataset.nama;
+                }
+                if (summary) {
+                    summary.innerHTML = 'Terhubung ke akun <strong>@' + (opt.dataset.username || '') + '</strong> (Role: ' + (opt.dataset.role || '').toUpperCase() + ')';
+                }
+            } else if (summary) {
+                summary.textContent = 'Pilih akun terdaftar di atas. Username & password mengikuti akun yang sudah ada.';
+            }
+        }
+
         // Live Search
         document.getElementById('searchGuru').addEventListener('keyup', function () {
             const val = this.value.toLowerCase();
