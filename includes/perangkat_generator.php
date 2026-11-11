@@ -338,7 +338,7 @@ class PerangkatGenerator
         }
 
         if ($sub === 'tarikh') {
-            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki wawasan historis mengenai Sejarah Kebudayaan Islam. Peserta didik mampu menelaah kronologi peristiwa penting, menganalisis faktor perkembangan dan kemajuan peradaban Islam, serta mengambil ibrah dan keteladanan dari kepemimpinan Rasulullah SAW, Khulafaur Rasyidin, dan tokoh-tokoh pembaharu Islam.";
+            return "Pada akhir Fase {$fase} (Kelas {$kelas}), peserta didik memiliki wawasan historis mengenai Sejarah Kebudayaan Islam. Peserta didik mampu menelaah kronologi peristiwa penting, menganalisis faktor perkembangan dan kemajuan peradaban Islam, serta mengambil ibrah dan keteladanan dari kepemimpinan Rasulullah shallallahu 'alaihi wa sallam, Khulafaur Rasyidin, dan tokoh-tokoh pembaharu Islam.";
         }
 
         if ($sub === 'fiqih') {
@@ -411,7 +411,7 @@ class PerangkatGenerator
         if ($sub === 'fiqih') {
             $fiqihStyles = [
                 1 => "Peserta didik mampu menelaah dalil naqli, hakikat hukum, dan rukun pokok terkait materi {$cleanBab}, serta memahami hikmah pensyariatannya dalam kehidupan pribadi dan sosial.",
-                2 => "Peserta didik mampu mengklasifikasikan syarat sah, rukun, dan perkara yang membatalkan pada materi {$cleanBab}, serta terampil mendemonstrasikan tata caranya sesuai sunnah Rasulullah SAW.",
+                2 => "Peserta didik mampu mengklasifikasikan syarat sah, rukun, dan perkara yang membatalkan pada materi {$cleanBab}, serta terampil mendemonstrasikan tata caranya sesuai sunnah Rasulullah shallallahu 'alaihi wa sallam.",
                 3 => "Peserta didik memiliki kepekaan dalam menganalisis problematika fiqih kontemporer seputar {$cleanBab}, serta mampu merumuskan sikap amaliah yang bijak berlandaskan tuntunan syar'i.",
                 4 => "Peserta didik mampu menginternalisasikan nilai-nilai kepatuhan, kebersihan lahir-batin, dan keikhlasan ibadah melalui pemahaman mendalam tentang materi {$cleanBab} dalam rutinitas keseharian."
             ];

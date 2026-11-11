@@ -168,6 +168,25 @@ $docTitles = [
 ];
 
 $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
+
+// Normalisasi singkatan SAW -> shallallahu 'alaihi wa sallam pada seluruh isi dokumen
+$normalizeShalawat = static function (&$val) {
+    if (is_string($val)) {
+        $val = preg_replace('/\b(?:S\.A\.W\.?|SAW)\b/', "shallallahu 'alaihi wa sallam", $val);
+    }
+};
+array_walk_recursive($modul, $normalizeShalawat);
+array_walk_recursive($smt1, $normalizeShalawat);
+array_walk_recursive($smt2, $normalizeShalawat);
+array_walk_recursive($allBabList, $normalizeShalawat);
+foreach (['capaian_pembelajaran', 'tujuan_pembelajaran', 'alur_tujuan_pembelajaran'] as $colKey) {
+    if (!empty($doc[$colKey])) {
+        $normalizeShalawat($doc[$colKey]);
+    }
+}
+
+$rawFilename = $titleText . '_' . ($doc['mapel'] ?? 'Mapel') . '_Kelas_' . ($doc['kelas'] ?? '');
+$pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') . '.pdf';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -188,21 +207,23 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
             padding: 25px 0;
         }
 
-        /* BAR AKSI CETAK DI LAYAR */
+        /* BAR AKSI DOWNLOAD PDF DI LAYAR */
         .action-bar {
-            max-width: 920px;
-            margin: 0 auto 25px auto;
+            width: 210mm;
+            max-width: calc(100vw - 24px);
+            margin: 0 auto 22px auto;
             background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(10px);
-            padding: 12px 24px;
+            padding: 12px 20px;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             border: 1px solid rgba(255,255,255,0.8);
+            box-sizing: border-box;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
 
         .action-bar select {
@@ -251,9 +272,10 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
             background: #e2e8f0;
         }
 
-        /* LEMBAR KERJA A4 RESMI */
+        /* LEMBAR KERJA A4 RESMI (210mm x 297mm) */
         .paper-wrapper {
-            max-width: 920px;
+            width: 210mm;
+            max-width: calc(100vw - 24px);
             margin: 0 auto;
         }
 
@@ -261,11 +283,46 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
             background: #ffffff;
             width: 100%;
             min-height: 297mm;
-            padding: 20mm 20mm 22mm 20mm;
-            margin-bottom: 25px;
+            padding: 15mm 16mm;
+            margin-bottom: 22px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             box-sizing: border-box;
             position: relative;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        .paper-cover {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+            padding: 32mm 18mm;
+        }
+
+        /* STAGE OFF-SCREEN KHUSUS EXPORT PDF A4 RATA */
+        .pdf-export-stage {
+            position: fixed;
+            left: -99999px;
+            top: 0;
+            width: 178mm;
+            background: #ffffff;
+            z-index: -1;
+        }
+
+        .pdf-export-stage .paper {
+            width: 178mm;
+            min-height: auto;
+            padding: 0;
+            margin: 0;
+            box-shadow: none;
+        }
+
+        .pdf-export-stage .paper.paper-cover {
+            height: 265mm;
+            min-height: 265mm;
+            padding: 18mm 4mm;
+            overflow: hidden;
         }
 
         /* KOP SURAT RESMI & SIMETRIS */
@@ -474,8 +531,8 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
             </select>
         </div>
 
-        <button onclick="window.print()" class="btn-print">
-            <i class="bi bi-printer-fill"></i> Cetak / Simpan PDF
+        <button type="button" id="btnDownloadPdf" onclick="downloadPdf()" class="btn-print">
+            <i class="bi bi-file-earmark-arrow-down-fill"></i> <span id="btnDownloadLabel">Download PDF</span>
         </button>
     </div>
 
@@ -588,7 +645,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
         <!-- 1. COVER PAGE JIKA DOKUMEN BUNDEL 1 TAHUN (DOC_TYPE == ALL) -->
         <!-- ==================================================================== -->
         <?php if ($docType === 'all'): ?>
-            <div class="paper" style="display: flex; flex-direction: column; justify-content: space-between; text-align: center; padding-top: 40mm; padding-bottom: 40mm;">
+            <div class="paper paper-cover">
                 <div>
                     <h2 style="font-size: 18pt; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px;">
                         PERANGKAT AJAR LENGKAP
@@ -943,7 +1000,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                             <td class="value-col"><?= htmlspecialchars($namaGuru) ?></td>
                             <td class="label-col-r">Model Pembelajaran</td>
                             <td class="colon-col-r">:</td>
-                            <td class="value-col-r"><?= htmlspecialchars(!empty($m['model_pembelajaran']) ? $m['model_pembelajaran'] : ($modulData['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)')) ?></td>
+                            <td class="value-col-r"><?= htmlspecialchars(!empty($m['model_pembelajaran']) ? $m['model_pembelajaran'] : ($modul['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)')) ?></td>
                         </tr>
                     </table>
 
@@ -966,7 +1023,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                         </tr>
                         <tr>
                             <th style="text-align: left;">Target Peserta Didik</th>
-                            <td><?= htmlspecialchars(!empty($m['target_siswa']) ? $m['target_siswa'] : ($modulData['target_siswa'] ?? 'Peserta didik reguler / santri (30 siswa)')) ?></td>
+                            <td><?= htmlspecialchars(!empty($m['target_siswa']) ? $m['target_siswa'] : ($modul['target_siswa'] ?? 'Peserta didik reguler / santri (30 siswa)')) ?></td>
                         </tr>
                     </table>
 
@@ -1029,7 +1086,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                     </table>
 
                     <div class="section-title">III. LAMPIRAN (LKPD &amp; GLOSARIUM)</div>
-                    <div style="border: 1px solid #000; padding: 10px 14px; background: #fafafa; margin-bottom: 10px; font-size: 9.5pt; line-height: 1.5;">
+                    <div class="lkpd-box" style="border: 1px solid #000; padding: 10px 14px; background: #fafafa; margin-bottom: 10px; font-size: 9.5pt; line-height: 1.5;">
                         <strong style="text-transform: uppercase;">Lembar Kerja Peserta Didik (LKPD):</strong><br>
                         <?= nl2br(htmlspecialchars($m['lkpd_content'] ?? 'Tersedia pada lampiran terpisah.')) ?>
                     </div>
@@ -1041,7 +1098,7 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
                         </tr>
                         <tr>
                             <th style="text-align: left;">Daftar Pustaka</th>
-                            <td><?= nl2br(htmlspecialchars(!empty($m['daftar_pustaka']) ? $m['daftar_pustaka'] : ($modulData['daftar_pustaka'] ?? '—'))) ?></td>
+                            <td><?= nl2br(htmlspecialchars(!empty($m['daftar_pustaka']) ? $m['daftar_pustaka'] : ($modul['daftar_pustaka'] ?? '—'))) ?></td>
                         </tr>
                     </table>
 
@@ -1051,6 +1108,102 @@ $titleText = $docTitles[$docType] ?? 'PERANGKAT AJAR KURIKULUM MERDEKA';
         <?php endif; ?>
 
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" crossorigin="anonymous"></script>
+    <script>
+        const PDF_FILENAME = <?= json_encode($pdfFilename, JSON_UNESCAPED_UNICODE) ?>;
+
+        async function waitForImages(container) {
+            const imgs = Array.from(container.querySelectorAll('img'));
+            await Promise.all(imgs.map((img) => {
+                if (img.complete) return Promise.resolve();
+                return new Promise((resolve) => {
+                    img.addEventListener('load', resolve, { once: true });
+                    img.addEventListener('error', resolve, { once: true });
+                });
+            }));
+        }
+
+        async function downloadPdf() {
+            const btn = document.getElementById('btnDownloadPdf');
+            const lbl = document.getElementById('btnDownloadLabel');
+            const papers = Array.from(document.querySelectorAll('.paper-wrapper .paper'));
+
+            if (!papers.length) {
+                alert('Tidak ada halaman dokumen untuk diunduh.');
+                return;
+            }
+            if (typeof html2pdf === 'undefined' || typeof PDFLib === 'undefined') {
+                alert('Pustaka PDF gagal dimuat. Pastikan koneksi internet aktif lalu muat ulang halaman.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.style.opacity = '0.75';
+
+            const stage = document.createElement('div');
+            stage.className = 'pdf-export-stage';
+            document.body.appendChild(stage);
+
+            try {
+                const mergedPdf = await PDFLib.PDFDocument.create();
+
+                for (let i = 0; i < papers.length; i++) {
+                    lbl.textContent = `Menyiapkan PDF (${i + 1}/${papers.length})...`;
+
+                    stage.innerHTML = '';
+                    const clone = papers[i].cloneNode(true);
+                    stage.appendChild(clone);
+                    await waitForImages(stage);
+
+                    const opt = {
+                        margin: [15, 16, 15, 16],
+                        filename: PDF_FILENAME,
+                        image: { type: 'jpeg', quality: 0.96 },
+                        html2canvas: {
+                            scale: 2,
+                            useCORS: true,
+                            letterRendering: true,
+                            scrollY: 0,
+                            backgroundColor: '#ffffff'
+                        },
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                        pagebreak: {
+                            mode: ['css', 'legacy'],
+                            avoid: ['tr', '.ttd-container', '.section-title', '.lkpd-box', '.meta-info-table']
+                        }
+                    };
+
+                    const buf = await html2pdf().set(opt).from(clone).outputPdf('arraybuffer');
+                    const srcDoc = await PDFLib.PDFDocument.load(buf);
+                    const pages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
+                    pages.forEach((p) => mergedPdf.addPage(p));
+                }
+
+                lbl.textContent = 'Mengunduh PDF...';
+                const pdfBytes = await mergedPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = PDF_FILENAME;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+            } catch (err) {
+                console.error(err);
+                alert('Terjadi kendala saat membuat PDF. Silakan muat ulang halaman dan coba lagi.');
+            } finally {
+                stage.remove();
+                btn.disabled = false;
+                btn.style.opacity = '';
+                lbl.textContent = 'Download PDF';
+            }
+        }
+    </script>
 
 </body>
 </html>

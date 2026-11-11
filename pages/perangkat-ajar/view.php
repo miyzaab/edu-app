@@ -32,6 +32,18 @@ if (!$doc) {
 $canEdit = ($userRole === 'admin' || $doc['user_id'] == $userId);
 
 $modulData = json_decode($doc['modul_ajar_json'] ?? '{}', true) ?: [];
+// Normalisasi penulisan singkatan SAW menjadi shallallahu 'alaihi wa sallam
+$normalizeShalawat = static function (&$val) {
+    if (is_string($val)) {
+        $val = preg_replace('/\b(?:S\.A\.W\.?|SAW)\b/', "shallallahu 'alaihi wa sallam", $val);
+    }
+};
+array_walk_recursive($modulData, $normalizeShalawat);
+foreach (['capaian_pembelajaran', 'tujuan_pembelajaran', 'alur_tujuan_pembelajaran'] as $colKey) {
+    if (!empty($doc[$colKey])) {
+        $normalizeShalawat($doc[$colKey]);
+    }
+}
 $smt1 = $modulData['semester_1'] ?? ['bab_list' => []];
 $smt2 = $modulData['semester_2'] ?? ['bab_list' => []];
 
@@ -417,7 +429,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                 </a>
                                 <?php endif; ?>
                                 <a href="print.php?id=<?= $id ?>&doc_type=cp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF CP
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF CP
                                 </a>
                             </div>
                         </div>
@@ -496,7 +508,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                 </a>
                                 <?php endif; ?>
                                 <a href="print.php?id=<?= $id ?>&doc_type=tp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF TP
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF TP
                                 </a>
                             </div>
                         </div>
@@ -571,7 +583,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                 </a>
                                 <?php endif; ?>
                                 <a href="print.php?id=<?= $id ?>&doc_type=atp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF ATP
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF ATP
                                 </a>
                             </div>
                         </div>
@@ -625,7 +637,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                         Daftar Modul Ajar Semester 1 (Ganjil)
                     </h5>
                     <a href="print.php?id=<?= $id ?>&doc_type=modul_sem1" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                        <i class="bi bi-file-earmark-pdf me-1"></i> Cetak Seluruh Modul Semester 1
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF Modul Semester 1
                     </a>
                 </div>
 
@@ -728,7 +740,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                         Daftar Modul Ajar Semester 2 (Genap)
                     </h5>
                     <a href="print.php?id=<?= $id ?>&doc_type=modul_sem2" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                        <i class="bi bi-file-earmark-pdf me-1"></i> Cetak Seluruh Modul Semester 2
+                        <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF Modul Semester 2
                     </a>
                 </div>
 

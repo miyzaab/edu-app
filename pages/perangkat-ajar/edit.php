@@ -27,6 +27,19 @@ if ($userRole !== 'admin' && $doc['user_id'] != $userId) {
 
 $modulData = json_decode($doc['modul_ajar_json'] ?? '{}', true) ?: [];
 
+// Normalisasi penulisan singkatan SAW menjadi shallallahu 'alaihi wa sallam
+$normalizeShalawat = static function (&$val) {
+    if (is_string($val)) {
+        $val = preg_replace('/\b(?:S\.A\.W\.?|SAW)\b/', "shallallahu 'alaihi wa sallam", $val);
+    }
+};
+array_walk_recursive($modulData, $normalizeShalawat);
+foreach (['capaian_pembelajaran', 'tujuan_pembelajaran', 'alur_tujuan_pembelajaran'] as $colKey) {
+    if (!empty($doc[$colKey])) {
+        $normalizeShalawat($doc[$colKey]);
+    }
+}
+
 // Helper rebuild flat text columns from structured bab lists
 function rebuildSummaryColumns(string $cpGlobal, array $modulData): array
 {
