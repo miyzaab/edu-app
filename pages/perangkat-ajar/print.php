@@ -283,7 +283,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             background: #ffffff;
             width: 100%;
             min-height: 297mm;
-            padding: 22mm 20mm;
+            padding: 12mm 10mm;
             margin-bottom: 22px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             box-sizing: border-box;
@@ -297,7 +297,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             flex-direction: column;
             justify-content: space-between;
             text-align: center;
-            padding: 32mm 20mm;
+            padding: 28mm 14mm;
         }
 
         /* STAGE OFF-SCREEN KHUSUS EXPORT PDF A4 RATA */
@@ -305,7 +305,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             position: fixed;
             left: -99999px;
             top: 0;
-            width: 170mm;
+            width: 190mm;
             background: #ffffff;
             z-index: -1;
         }
@@ -320,8 +320,8 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
         }
 
         .paper.paper-cover.paper-pdf-clean {
-            height: 249mm !important;
-            min-height: 249mm !important;
+            height: 269mm !important;
+            min-height: 269mm !important;
             padding: 14mm 4mm !important;
             overflow: hidden !important;
         }
@@ -1160,7 +1160,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
                     await waitForImages(stage);
 
                     const opt = {
-                        margin: [22, 20, 22, 20],
+                        margin: [12, 10],
                         filename: PDF_FILENAME,
                         image: { type: 'jpeg', quality: 0.96 },
                         html2canvas: {
