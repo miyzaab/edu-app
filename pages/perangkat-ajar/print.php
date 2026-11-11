@@ -283,7 +283,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             background: #ffffff;
             width: 100%;
             min-height: 297mm;
-            padding: 15mm 16mm;
+            padding: 22mm 20mm;
             margin-bottom: 22px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
             box-sizing: border-box;
@@ -297,7 +297,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             flex-direction: column;
             justify-content: space-between;
             text-align: center;
-            padding: 32mm 18mm;
+            padding: 32mm 20mm;
         }
 
         /* STAGE OFF-SCREEN KHUSUS EXPORT PDF A4 RATA */
@@ -305,24 +305,25 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             position: fixed;
             left: -99999px;
             top: 0;
-            width: 178mm;
+            width: 170mm;
             background: #ffffff;
             z-index: -1;
         }
 
-        .pdf-export-stage .paper {
-            width: 178mm;
-            min-height: auto;
-            padding: 0;
-            margin: 0;
-            box-shadow: none;
+        .paper.paper-pdf-clean {
+            width: 100% !important;
+            min-height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
         }
 
-        .pdf-export-stage .paper.paper-cover {
-            height: 265mm;
-            min-height: 265mm;
-            padding: 18mm 4mm;
-            overflow: hidden;
+        .paper.paper-cover.paper-pdf-clean {
+            height: 249mm !important;
+            min-height: 249mm !important;
+            padding: 14mm 4mm !important;
+            overflow: hidden !important;
         }
 
         /* KOP SURAT RESMI & SIMETRIS */
@@ -457,7 +458,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
         }
         .table-custom th, .table-custom td {
             border: 1px solid #000;
-            padding: 6px 8px;
+            padding: 7px 10px;
             vertical-align: top;
         }
         .table-custom th {
@@ -1154,11 +1155,12 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
 
                     stage.innerHTML = '';
                     const clone = papers[i].cloneNode(true);
+                    clone.classList.add('paper-pdf-clean');
                     stage.appendChild(clone);
                     await waitForImages(stage);
 
                     const opt = {
-                        margin: [15, 16, 15, 16],
+                        margin: [22, 20, 22, 20],
                         filename: PDF_FILENAME,
                         image: { type: 'jpeg', quality: 0.96 },
                         html2canvas: {
