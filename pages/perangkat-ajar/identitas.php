@@ -23,7 +23,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
     $alamatSekolah = trim($_POST['alamat_sekolah'] ?? '');
     $kotaSekolah = trim($_POST['kota_sekolah'] ?? '');
     $teleponSekolah = trim($_POST['telepon_sekolah'] ?? '');
-    $emailSekolah = trim($_POST['email_sekolah'] ?? '');
+    $websiteSekolah = trim($_POST['website_sekolah'] ?? '');
     $namaKepsek = trim($_POST['nama_kepsek'] ?? '');
     $nipKepsek = trim($_POST['nip_kepsek'] ?? '');
     $titimangsa = trim($_POST['titimangsa_dokumen'] ?? '');
@@ -34,7 +34,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
     updateSetting('alamat_sekolah', $alamatSekolah);
     updateSetting('kota_sekolah', $kotaSekolah);
     updateSetting('telepon_sekolah', $teleponSekolah);
-    updateSetting('email_sekolah', $emailSekolah);
+    updateSetting('website_sekolah', $websiteSekolah);
     updateSetting('nama_kepsek', $namaKepsek);
     updateSetting('nama_kepala_sekolah', $namaKepsek);
     updateSetting('nip_kepsek', $nipKepsek);
@@ -99,7 +99,19 @@ $namaSekolah = getSetting('nama_sekolah', SCHOOL_NAME);
 $alamatSekolah = getSetting('alamat_sekolah', 'Jl. Nakula No. 1');
 $kotaSekolah = getSetting('kota_sekolah', 'Kota / Kabupaten');
 $teleponSekolah = getSetting('telepon_sekolah', '0812-3456-7890');
-$emailSekolah = getSetting('email_sekolah', 'info@sekolah.sch.id');
+$websiteSekolah = getSetting('website_sekolah', '');
+if ($websiteSekolah === '') {
+    try {
+        $stmtWeb = $pdo->query("SELECT setting_value FROM rapor_settings WHERE setting_key = 'kop_website' LIMIT 1");
+        $valWeb = $stmtWeb ? $stmtWeb->fetchColumn() : '';
+        if (!empty($valWeb)) {
+            $websiteSekolah = $valWeb;
+        }
+    } catch (Exception $e) {}
+}
+if ($websiteSekolah === '') {
+    $websiteSekolah = 'sekolahismi.sch.id & ismi.sch.id';
+}
 $namaKepsek = getSetting('nama_kepsek', 'Kepala Sekolah, M.Pd');
 $nipKepsek = getSetting('nip_kepsek', '—');
 $titimangsa = getSetting('titimangsa_dokumen', '');
@@ -220,13 +232,13 @@ require_once __DIR__ . '/subnav.php';
                                 </div>
                             </div>
 
-                            <!-- Email Sekolah -->
+                            <!-- Website Sekolah -->
                             <div class="mb-2">
-                                <label class="form-label extra-small fw-bold text-muted mb-1">EMAIL RESMI
+                                <label class="form-label extra-small fw-bold text-muted mb-1">WEBSITE RESMI
                                     SEKOLAH</label>
-                                <input type="email" name="email_sekolah" id="inputEmailSekolah"
-                                    class="form-control rounded-3 py-2" value="<?= htmlspecialchars($emailSekolah) ?>"
-                                    placeholder="Contoh: info@sekolah.sch.id">
+                                <input type="text" name="website_sekolah" id="inputWebsiteSekolah"
+                                    class="form-control rounded-3 py-2" value="<?= htmlspecialchars($websiteSekolah) ?>"
+                                    placeholder="Contoh: sekolahismi.sch.id & ismi.sch.id">
                             </div>
                         </div>
                     </div>
@@ -357,8 +369,8 @@ require_once __DIR__ . '/subnav.php';
                                         </div>
                                         <div style="font-size: 7.5pt; color: #333; line-height: 1.3; margin-top: 2px;"
                                             id="livePrevKontak">
-                                            Telp: <?= htmlspecialchars($teleponSekolah) ?> | Email:
-                                            <?= htmlspecialchars($emailSekolah) ?>
+                                            Telp: <?= htmlspecialchars($teleponSekolah) ?> | Website:
+                                            <?= htmlspecialchars($websiteSekolah) ?>
                                         </div>
                                     </td>
                                     <td style="width: 60px; padding: 0;">
@@ -485,11 +497,11 @@ require_once __DIR__ . '/subnav.php';
         // Update kontak bar
         const updateKontak = () => {
             const telp = document.getElementById('inputTelpSekolah')?.value || '';
-            const email = document.getElementById('inputEmailSekolah')?.value || '';
-            document.getElementById('livePrevKontak').textContent = `Telp: ${telp} | Email: ${email}`;
+            const web = document.getElementById('inputWebsiteSekolah')?.value || '';
+            document.getElementById('livePrevKontak').textContent = `Telp: ${telp} | Website: ${web}`;
         };
         document.getElementById('inputTelpSekolah')?.addEventListener('input', updateKontak);
-        document.getElementById('inputEmailSekolah')?.addEventListener('input', updateKontak);
+        document.getElementById('inputWebsiteSekolah')?.addEventListener('input', updateKontak);
 
         // Update titimangsa tanggal
         const elTgl = document.getElementById('inputTitimangsa');

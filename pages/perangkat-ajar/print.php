@@ -55,7 +55,21 @@ $namaSekolah = !empty($settingNamaSekolah) ? $settingNamaSekolah : (!empty($modu
 
 $alamatSekolah  = getSetting('alamat_sekolah', 'Jl. Nakula 1, Harjamukti, Cimanggis, Depok, Jawa Barat');
 $teleponSekolah = getSetting('telepon_sekolah', '');
-$emailSekolah   = getSetting('email_sekolah', '');
+$websiteSekolah = getSetting('website_sekolah', '');
+if ($websiteSekolah === '') {
+    try {
+        $stmtWeb = $pdo->query("SELECT setting_value FROM rapor_settings WHERE setting_key = 'kop_website' LIMIT 1");
+        $valWeb = $stmtWeb ? $stmtWeb->fetchColumn() : '';
+        if (!empty($valWeb)) {
+            $websiteSekolah = $valWeb;
+        }
+    } catch (Exception $e) {
+        // Lewati jika tabel rapor_settings belum ada
+    }
+}
+if ($websiteSekolah === '') {
+    $websiteSekolah = 'sekolahismi.sch.id & ismi.sch.id';
+}
 
 // Nama Guru: Utamakan nama lengkap resmi dari tabel users (dengan gelar akademik)
 $rawGuruName = !empty($doc['nama_guru_user']) ? $doc['nama_guru_user'] : (!empty($modul['nama_guru']) ? $modul['nama_guru'] : ($_SESSION['nama_lengkap'] ?? 'Guru Pengampu'));
@@ -221,7 +235,7 @@ function resolveAssetSrc(string $settingPath, bool $forMpdf, string $fallbackRel
 }
 
 // Helper Render Kop Surat Resmi & Simetris
-function renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, bool $forMpdf = false) {
+function renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $websiteSekolah, bool $forMpdf = false) {
     $logoUrl     = resolveAssetSrc(getSetting('logo_path', ''), $forMpdf, 'assets/img/logo.png');
     $fallbackUrl = $forMpdf ? '' : '../../assets/img/logo.png';
     ?>
@@ -235,11 +249,11 @@ function renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSek
             <td class="kop-text">
                 <div class="kop-nama-sekolah"><?= htmlspecialchars($namaSekolah) ?></div>
                 <div class="kop-alamat"><?= htmlspecialchars($alamatSekolah) ?></div>
-                <?php if (!empty($teleponSekolah) || !empty($emailSekolah)): ?>
+                <?php if (!empty($teleponSekolah) || !empty($websiteSekolah)): ?>
                     <div class="kop-kontak">
                         <?php if (!empty($teleponSekolah)): ?>Telp: <?= htmlspecialchars($teleponSekolah) ?><?php endif; ?>
-                        <?php if (!empty($teleponSekolah) && !empty($emailSekolah)): ?> &nbsp;|&nbsp; <?php endif; ?>
-                        <?php if (!empty($emailSekolah)): ?>Email: <?= htmlspecialchars($emailSekolah) ?><?php endif; ?>
+                        <?php if (!empty($teleponSekolah) && !empty($websiteSekolah)): ?> &nbsp;|&nbsp; <?php endif; ?>
+                        <?php if (!empty($websiteSekolah)): ?>Website: <?= htmlspecialchars($websiteSekolah) ?><?php endif; ?>
                     </div>
                 <?php endif; ?>
             </td>
@@ -393,7 +407,7 @@ if ($docType === 'all') {
 // 2. DOKUMEN CAPAIAN PEMBELAJARAN (CP)
 if ($docType === 'cp' || $docType === 'all') {
     ob_start();
-    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $websiteSekolah, $isPdfDownload);
     ?>
     <div class="title-header-center">
         CAPAIAN PEMBELAJARAN (CP)<br>
@@ -473,7 +487,7 @@ if ($docType === 'cp' || $docType === 'all') {
 // 3. DOKUMEN TUJUAN PEMBELAJARAN (TP)
 if ($docType === 'tp' || $docType === 'all') {
     ob_start();
-    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $websiteSekolah, $isPdfDownload);
     ?>
     <div class="title-header-center">
         TUJUAN PEMBELAJARAN (TP)<br>
@@ -561,7 +575,7 @@ if ($docType === 'tp' || $docType === 'all') {
 // 4. DOKUMEN ALUR TUJUAN PEMBELAJARAN (ATP)
 if ($docType === 'atp' || $docType === 'all') {
     ob_start();
-    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $websiteSekolah, $isPdfDownload);
     ?>
     <div class="title-header-center">
         ALUR TUJUAN PEMBELAJARAN (ATP)<br>
@@ -650,7 +664,7 @@ if ($docType === 'all') {
 foreach ($renderModulList as $b) {
     $m = $b['modul'] ?? [];
     ob_start();
-    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $emailSekolah, $isPdfDownload);
+    renderKopSurat($namaSekolah, $alamatSekolah, $teleponSekolah, $websiteSekolah, $isPdfDownload);
     ?>
     <div class="title-header-center">
         MODUL AJAR KURIKULUM MERDEKA<br>
