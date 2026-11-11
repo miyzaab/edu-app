@@ -1018,7 +1018,17 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
                         </tr>
                         <tr>
                             <th style="text-align: left;">Profil Pelajar Pancasila</th>
-                            <td><?= htmlspecialchars(is_array($m['profil_pancasila'] ?? null) ? implode(', ', $m['profil_pancasila']) : ($m['profil_pancasila'] ?? 'Bernalar Kritis, Mandiri')) ?></td>
+                            <td><?php
+                                $profilText = is_array($m['profil_pancasila'] ?? null)
+                                    ? implode(', ', $m['profil_pancasila'])
+                                    : ($m['profil_pancasila'] ?? 'Bernalar Kritis, Mandiri');
+                                $profilText = str_replace(
+                                    ['Beriman & Bertakwa kepada Tuhan YME, Akhlak Mulia, Mandiri, Bernalar Kritis', 'Beriman & Bertakwa kepada Tuhan YME'],
+                                    ["Beriman & Bertakwa kepada Allah Ta'ala, berakhlak mulia, mandiri dan bernalar kritis", "Beriman & Bertakwa kepada Allah Ta'ala"],
+                                    $profilText
+                                );
+                                echo htmlspecialchars($profilText);
+                            ?></td>
                         </tr>
                         <tr>
                             <th style="text-align: left;">Sarana &amp; Prasarana</th>
@@ -1245,9 +1255,10 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
             const stage = document.createElement('div');
             stage.className = 'pdf-export-stage';
             document.body.appendChild(stage);
+            const paperWrapper = document.querySelector('.paper-wrapper');
 
             try {
-                await waitForImages(document.querySelector('.paper-wrapper'));
+                await waitForImages(paperWrapper);
 
                 // Rasio area cetak bersih A4: lebar 190mm (margin kiri/kanan 10mm), tinggi 273mm (margin atas/bawah 12mm)
                 const stageWidthPx = stage.clientWidth || 718;
@@ -1261,6 +1272,10 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
 
                 await waitForImages(stage);
 
+                // Lepas semua halaman dulu agar tiap iterasi html2canvas hanya memproses 1 halaman (jauh lebih cepat)
+                allPages.forEach((pg) => pg.remove());
+                if (paperWrapper) paperWrapper.style.display = 'none';
+
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
 
@@ -1268,22 +1283,34 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
                     lbl.textContent = `Menyiapkan PDF (${i + 1}/${allPages.length})...`;
 
                     const pageEl = allPages[i];
+                    stage.innerHTML = '';
+                    stage.appendChild(pageEl);
+
                     const canvas = await html2canvas(pageEl, {
-                        scale: 2,
+                        scale: 1.35,
                         useCORS: true,
-                        letterRendering: true,
+                        logging: false,
                         scrollY: 0,
                         backgroundColor: '#ffffff'
                     });
 
-                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                    const imgW = 190;
-                    const imgH = Math.min(273, (canvas.height / canvas.width) * imgW);
+                    const cw = canvas.width;
+                    const ch = canvas.height;
+                    const imgData = canvas.toDataURL('image/jpeg', 0.65);
+                    canvas.width = 0;
+                    canvas.height = 0;
+                    pageEl.remove();
 
                     if (i > 0) {
                         pdf.addPage();
                     }
+                    const imgW = 190;
+                    const imgH = Math.min(273, (ch / cw) * imgW);
                     pdf.addImage(imgData, 'JPEG', 10, 12, imgW, imgH, undefined, 'FAST');
+
+                    if (i % 4 === 3) {
+                        await new Promise((resolve) => setTimeout(resolve, 0));
+                    }
                 }
 
                 lbl.textContent = 'Mengunduh PDF...';
@@ -1292,6 +1319,7 @@ $pdfFilename = trim(preg_replace('/[^A-Za-z0-9_-]+/', '_', $rawFilename), '_') .
                 console.error(err);
                 alert('Terjadi kendala saat membuat PDF. Silakan muat ulang halaman dan coba lagi.');
             } finally {
+                if (paperWrapper) paperWrapper.style.display = '';
                 stage.remove();
                 btn.disabled = false;
                 btn.style.opacity = '';

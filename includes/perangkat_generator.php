@@ -608,7 +608,7 @@ class PerangkatGenerator
         if ($sub === 'shorof') {
             // Khusus Morfologi Bahasa Arab (Shorof / Tashrif) - Tanpa Dalil Naqli Syariat
             $modelPembelajaran = 'Metode Qiyasiyah (Deduktif-Drill), Latihan Tashrif Mandiri & Berpasangan';
-            $profilPancasila   = ['Mandiri', 'Bernalar Kritis', 'Beriman & Bertakwa kepada Tuhan YME'];
+            $profilPancasila   = ['Mandiri', 'Bernalar Kritis', "Beriman & Bertakwa kepada Allah Ta'ala"];
             $kompetensiAwal    = "Peserta didik telah mampu membaca tulisan Arab berharakat dengan lancar dan mengenal jenis kata dasar (fi'il, isim, huruf).";
             $pemahamanBermakna = "Menguasai kaidah {$cleanBab} menjadi pondasi utama untuk membongkar susunan bentuk kata bahasa Arab, memahami perubahan makna kata, dan ketelitian menelaah literatur Islam.";
             $pertanyaanPemantik= "1. Bagaimana pola wazan pada materi {$cleanBab} memandu kita merangkai berbagai variasi bentuk kata?\n2. Mengapa perubahan harakat dan huruf pada materi {$cleanBab} dapat melahirkan arti kata yang berbeda?";
@@ -629,7 +629,7 @@ class PerangkatGenerator
         } elseif ($sub === 'nahwu') {
             // Khusus Sintaksis Bahasa Arab (Nahwu / I'rab) - Tanpa Dalil Naqli Syariat
             $modelPembelajaran = 'Metode Istiqra\'iyyah (Induktif) & Analisis Tarkib Kontekstual';
-            $profilPancasila   = ['Bernalar Kritis', 'Mandiri', 'Beriman & Bertakwa kepada Tuhan YME'];
+            $profilPancasila   = ['Bernalar Kritis', 'Mandiri', "Beriman & Bertakwa kepada Allah Ta'ala"];
             $kompetensiAwal    = "Peserta didik memahami pembagian kalam (isim, fi'il, huruf) dan harakat dasar bahasa Arab.";
             $pemahamanBermakna = "Memahami kaidah {$cleanBab} melatih ketelitian logika berpikir dalam membedah susunan kalimat Arab serta menjaga lisan dari kesalahan tata bahasa.";
             $pertanyaanPemantik= "1. Mengapa tanda akhir kata pada materi {$cleanBab} bisa berubah ketika menduduki posisi tertentu dalam kalimat?\n2. Bagaimana cara membedakan peran kata pada topik ini dalam sebuah kalimat utuh?";
@@ -692,7 +692,7 @@ class PerangkatGenerator
         } elseif ($sub === 'quran_hadits') {
             // Khusus Al-Qur'an Hadits / Tajwid / Tahfidz
             $modelPembelajaran = 'Metode Talaqqi, Musyafahah, & Pembelajaran Kontekstual';
-            $profilPancasila   = ['Beriman & Bertakwa kepada Tuhan YME', 'Akhlak Mulia', 'Mandiri'];
+            $profilPancasila   = ["Beriman & Bertakwa kepada Allah Ta'ala", 'Akhlak Mulia', 'Mandiri'];
             $kompetensiAwal    = "Peserta didik mampu membaca ayat Al-Qur'an dan memahami huruf hijaiyah.";
             $pemahamanBermakna = "Mempelajari {$cleanBab} menumbuhkan rasa cinta kepada kitab suci Al-Qur'an dan As-Sunnah, memperbaiki kualitas tilawah, serta menuntun perilaku berakhlak mulia.";
             $pertanyaanPemantik= "1. Mengapa penerapan kaidah tajwid pada materi {$cleanBab} sangat menentukan ketepatan makna ayat?\n2. Bagaimana cara kita mengamalkan pesan moral dari materi ini dalam keseharian?";
@@ -713,7 +713,7 @@ class PerangkatGenerator
         } elseif ($sub === 'fiqih') {
             // Khusus Fiqih & Ibadah (Di sinilah Dalil Naqli, Rukun & Syarat Sah relevan)
             $modelPembelajaran = 'Direct Instruction, Simulasi Praktik Amaliah, & Kajian Masail';
-            $profilPancasila   = ['Beriman & Bertakwa kepada Tuhan YME', 'Akhlak Mulia', 'Mandiri', 'Bernalar Kritis'];
+            $profilPancasila   = ["Beriman & Bertakwa kepada Allah Ta'ala, berakhlak mulia, mandiri dan bernalar kritis"];
             $kompetensiAwal    = "Peserta didik memahami dasar-dasar syariat Islam terkait thaharah dan ibadah harian.";
             $pemahamanBermakna = "Mempelajari {$cleanBab} menumbuhkan kesadaran bahwa ketaatan menjalankan syariat Allah secara benar mendatangkan ketenangan batin, keberkahan ilmu, dan keselamatan dunia-akhirat.";
             $pertanyaanPemantik= "1. Mengapa materi {$cleanBab} sangat menentukan keabsahan dan kualitas ibadah kita sehari-hari?\n2. Bagaimana cara kita membentengi diri agar tidak keliru dalam mengamalkan {$cleanBab} di era modern?";
@@ -734,7 +734,7 @@ class PerangkatGenerator
         } elseif ($sub === 'aqidah') {
             // Khusus Aqidah Akhlak
             $modelPembelajaran = 'Discovery Learning & Pembiasaan Reflektif';
-            $profilPancasila   = ['Beriman & Bertakwa kepada Tuhan YME', 'Akhlak Mulia', 'Mandiri', 'Bernalar Kritis'];
+            $profilPancasila   = ["Beriman & Bertakwa kepada Allah Ta'ala, berakhlak mulia, mandiri dan bernalar kritis"];
             $kompetensiAwal    = "Peserta didik mengenal rukun iman dan nilai-nilai akhlak terpuji dalam keluarga.";
             $pemahamanBermakna = "Memahami materi {$cleanBab} memperkokoh keyakinan tauhid, membentengi diri dari keraguan akidah, dan membentuk pribadi yang berbudi pekerti luhur.";
             $pertanyaanPemantik= "1. Mengapa keyakinan terhadap materi {$cleanBab} menjadi landasan utama dari semua perbuatan baik kita?\n2. Bagaimana keteladanan pada materi ini dapat kita wujudkan dalam interaksi bersama sesama teman?";
