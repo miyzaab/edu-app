@@ -138,11 +138,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
         $curBab['alokasi_jp'] = (int)($_POST['alokasi_jp'] ?? $curBab['alokasi_jp']);
         $curBab['jumlah_pertemuan'] = (int)($_POST['jumlah_pertemuan'] ?? $curBab['jumlah_pertemuan']);
         $curBab['cp_teks'] = trim($_POST['cp_teks'] ?? $curBab['cp_teks']);
+        $curBab['atp_teks'] = trim($_POST['atp_teks'] ?? ($curBab['atp_teks'] ?? ''));
 
         // Update TP
         $rawTp = trim($_POST['tp_list_raw'] ?? '');
         if ($rawTp !== '') {
-            $curBab['tp_list'] = array_filter(array_map('trim', explode("\n", $rawTp)));
+            $curBab['tp_list'] = array_values(array_filter(array_map('trim', explode("\n", $rawTp))));
         }
 
         // Update Modul Ajar Detail
@@ -153,6 +154,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
         $curBab['modul']['alokasi_waktu']        = "{$curBab['jumlah_pertemuan']} Pertemuan ({$curBab['alokasi_jp']} JP × 40 Menit)";
         $curBab['modul']['model_pembelajaran']   = trim($_POST['model_pembelajaran'] ?? ($curBab['modul']['model_pembelajaran'] ?? ''));
         $curBab['modul']['target_siswa']         = trim($_POST['target_siswa'] ?? ($curBab['modul']['target_siswa'] ?? ''));
+        $curBab['modul']['sarana_prasarana']     = trim($_POST['sarana_prasarana'] ?? ($curBab['modul']['sarana_prasarana'] ?? ''));
         $curBab['modul']['daftar_pustaka']       = trim($_POST['daftar_pustaka'] ?? ($curBab['modul']['daftar_pustaka'] ?? ''));
         $curBab['modul']['pemahaman_bermakna']   = trim($_POST['pemahaman_bermakna'] ?? ($curBab['modul']['pemahaman_bermakna'] ?? ''));
         $curBab['modul']['pertanyaan_pemantik']  = trim($_POST['pertanyaan_pemantik'] ?? ($curBab['modul']['pertanyaan_pemantik'] ?? ''));
@@ -162,11 +164,29 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
         $curBab['modul']['asesmen_formatif']     = trim($_POST['asesmen_formatif'] ?? ($curBab['modul']['asesmen_formatif'] ?? ''));
         $curBab['modul']['asesmen_sumatif']      = trim($_POST['asesmen_sumatif'] ?? ($curBab['modul']['asesmen_sumatif'] ?? ''));
         $curBab['modul']['lkpd_content']         = trim($_POST['lkpd_content'] ?? ($curBab['modul']['lkpd_content'] ?? ''));
+        $curBab['modul']['glosarium']            = trim($_POST['glosarium'] ?? ($curBab['modul']['glosarium'] ?? ''));
 
-        // Simpan JSON kembali ke database
+        // Sinkronkan juga kolom ringkasan CP, TP, ATP
+        $cpLines = [];
+        $tpLines = [];
+        $atpLines = [];
+        foreach (['semester_1' => 'Semester 1 (Ganjil)', 'semester_2' => 'Semester 2 (Genap)'] as $sk => $sLbl) {
+            foreach (($modulData[$sk]['bab_list'] ?? []) as $bi) {
+                $lbl = ($bi['judul_lengkap'] ?? ('Bab ' . ($bi['nomor'] ?? ''))) . " ({$sLbl})";
+                if (!empty($bi['cp_teks'])) $cpLines[] = "{$lbl}:\n" . $bi['cp_teks'];
+                if (!empty($bi['tp_list'])) $tpLines[] = "{$lbl}:\n- " . implode("\n- ", $bi['tp_list']);
+                if (!empty($bi['atp_teks'])) $atpLines[] = "{$lbl} [" . ($bi['alokasi_jp'] ?? 0) . " JP]: " . $bi['atp_teks'];
+            }
+        }
+        $cpGlobalText = trim($modulData['cp_global'] ?? '');
+        $cpSummary  = ($cpGlobalText !== '' ? $cpGlobalText . "\n\n" : '') . implode("\n\n", $cpLines);
+        $tpSummary  = implode("\n\n", $tpLines);
+        $atpSummary = implode("\n", $atpLines);
+
+        // Simpan JSON & kolom ringkasan kembali ke database
         $newJson = json_encode($modulData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        $stmtUp = $pdo->prepare("UPDATE perangkat_ajar SET modul_ajar_json = :j WHERE id = :id");
-        $stmtUp->execute([':j' => $newJson, ':id' => $id]);
+        $stmtUp = $pdo->prepare("UPDATE perangkat_ajar SET modul_ajar_json = :j, capaian_pembelajaran = :cp, tujuan_pembelajaran = :tp, alur_tujuan_pembelajaran = :atp WHERE id = :id");
+        $stmtUp->execute([':j' => $newJson, ':cp' => $cpSummary, ':tp' => $tpSummary, ':atp' => $atpSummary, ':id' => $id]);
 
         redirect("view.php?id={$id}&tab=modul_sem{$semNum}", 'success', "Alhamdulillah, data Bab " . $curBab['nomor'] . " berhasil diperbarui!");
     }
@@ -289,6 +309,15 @@ $activeTab = $_GET['tab'] ?? 'cp';
                             <span>Unduh Bundel Lengkap 1 Tahun</span>
                         </a>
 
+                        <?php if ($canEdit): ?>
+                        <!-- Tombol Edit Perangkat Ajar di samping tombol unduh -->
+                        <a href="edit.php?id=<?= $id ?>"
+                           class="btn btn-primary px-4 py-2.5 rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-pencil-square fs-5"></i>
+                            <span>Edit Perangkat</span>
+                        </a>
+                        <?php endif; ?>
+
                         <!-- Dropdown Opsi Lainnya -->
                         <div class="dropdown">
                             <button class="btn btn-outline-secondary px-3 py-2.5 rounded-pill fw-bold dropdown-toggle d-inline-flex align-items-center gap-1.5"
@@ -381,9 +410,16 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                     Standar kompetensi akhir fase dan deskripsi capaian pembelajaran per bab pembahasan.
                                 </p>
                             </div>
-                            <a href="print.php?id=<?= $id ?>&doc_type=cp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                                <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF CP
-                            </a>
+                            <div class="d-flex align-items-center gap-2">
+                                <?php if ($canEdit): ?>
+                                <a href="edit.php?id=<?= $id ?>#section-cp" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit CP
+                                </a>
+                                <?php endif; ?>
+                                <a href="print.php?id=<?= $id ?>&doc_type=cp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF CP
+                                </a>
+                            </div>
                         </div>
 
                         <!-- Narasi CP Global -->
@@ -453,9 +489,16 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                     Pemetaan indikator ketercapaian tujuan pembelajaran bertingkat Taksonomi Bloom per bab pembahasan.
                                 </p>
                             </div>
-                            <a href="print.php?id=<?= $id ?>&doc_type=tp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                                <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF TP
-                            </a>
+                            <div class="d-flex align-items-center gap-2">
+                                <?php if ($canEdit): ?>
+                                <a href="edit.php?id=<?= $id ?>#section-bab" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit TP
+                                </a>
+                                <?php endif; ?>
+                                <a href="print.php?id=<?= $id ?>&doc_type=tp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF TP
+                                </a>
+                            </div>
                         </div>
 
                         <div class="table-responsive">
@@ -521,9 +564,16 @@ $activeTab = $_GET['tab'] ?? 'cp';
                                     Peta tahapan pembelajaran terstruktur lengkap dengan alokasi waktu JP dan indikator tujuan.
                                 </p>
                             </div>
-                            <a href="print.php?id=<?= $id ?>&doc_type=atp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                                <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF ATP
-                            </a>
+                            <div class="d-flex align-items-center gap-2">
+                                <?php if ($canEdit): ?>
+                                <a href="edit.php?id=<?= $id ?>#section-bab" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-pencil-square me-1"></i> Edit ATP
+                                </a>
+                                <?php endif; ?>
+                                <a href="print.php?id=<?= $id ?>&doc_type=atp" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Cetak PDF ATP
+                                </a>
+                            </div>
                         </div>
 
                         <div class="table-responsive">
@@ -825,9 +875,15 @@ $activeTab = $_GET['tab'] ?? 'cp';
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label extra-small fw-bold text-muted mb-1">DAFTAR PUSTAKA (RUJUKAN / KITAB)</label>
-                        <input type="text" name="daftar_pustaka" id="editDaftarPustaka" class="form-control rounded-3" placeholder="Contoh: Kitab Rujukan, Buku Paket Siswa">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">SARANA &amp; PRASARANA</label>
+                            <input type="text" name="sarana_prasarana" id="editSaranaPrasarana" class="form-control rounded-3" placeholder="Kitab Rujukan, Papan Tulis, dan alat tulis">
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">DAFTAR PUSTAKA (RUJUKAN / KITAB)</label>
+                            <input type="text" name="daftar_pustaka" id="editDaftarPustaka" class="form-control rounded-3" placeholder="Contoh: Kitab Rujukan, Buku Paket Siswa">
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -838,6 +894,11 @@ $activeTab = $_GET['tab'] ?? 'cp';
                     <div class="mb-3">
                         <label class="form-label extra-small fw-bold text-muted mb-1">TUJUAN PEMBELAJARAN (TP) - 1 BARIS 1 TUJUAN</label>
                         <textarea name="tp_list_raw" id="editTpListRaw" rows="4" class="form-control rounded-3 small font-monospace"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label extra-small fw-bold text-muted mb-1">ALUR TUJUAN PEMBELAJARAN (ATP) BAB</label>
+                        <textarea name="atp_teks" id="editAtpTeks" rows="2" class="form-control rounded-3 small"></textarea>
                     </div>
 
                     <div class="row g-3 mb-3">
@@ -851,14 +912,31 @@ $activeTab = $_GET['tab'] ?? 'cp';
                         </div>
                     </div>
 
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">KEGIATAN PENDAHULUAN</label>
+                            <textarea name="kegiatan_pendahuluan" id="editKegiatanPendahuluan" rows="3" class="form-control rounded-3 small"></textarea>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">KEGIATAN PENUTUP</label>
+                            <textarea name="kegiatan_penutup" id="editKegiatanPenutup" rows="3" class="form-control rounded-3 small"></textarea>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label extra-small fw-bold text-muted mb-1">KEGIATAN INTI PEMBELAJARAN</label>
                         <textarea name="kegiatan_inti" id="editKegiatanInti" rows="4" class="form-control rounded-3 small"></textarea>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label extra-small fw-bold text-muted mb-1">LEMBAR KERJA PESERTA DIDIK (LKPD)</label>
-                        <textarea name="lkpd_content" id="editLkpdContent" rows="3" class="form-control rounded-3 small font-monospace"></textarea>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">LEMBAR KERJA PESERTA DIDIK (LKPD)</label>
+                            <textarea name="lkpd_content" id="editLkpdContent" rows="3" class="form-control rounded-3 small font-monospace"></textarea>
+                        </div>
+                        <div class="col-md-6 col-12">
+                            <label class="form-label extra-small fw-bold text-muted mb-1">GLOSARIUM / ISTILAH KUNCI</label>
+                            <textarea name="glosarium" id="editGlosarium" rows="3" class="form-control rounded-3 small"></textarea>
+                        </div>
                     </div>
                 </div>
 
@@ -968,6 +1046,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
         document.getElementById('editAlokasiJp').value = babData.alokasi_jp || 18;
         document.getElementById('editJmlPertemuan').value = babData.jumlah_pertemuan || 6;
         document.getElementById('editCpTeks').value = babData.cp_teks || '';
+        document.getElementById('editAtpTeks').value = babData.atp_teks || '';
         
         const tpArr = babData.tp_list || [];
         document.getElementById('editTpListRaw').value = Array.isArray(tpArr) ? tpArr.join('\n') : tpArr;
@@ -975,11 +1054,15 @@ $activeTab = $_GET['tab'] ?? 'cp';
         const m = babData.modul || {};
         document.getElementById('editModelPembelajaran').value = m.model_pembelajaran || '';
         document.getElementById('editTargetSiswa').value = m.target_siswa || '';
+        document.getElementById('editSaranaPrasarana').value = m.sarana_prasarana || '';
         document.getElementById('editDaftarPustaka').value = m.daftar_pustaka || '';
         document.getElementById('editPemahamanBermakna').value = m.pemahaman_bermakna || '';
         document.getElementById('editPertanyaanPemantik').value = m.pertanyaan_pemantik || '';
+        document.getElementById('editKegiatanPendahuluan').value = m.kegiatan_pendahuluan || '';
         document.getElementById('editKegiatanInti').value = m.kegiatan_inti || '';
+        document.getElementById('editKegiatanPenutup').value = m.kegiatan_penutup || '';
         document.getElementById('editLkpdContent').value = m.lkpd_content || '';
+        document.getElementById('editGlosarium').value = m.glosarium || '';
 
         const modal = new bootstrap.Modal(document.getElementById('modalEditBab'));
         modal.show();
