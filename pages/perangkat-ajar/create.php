@@ -114,6 +114,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
 
     if (empty($mapel)) {
         $_SESSION['flash_msg'] = ['type' => 'danger', 'text' => 'Mohon pilih mata pelajaran.'];
+    } elseif ($modelPembelajaran === '') {
+        $_SESSION['flash_msg'] = ['type' => 'danger', 'text' => 'Mohon isi Model Pembelajaran terlebih dahulu.'];
+    } elseif ($daftarPustaka === '') {
+        $_SESSION['flash_msg'] = ['type' => 'danger', 'text' => 'Mohon isi Daftar Pustaka / kitab rujukan terlebih dahulu.'];
     } elseif (empty($babSmt1) && empty($babSmt2)) {
         $_SESSION['flash_msg'] = ['type' => 'danger', 'text' => 'Mohon isi daftar bab pelajaran setidaknya untuk satu semester.'];
     } else {
@@ -307,7 +311,7 @@ require_once __DIR__ . '/subnav.php';
                         <!-- Model Pembelajaran -->
                         <div class="col-md-4 col-12">
                             <label class="form-label extra-small fw-bold text-muted mb-1">
-                                MODEL PEMBELAJARAN
+                                MODEL PEMBELAJARAN <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted border-secondary-subtle">
@@ -316,7 +320,7 @@ require_once __DIR__ . '/subnav.php';
                                 <input type="text" name="model_pembelajaran" id="inputModelPembelajaran" list="listModelPembelajaran" 
                                        class="form-control rounded-end-3 py-2 fw-semibold border-secondary-subtle" 
                                        placeholder="Contoh: Problem-Based Learning (PBL)" 
-                                       value="<?= htmlspecialchars($_POST['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)') ?>">
+                                       value="<?= htmlspecialchars($_POST['model_pembelajaran'] ?? 'Problem-Based Learning (PBL)') ?>" required>
                                 <datalist id="listModelPembelajaran">
                                     <option value="Problem-Based Learning (PBL)">
                                     <option value="Project-Based Learning (PjBL)">
@@ -356,7 +360,7 @@ require_once __DIR__ . '/subnav.php';
                         <!-- Daftar Pustaka -->
                         <div class="col-md-4 col-12">
                             <label class="form-label extra-small fw-bold text-muted mb-1">
-                                DAFTAR PUSTAKA <span class="fw-normal text-muted">(Rujukan / Kitab)</span>
+                                DAFTAR PUSTAKA <span class="fw-normal text-muted">(Rujukan / Kitab)</span> <span class="text-danger">*</span>
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-muted border-secondary-subtle">
@@ -365,10 +369,10 @@ require_once __DIR__ . '/subnav.php';
                                 <input type="text" name="daftar_pustaka" id="inputDaftarPustaka" 
                                        class="form-control rounded-end-3 py-2 fw-semibold border-secondary-subtle" 
                                        placeholder="Kitab Rujukan / Buku Paket Pegangan Siswa" 
-                                       value="<?= htmlspecialchars($_POST['daftar_pustaka'] ?? '') ?>">
+                                       value="<?= htmlspecialchars($_POST['daftar_pustaka'] ?? '') ?>" required>
                             </div>
                             <div class="form-text extra-small text-muted">
-                                Kitab/buku pegangan belajar siswa (otomatis bila dikosongkan).
+                                Wajib diisi: cantumkan kitab rujukan atau buku pegangan siswa.
                             </div>
                         </div>
                     </div>

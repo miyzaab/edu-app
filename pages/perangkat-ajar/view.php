@@ -983,7 +983,7 @@ $activeTab = $_GET['tab'] ?? 'cp';
                 <div class="modal-body py-4">
                     <div class="mb-3">
                         <label class="form-label extra-small fw-bold text-muted mb-1">
-                            MODEL PEMBELAJARAN
+                            MODEL PEMBELAJARAN <span class="text-danger">*</span>
                         </label>
                         <input type="text" name="model_pembelajaran" id="modalModelPem" list="listModalModel" 
                                class="form-control rounded-3 py-2 fw-semibold" 
@@ -1021,12 +1021,12 @@ $activeTab = $_GET['tab'] ?? 'cp';
 
                     <div class="mb-3">
                         <label class="form-label extra-small fw-bold text-muted mb-1">
-                            DAFTAR PUSTAKA
+                            DAFTAR PUSTAKA <span class="text-danger">*</span>
                         </label>
                         <input type="text" name="daftar_pustaka" 
                                class="form-control rounded-3 py-2 fw-semibold" 
                                value="<?= htmlspecialchars($modulData['daftar_pustaka'] ?? ($modulData['semester_1']['bab_list'][0]['modul']['daftar_pustaka'] ?? '')) ?>" 
-                               placeholder="Kitab Rujukan / Buku Pegangan Siswa">
+                               placeholder="Kitab Rujukan / Buku Pegangan Siswa" required>
                     </div>
 
                     <div class="form-check form-switch mt-3 pt-2 border-top">
