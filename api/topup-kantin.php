@@ -3,6 +3,7 @@
  * API Endpoint: Submit Permohonan Top-Up E-Kantin Siswa dari Portal Orang Tua
  */
 require_once __DIR__ . '/../config/koneksi.php';
+require_once __DIR__ . '/../includes/proof_upload_helper.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -64,114 +65,15 @@ if ($nominal <= 0) {
     exit;
 }
 
-$dbPath = '';
-
-// 1. Cek jika dikirim via base64 (compressed image payload)
-if (!empty($_POST['bukti_base64'])) {
-    $base64Data = $_POST['bukti_base64'];
-    if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
-        $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
-        $type = strtolower($type[1]); // jpg, png, jpeg, webp
-        if (!in_array($type, ['jpg', 'jpeg', 'png', 'webp'])) {
-            $type = 'jpg';
-        }
-        $data = base64_decode($base64Data);
-        if ($data !== false) {
-            $uploadDirs = [
-                __DIR__ . '/../assets/uploads/bukti/',
-                __DIR__ . '/../uploads/bukti/',
-                __DIR__ . '/../assets/uploads/',
-                __DIR__ . '/../uploads/'
-            ];
-            $chosenDir = '';
-            $relPrefix = '';
-            foreach ($uploadDirs as $idx => $dir) {
-                if (!is_dir($dir)) {
-                    @mkdir($dir, 0777, true);
-                }
-                if (is_dir($dir) && is_writable($dir)) {
-                    $chosenDir = $dir;
-                    if ($idx === 0)
-                        $relPrefix = 'assets/uploads/bukti/';
-                    elseif ($idx === 1)
-                        $relPrefix = 'uploads/bukti/';
-                    elseif ($idx === 2)
-                        $relPrefix = 'assets/uploads/';
-                    else
-                        $relPrefix = 'uploads/';
-                    break;
-                }
-            }
-            if (!$chosenDir) {
-                $chosenDir = __DIR__ . '/../assets/uploads/bukti/';
-                $relPrefix = 'assets/uploads/bukti/';
-            }
-            $filename = 'topup_' . time() . '_' . rand(1000, 9999) . '.' . ($type === 'jpeg' ? 'jpg' : $type);
-            $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
-            if (file_put_contents($targetPath, $data)) {
-                $dbPath = $relPrefix . $filename;
-            }
-        }
-    }
-}
-
-// 2. Cek jika dikirim via standard $_FILES
-if (empty($dbPath) && isset($_FILES['bukti_transfer']) && $_FILES['bukti_transfer']['error'] === UPLOAD_ERR_OK) {
-    $file = $_FILES['bukti_transfer'];
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'heic', 'jfif', 'bmp', 'svg'];
-
-    if (in_array($ext, $allowedExts) && $file['size'] <= 10 * 1024 * 1024) {
-        $uploadDirs = [
-            __DIR__ . '/../assets/uploads/bukti/',
-            __DIR__ . '/../uploads/bukti/',
-            __DIR__ . '/../assets/uploads/',
-            __DIR__ . '/../uploads/'
-        ];
-
-        $chosenDir = '';
-        $relPrefix = '';
-
-        foreach ($uploadDirs as $idx => $dir) {
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0777, true);
-            }
-            if (is_dir($dir) && is_writable($dir)) {
-                $chosenDir = $dir;
-                if ($idx === 0)
-                    $relPrefix = 'assets/uploads/bukti/';
-                elseif ($idx === 1)
-                    $relPrefix = 'uploads/bukti/';
-                elseif ($idx === 2)
-                    $relPrefix = 'assets/uploads/';
-                else
-                    $relPrefix = 'uploads/';
-                break;
-            }
-        }
-
-        if (!$chosenDir) {
-            $chosenDir = __DIR__ . '/../assets/uploads/bukti/';
-            $relPrefix = 'assets/uploads/bukti/';
-        }
-
-        $filename = 'topup_' . time() . '_' . rand(1000, 9999) . '.' . ($ext === 'heic' ? 'jpg' : $ext);
-        $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
-
-        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-            $dbPath = $relPrefix . $filename;
-        }
-    }
-}
-
-// Fallback jika write ke disk terhambat izin folder di hosting
-if (empty($dbPath) && (!empty($_POST['bukti_base64']) || (isset($_FILES['bukti_transfer']) && $_FILES['bukti_transfer']['error'] === UPLOAD_ERR_OK))) {
-    $ext = !empty($_FILES['bukti_transfer']['name']) ? strtolower(pathinfo($_FILES['bukti_transfer']['name'], PATHINFO_EXTENSION)) : 'jpg';
-    $dbPath = 'assets/uploads/bukti/topup_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-}
+$dbPath = saveValidatedProofUpload(
+    __DIR__ . '/..',
+    $_FILES['bukti_transfer'] ?? null,
+    $_POST['bukti_base64'] ?? null,
+    'topup'
+) ?? '';
 
 if (empty($dbPath)) {
-    echo json_encode(['success' => false, 'message' => 'Bukti transfer wajib diunggah (Format foto JPG, PNG, WEBP, atau PDF).']);
+    echo json_encode(['success' => false, 'message' => 'Bukti transfer wajib berupa file gambar/PDF valid (tidak kosong/korup).']);
     exit;
 }
 

@@ -273,8 +273,20 @@ require_once __DIR__ . '/../../includes/header.php';
             </div>
             <div class="modal-body text-center bg-light p-3 position-relative">
                 <img src="" id="imgBukti"
-                    style="max-width:100%; max-height:70vh; object-fit:contain; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);"
-                    onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\' viewBox=\'0 0 300 200\'><rect fill=\'%23f8f9fa\' width=\'300\' height=\'200\'/><text fill=\'%23dc3545\' font-family=\'sans-serif\' font-size=\'14\' dy=\'10.5\' font-weight=\'bold\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'>Gambar tidak dapat dimuat</text></svg>'">
+                    style="max-width:100%; max-height:70vh; object-fit:contain; display: block; margin: 0 auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+                <iframe id="pdfBukti" src=""
+                    style="display:none; width:100%; height:70vh; border:0; border-radius:8px; background:#ffffff;"></iframe>
+                <div id="buktiErrorBox" class="py-4 px-3 text-center" style="display:none;">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger-subtle text-danger mb-2"
+                        style="width: 56px; height: 56px; font-size: 1.5rem;">
+                        <i class="bi bi-file-earmark-x"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">Gambar Bukti Tidak Dapat Dimuat</h6>
+                    <p class="text-muted small mb-0" style="max-width: 440px; margin: 0 auto;">
+                        File bukti transfer pada server kosong (0 KB) atau korup saat diunggah dari perangkat pengirim.
+                        Silakan hubungi wali murid atau tolak agar mengirim ulang bukti transfer yang valid.
+                    </p>
+                </div>
                 <div id="copyFeedback"
                     class="position-absolute top-50 start-50 translate-middle badge bg-dark opacity-90 p-3 shadow"
                     style="display:none; font-size: 1rem; z-index: 10;">
@@ -405,7 +417,39 @@ require_once __DIR__ . '/../../includes/header.php';
             return;
         }
         const fullUrl = (url.startsWith('http')) ? url : window.location.origin + url;
-        document.getElementById('imgBukti').src = fullUrl;
+        const imgEl = document.getElementById('imgBukti');
+        const pdfEl = document.getElementById('pdfBukti');
+        const errEl = document.getElementById('buktiErrorBox');
+        const btnCopy = document.getElementById('btnCopyBukti');
+        const isPdf = /\.pdf(\?|$)/i.test(fullUrl);
+
+        errEl.style.display = 'none';
+        imgEl.onload = null;
+        imgEl.onerror = null;
+
+        if (isPdf) {
+            imgEl.style.display = 'none';
+            imgEl.src = '';
+            pdfEl.src = fullUrl;
+            pdfEl.style.display = 'block';
+            if (btnCopy) btnCopy.style.display = 'none';
+        } else {
+            pdfEl.style.display = 'none';
+            pdfEl.src = '';
+            imgEl.style.display = 'block';
+            if (btnCopy) btnCopy.style.display = 'inline-block';
+            imgEl.onload = function () {
+                errEl.style.display = 'none';
+                imgEl.style.display = 'block';
+                if (btnCopy) btnCopy.style.display = 'inline-block';
+            };
+            imgEl.onerror = function () {
+                imgEl.style.display = 'none';
+                errEl.style.display = 'block';
+                if (btnCopy) btnCopy.style.display = 'none';
+            };
+            imgEl.src = fullUrl;
+        }
         document.getElementById('btnDownloadBukti').href = fullUrl;
 
         let waMsg = 'Berikut adalah bukti transfer pembayaran';

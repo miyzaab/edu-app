@@ -3,6 +3,7 @@
  * PORTAL ORANG TUA (100% PRESISE REAL-DATABASE DRIVEN WITH PAGE-ENTER ANIMATIONS) - Edu-App
  */
 require_once __DIR__ . '/config/koneksi.php';
+require_once __DIR__ . '/includes/proof_upload_helper.php';
 
 // Proteksi Halaman: Wajib Login Orang Tua
 if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'ortu') {
@@ -782,93 +783,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
  */
 function handleProofUpload(?array $fileData, ?string $base64Data, string $prefix = 'bukti'): ?string
 {
-    $uploadDirs = [
-        __DIR__ . '/assets/uploads/bukti/',
-        __DIR__ . '/uploads/bukti/',
-        __DIR__ . '/assets/uploads/',
-        __DIR__ . '/uploads/'
-    ];
-
-    $chosenDir = '';
-    $relPrefix = '';
-    foreach ($uploadDirs as $idx => $dir) {
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0755, true);
-        }
-        if (is_dir($dir) && is_writable($dir)) {
-            $chosenDir = $dir;
-            if ($idx === 0)
-                $relPrefix = 'assets/uploads/bukti/';
-            elseif ($idx === 1)
-                $relPrefix = 'uploads/bukti/';
-            elseif ($idx === 2)
-                $relPrefix = 'assets/uploads/';
-            else
-                $relPrefix = 'uploads/';
-            break;
-        }
-    }
-    if (!$chosenDir) {
-        $chosenDir = __DIR__ . '/assets/uploads/bukti/';
-        $relPrefix = 'assets/uploads/bukti/';
-        if (!is_dir($chosenDir)) {
-            @mkdir($chosenDir, 0755, true);
-        }
-    }
-
-    // 1. Cek jika dikirim via Base64 (Compressed Image / In-Memory Data dari HP)
-    if (!empty($base64Data) && is_string($base64Data)) {
-        if (preg_match('/^data:([a-zA-Z0-9\/\+\.-]+);base64,/', $base64Data, $matches)) {
-            $mime = strtolower($matches[1]);
-            $base64Raw = substr($base64Data, strpos($base64Data, ',') + 1);
-            $ext = 'jpg';
-            if (strpos($mime, 'pdf') !== false) {
-                $ext = 'pdf';
-            } elseif (strpos($mime, 'png') !== false) {
-                $ext = 'png';
-            } elseif (strpos($mime, 'webp') !== false) {
-                $ext = 'webp';
-            } elseif (strpos($mime, 'jpeg') !== false || strpos($mime, 'jpg') !== false) {
-                $ext = 'jpg';
-            }
-            $bin = base64_decode($base64Raw);
-            if ($bin !== false && strlen($bin) > 0) {
-                $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-                $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
-                if (@file_put_contents($targetPath, $bin)) {
-                    return $relPrefix . $filename;
-                }
-            }
-        }
-    }
-
-    // 2. Cek jika dikirim via standard $_FILES (atau In-Memory Blob)
-    if (!empty($fileData) && isset($fileData['error']) && $fileData['error'] === UPLOAD_ERR_OK) {
-        $ext = strtolower(pathinfo($fileData['name'], PATHINFO_EXTENSION));
-        $allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'heic', 'jfif', 'bmp', 'svg'];
-        if (empty($ext) || !in_array($ext, $allowedExts)) {
-            if (!empty($fileData['type']) && strpos($fileData['type'], 'pdf') !== false) {
-                $ext = 'pdf';
-            } else {
-                $ext = 'jpg';
-            }
-        }
-        if (in_array($ext, $allowedExts) && $fileData['size'] <= 15 * 1024 * 1024) {
-            $filename = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . ($ext === 'heic' ? 'jpg' : $ext);
-            $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
-            if (@move_uploaded_file($fileData['tmp_name'], $targetPath)) {
-                return $relPrefix . $filename;
-            }
-        }
-    }
-
-    // 3. Fallback jika file diterima tetapi storage memiliki kendala izin
-    if (!empty($base64Data) || (!empty($fileData) && isset($fileData['error']) && $fileData['error'] === UPLOAD_ERR_OK)) {
-        $ext = !empty($fileData['name']) ? strtolower(pathinfo($fileData['name'], PATHINFO_EXTENSION)) : 'jpg';
-        return 'assets/uploads/bukti/' . $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
-    }
-
-    return null;
+    return saveValidatedProofUpload(__DIR__, $fileData, $base64Data, $prefix);
 }
 
 // PROSES SUBMIT TOP-UP KANTIN
@@ -6859,19 +6774,28 @@ unset($_SESSION['flash_ortu']);
             });
         }
 
+        function isLikelyImageFile(file) {
+            if (!file) return false;
+            if (file.type && file.type.startsWith('image/')) return true;
+            return /\.(jpe?g|png|webp|gif|bmp|jfif)$/i.test(file.name || '');
+        }
+
         function compressImage(file, maxWidth = 1280, quality = 0.82) {
             return new Promise((resolve) => {
-                if (!file) return resolve(null);
-                if (!file.type || !file.type.startsWith('image/')) {
-                    // Jika bukan gambar (misal dokumen PDF), baca langsung sebagai DataURL tanpa canvas
+                if (!file || file.size === 0) return resolve(null);
+                if (!isLikelyImageFile(file)) {
+                    // Jika dokumen PDF, baca langsung sebagai DataURL tanpa canvas
                     return readFileAsDataURL(file).then(resolve);
                 }
                 const reader = new FileReader();
                 reader.onload = function (e) {
+                    const dataRes = e.target.result;
+                    if (!dataRes || dataRes.length < 300) return resolve(null);
                     const img = new Image();
                     img.onload = function () {
-                        let width = img.width;
-                        let height = img.height;
+                        let width = img.naturalWidth || img.width;
+                        let height = img.naturalHeight || img.height;
+                        if (!width || !height) return resolve(null);
                         if (width > maxWidth) {
                             height = Math.round((height * maxWidth) / width);
                             width = maxWidth;
@@ -6880,19 +6804,42 @@ unset($_SESSION['flash_ortu']);
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
                         const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        resolve(dataUrl);
+                        resolve(dataUrl && dataUrl.length > 300 ? dataUrl : dataRes);
                     };
                     img.onerror = function () {
-                        // Fallback ke data URL mentah jika gagal didecode canvas
-                        resolve(e.target.result);
+                        // Fallback ke data URL mentah hanya jika file berukuran wajar
+                        resolve(dataRes.length > 300 ? dataRes : null);
                     };
-                    img.src = e.target.result;
+                    img.src = dataRes;
                 };
                 reader.onerror = function () { resolve(null); };
                 reader.readAsDataURL(file);
             });
+        }
+
+        async function prepareSafePayload(fileInput, maxWidth = 1280, quality = 0.82) {
+            let base64 = fileInput._safeBase64;
+            let blob = fileInput._safeBlob;
+            const origFile = fileInput.files && fileInput.files[0];
+            if (!base64 && origFile) {
+                base64 = await compressImage(origFile, maxWidth, quality);
+                if (base64) {
+                    blob = dataURLtoBlob(base64);
+                }
+            }
+            if (!base64 || !blob || blob.size < 256) {
+                return null;
+            }
+            const extMatch = (base64.match(/^data:image\/([a-z0-9]+)/i) || [])[1];
+            let fileName = fileInput._safeFileName || (origFile ? origFile.name : '') || 'bukti.jpg';
+            if (extMatch === 'jpeg') {
+                fileName = fileName.replace(/\.[^.]+$/, '') + '.jpg';
+            }
+            return { base64, blob, fileName };
         }
 
         // AUTO-ATTACH KOMPRESI & ANTI ERR_UPLOAD_FILE_CHANGED PADA FORM UPLOAD
@@ -6915,18 +6862,21 @@ unset($_SESSION['flash_ortu']);
             function bindSafeInput(inputEl) {
                 if (!inputEl) return;
                 inputEl.addEventListener('change', async function () {
+                    inputEl._safeBase64 = null;
+                    inputEl._safeBlob = null;
                     if (!inputEl.files || !inputEl.files[0]) {
-                        inputEl._safeBase64 = null;
-                        inputEl._safeBlob = null;
                         return;
                     }
                     const f = inputEl.files[0];
                     try {
                         const base64 = await compressImage(f, 1280, 0.82);
-                        if (base64) {
+                        const blob = base64 ? dataURLtoBlob(base64) : null;
+                        if (base64 && blob && blob.size >= 256) {
                             inputEl._safeBase64 = base64;
-                            inputEl._safeBlob = dataURLtoBlob(base64);
-                            inputEl._safeFileName = f.name || 'bukti.jpg';
+                            inputEl._safeBlob = blob;
+                            inputEl._safeFileName = (base64.indexOf('data:image/jpeg') === 0)
+                                ? (f.name || 'bukti').replace(/\.[^.]+$/, '') + '.jpg'
+                                : (f.name || 'bukti.jpg');
                         }
                     } catch (e) {
                         console.warn('Safe pre-cache warning:', e);
@@ -6961,28 +6911,22 @@ unset($_SESSION['flash_ortu']);
                     }
 
                     try {
-                        let base64 = fileInput._safeBase64;
-                        let blob = fileInput._safeBlob;
-                        let fileName = fileInput._safeFileName || fileInput.files[0].name || 'bukti.jpg';
-
-                        if (!base64) {
-                            base64 = await compressImage(fileInput.files[0], 1280, 0.82);
-                            if (base64) {
-                                blob = dataURLtoBlob(base64);
+                        const payload = await prepareSafePayload(fileInput, 1280, 0.82);
+                        if (!payload) {
+                            alert('File bukti gagal terbaca atau korup (0 KB). Silakan pilih ulang foto/screenshot lain.');
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = originalBtnHtml;
                             }
+                            return;
                         }
 
                         const formData = new FormData(formBayar);
                         // Hapus file asli dari FormData agar browser TIDAK mengakses pointer file storage Android yang rentan berubah (ERR_UPLOAD_FILE_CHANGED)
                         formData.delete('bukti_transfer');
                         formData.append('is_ajax', '1');
-
-                        if (blob) {
-                            formData.append('bukti_transfer', blob, fileName);
-                        }
-                        if (base64) {
-                            formData.append('bukti_base64', base64);
-                        }
+                        formData.append('bukti_transfer', payload.blob, payload.fileName);
+                        formData.append('bukti_base64', payload.base64);
 
                         const response = await fetch('portal-ortu.php', {
                             method: 'POST',
@@ -7031,27 +6975,21 @@ unset($_SESSION['flash_ortu']);
                     }
 
                     try {
-                        let base64 = fileInput._safeBase64;
-                        let blob = fileInput._safeBlob;
-                        let fileName = fileInput._safeFileName || fileInput.files[0].name || 'bukti.jpg';
-
-                        if (!base64) {
-                            base64 = await compressImage(fileInput.files[0], 1280, 0.82);
-                            if (base64) {
-                                blob = dataURLtoBlob(base64);
+                        const payload = await prepareSafePayload(fileInput, 1280, 0.82);
+                        if (!payload) {
+                            alert('File bukti gagal terbaca atau korup (0 KB). Silakan pilih ulang foto/screenshot lain.');
+                            if (btnSubmit) {
+                                btnSubmit.disabled = false;
+                                btnSubmit.innerHTML = originalBtnHtml;
                             }
+                            return;
                         }
 
                         const formData = new FormData(formTopup);
                         formData.delete('bukti_transfer');
                         formData.append('is_ajax', '1');
-
-                        if (blob) {
-                            formData.append('bukti_transfer', blob, fileName);
-                        }
-                        if (base64) {
-                            formData.append('bukti_base64', base64);
-                        }
+                        formData.append('bukti_transfer', payload.blob, payload.fileName);
+                        formData.append('bukti_base64', payload.base64);
 
                         const response = await fetch('portal-ortu.php', {
                             method: 'POST',
