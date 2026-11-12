@@ -11,7 +11,7 @@ if (!function_exists('validateProofBinary')) {
     function validateProofBinary(string $bin): ?string
     {
         $len = strlen($bin);
-        if ($len < 256) {
+        if ($len < 64) {
             return null;
         }
 
@@ -118,7 +118,7 @@ if (!function_exists('saveValidatedProofUpload')) {
                 if ($ext !== null) {
                     $filename   = $prefix . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
                     $targetPath = rtrim($chosenDir, '/\\') . DIRECTORY_SEPARATOR . $filename;
-                    if (@file_put_contents($targetPath, $bin) !== false && @filesize($targetPath) >= 256) {
+                    if (@file_put_contents($targetPath, $bin) !== false && @filesize($targetPath) >= 64) {
                         return $relPrefix . $filename;
                     }
                     if (file_exists($targetPath)) {
@@ -132,7 +132,7 @@ if (!function_exists('saveValidatedProofUpload')) {
         if (!empty($fileData) && isset($fileData['error']) && $fileData['error'] === UPLOAD_ERR_OK) {
             $tmpName = (string) ($fileData['tmp_name'] ?? '');
             $size    = (int) ($fileData['size'] ?? 0);
-            if ($tmpName !== '' && file_exists($tmpName) && $size >= 256 && $size <= 15 * 1024 * 1024) {
+            if ($tmpName !== '' && file_exists($tmpName) && $size >= 64 && $size <= 15 * 1024 * 1024) {
                 $bin = @file_get_contents($tmpName);
                 if (is_string($bin)) {
                     $ext = validateProofBinary($bin);
@@ -142,7 +142,7 @@ if (!function_exists('saveValidatedProofUpload')) {
                         $moved = is_uploaded_file($tmpName)
                             ? @move_uploaded_file($tmpName, $targetPath)
                             : (@file_put_contents($targetPath, $bin) !== false);
-                        if ($moved && @filesize($targetPath) >= 256) {
+                        if ($moved && @filesize($targetPath) >= 64) {
                             return $relPrefix . $filename;
                         }
                         if (file_exists($targetPath)) {
