@@ -975,11 +975,132 @@ unset($_SESSION['flash_ortu']);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
+    <script>
+        // Inisialisasi Tema Warna Instan Sebelum Halaman Dirender (Anti-Flicker)
+        (function() {
+            try {
+                const saved = localStorage.getItem('ortu_theme_color') || 'ocean';
+                const themes = {
+                    ocean: {
+                        '--brand-blue': '#003b87',
+                        '--brand-blue-light': '#0a4b9c',
+                        '--brand-accent': '#0284c7',
+                        '--brand-accent-soft': '#e0f2fe',
+                        '--brand-accent-border': '#bae6fd',
+                        '--brand-accent-shadow': 'rgba(2, 132, 199, 0.22)',
+                        '--brand-shadow': 'rgba(0, 59, 135, 0.25)',
+                        '--brand-hero-start': '#092040',
+                        '--brand-hero-mid': '#0d47a1',
+                        '--brand-hero-end': '#1e88e5'
+                    },
+                    emerald: {
+                        '--brand-blue': '#064e3b',
+                        '--brand-blue-light': '#047857',
+                        '--brand-accent': '#059669',
+                        '--brand-accent-soft': '#d1fae5',
+                        '--brand-accent-border': '#a7f3d0',
+                        '--brand-accent-shadow': 'rgba(5, 150, 105, 0.22)',
+                        '--brand-shadow': 'rgba(6, 78, 59, 0.25)',
+                        '--brand-hero-start': '#022c22',
+                        '--brand-hero-mid': '#065f46',
+                        '--brand-hero-end': '#059669'
+                    },
+                    purple: {
+                        '--brand-blue': '#4c1d95',
+                        '--brand-blue-light': '#6d28d9',
+                        '--brand-accent': '#7c3aed',
+                        '--brand-accent-soft': '#ede9fe',
+                        '--brand-accent-border': '#ddd6fe',
+                        '--brand-accent-shadow': 'rgba(124, 58, 237, 0.22)',
+                        '--brand-shadow': 'rgba(76, 29, 149, 0.25)',
+                        '--brand-hero-start': '#2e1065',
+                        '--brand-hero-mid': '#581c87',
+                        '--brand-hero-end': '#7c3aed'
+                    },
+                    rose: {
+                        '--brand-blue': '#881337',
+                        '--brand-blue-light': '#be123c',
+                        '--brand-accent': '#e11d48',
+                        '--brand-accent-soft': '#ffe4e6',
+                        '--brand-accent-border': '#fecdd3',
+                        '--brand-accent-shadow': 'rgba(225, 29, 72, 0.22)',
+                        '--brand-shadow': 'rgba(136, 19, 55, 0.25)',
+                        '--brand-hero-start': '#4c0519',
+                        '--brand-hero-mid': '#9f1239',
+                        '--brand-hero-end': '#e11d48'
+                    },
+                    amber: {
+                        '--brand-blue': '#7c2d12',
+                        '--brand-blue-light': '#c2410c',
+                        '--brand-accent': '#ea580c',
+                        '--brand-accent-soft': '#ffedd5',
+                        '--brand-accent-border': '#fed7aa',
+                        '--brand-accent-shadow': 'rgba(234, 88, 12, 0.22)',
+                        '--brand-shadow': 'rgba(124, 45, 18, 0.25)',
+                        '--brand-hero-start': '#431407',
+                        '--brand-hero-mid': '#9a3412',
+                        '--brand-hero-end': '#ea580c'
+                    },
+                    teal: {
+                        '--brand-blue': '#134e4a',
+                        '--brand-blue-light': '#0f766e',
+                        '--brand-accent': '#0d9488',
+                        '--brand-accent-soft': '#ccfbf1',
+                        '--brand-accent-border': '#99f6e4',
+                        '--brand-accent-shadow': 'rgba(13, 148, 136, 0.22)',
+                        '--brand-shadow': 'rgba(19, 78, 74, 0.25)',
+                        '--brand-hero-start': '#042f2e',
+                        '--brand-hero-mid': '#115e59',
+                        '--brand-hero-end': '#0d9488'
+                    },
+                    slate: {
+                        '--brand-blue': '#0f172a',
+                        '--brand-blue-light': '#334155',
+                        '--brand-accent': '#475569',
+                        '--brand-accent-soft': '#f1f5f9',
+                        '--brand-accent-border': '#cbd5e1',
+                        '--brand-accent-shadow': 'rgba(71, 85, 105, 0.22)',
+                        '--brand-shadow': 'rgba(15, 23, 42, 0.25)',
+                        '--brand-hero-start': '#020617',
+                        '--brand-hero-mid': '#1e293b',
+                        '--brand-hero-end': '#334155'
+                    },
+                    mocha: {
+                        '--brand-blue': '#451a03',
+                        '--brand-blue-light': '#78350f',
+                        '--brand-accent': '#b45309',
+                        '--brand-accent-soft': '#fef3c7',
+                        '--brand-accent-border': '#fde68a',
+                        '--brand-accent-shadow': 'rgba(180, 83, 9, 0.22)',
+                        '--brand-shadow': 'rgba(69, 26, 3, 0.25)',
+                        '--brand-hero-start': '#291002',
+                        '--brand-hero-mid': '#713f12',
+                        '--brand-hero-end': '#b45309'
+                    }
+                };
+                const active = themes[saved] || themes.ocean;
+                const root = document.documentElement;
+                for (const [k, v] of Object.entries(active)) {
+                    root.style.setProperty(k, v);
+                }
+                root.setAttribute('data-ortu-theme', saved);
+            } catch(e) {}
+        })();
+    </script>
+
     <style>
         :root {
             --app-bg: #f4f7fb;
             --brand-blue: #003b87;
             --brand-blue-light: #0a4b9c;
+            --brand-accent: #0284c7;
+            --brand-accent-soft: #e0f2fe;
+            --brand-accent-border: #bae6fd;
+            --brand-accent-shadow: rgba(2, 132, 199, 0.22);
+            --brand-shadow: rgba(0, 59, 135, 0.25);
+            --brand-hero-start: #092040;
+            --brand-hero-mid: #0d47a1;
+            --brand-hero-end: #1e88e5;
             --app-text: #0f172a;
             --app-text-muted: #64748b;
             --app-red: #d97706;
@@ -1538,7 +1659,7 @@ unset($_SESSION['flash_ortu']);
 
         /* HERO PENGELUARAN KANTIN MINGGU INI (MATCHING BERANDA SIGNATURE BLUE GRADIENT) */
         .hero-kantin-spend-card {
-            background: linear-gradient(135deg, #092040 0%, #0d47a1 45%, #1565c0 80%, #1e88e5 100%);
+            background: linear-gradient(135deg, var(--brand-hero-start, #092040) 0%, var(--brand-hero-mid, #0d47a1) 45%, var(--brand-hero-end, #1e88e5) 100%);
             border-radius: 28px;
             padding: 1.5rem 1.5rem;
             color: #ffffff;
@@ -1683,19 +1804,110 @@ unset($_SESSION['flash_ortu']);
         }
 
         .nav-tab-item.active .nav-tab-icon-wrapper {
-            color: #0284c7;
-            background: #e0f2fe;
-            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.15);
+            color: var(--brand-accent, #0284c7);
+            background: var(--brand-accent-soft, #e0f2fe);
+            box-shadow: 0 2px 8px var(--brand-accent-shadow, rgba(2, 132, 199, 0.15));
         }
 
         .nav-tab-item.active .nav-tab-icon-wrapper i {
             transform: scale(1.1);
-            color: #0284c7;
+            color: var(--brand-accent, #0284c7);
         }
 
         .nav-tab-item.active .nav-tab-label {
-            color: #0284c7;
+            color: var(--brand-accent, #0284c7);
             font-weight: 800;
+        }
+
+        /* DYNAMIC THEME ADAPTATIONS ACROSS APP CANVAS */
+        .app-canvas .btn-primary,
+        .app-canvas .btn-primary:focus {
+            background: var(--brand-accent, #0284c7) !important;
+            border-color: var(--brand-accent, #0284c7) !important;
+            color: #ffffff !important;
+        }
+        .app-canvas .btn-primary:hover {
+            background: var(--brand-blue-light, #0a4b9c) !important;
+            border-color: var(--brand-blue-light, #0a4b9c) !important;
+            color: #ffffff !important;
+        }
+        .app-canvas .btn-outline-primary {
+            color: var(--brand-accent, #0284c7) !important;
+            border-color: var(--brand-accent, #0284c7) !important;
+        }
+        .app-canvas .btn-outline-primary:hover,
+        .app-canvas .btn-outline-primary:active {
+            background: var(--brand-accent, #0284c7) !important;
+            border-color: var(--brand-accent, #0284c7) !important;
+            color: #ffffff !important;
+        }
+        .app-canvas .text-primary {
+            color: var(--brand-accent, #0284c7) !important;
+        }
+        .app-canvas .border-primary {
+            border-color: var(--brand-accent, #0284c7) !important;
+        }
+        .app-canvas .bg-primary-subtle {
+            background-color: var(--brand-accent-soft, #e0f2fe) !important;
+            color: var(--brand-accent, #0284c7) !important;
+        }
+        .app-canvas .badge.bg-primary {
+            background-color: var(--brand-accent, #0284c7) !important;
+            color: #ffffff !important;
+        }
+
+        /* THEME COLOR PICKER COMPONENT */
+        .theme-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .theme-swatch-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 9px 4px 8px 4px;
+            border-radius: 18px;
+            border: 2px solid transparent;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+            position: relative;
+        }
+        .theme-swatch-item:active {
+            transform: scale(0.92);
+        }
+        .theme-swatch-item.active {
+            border-color: var(--brand-accent, #0284c7);
+            background: var(--brand-accent-soft, #e0f2fe);
+            box-shadow: 0 4px 14px var(--brand-accent-shadow, rgba(2, 132, 199, 0.2));
+        }
+        .theme-swatch-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1rem;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+            margin-bottom: 6px;
+            transition: transform 0.2s ease;
+        }
+        .theme-swatch-item.active .theme-swatch-circle {
+            transform: scale(1.1);
+        }
+        .theme-swatch-name {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #475569;
+            text-align: center;
+            line-height: 1.15;
+        }
+        .theme-swatch-item.active .theme-swatch-name {
+            color: var(--brand-accent, #0284c7);
         }
 
         .widget-card {
@@ -1897,7 +2109,7 @@ unset($_SESSION['flash_ortu']);
             border-radius: 28px;
             padding: 1.5rem 1.5rem;
             color: #fff;
-            background: linear-gradient(135deg, #092040 0%, #0d47a1 45%, #1565c0 80%, #1e88e5 100%);
+            background: linear-gradient(135deg, var(--brand-hero-start, #092040) 0%, var(--brand-hero-mid, #0d47a1) 45%, var(--brand-hero-end, #1e88e5) 100%);
             box-shadow: 0 20px 48px -10px rgba(13, 71, 161, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
             position: relative;
             overflow: hidden;
@@ -1910,7 +2122,7 @@ unset($_SESSION['flash_ortu']);
             border-radius: 28px;
             padding: 1.5rem 1.5rem;
             color: #fff;
-            background: linear-gradient(135deg, #092040 0%, #0d47a1 45%, #1565c0 80%, #1e88e5 100%);
+            background: linear-gradient(135deg, var(--brand-hero-start, #092040) 0%, var(--brand-hero-mid, #0d47a1) 45%, var(--brand-hero-end, #1e88e5) 100%);
             box-shadow: 0 20px 48px -10px rgba(13, 71, 161, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
             position: relative;
             overflow: hidden;
@@ -2202,7 +2414,7 @@ unset($_SESSION['flash_ortu']);
             padding: 1.5rem;
             border-radius: 28px;
             color: #ffffff;
-            background: linear-gradient(135deg, #092040 0%, #0d47a1 45%, #1565c0 80%, #1e88e5 100%);
+            background: linear-gradient(135deg, var(--brand-hero-start, #092040) 0%, var(--brand-hero-mid, #0d47a1) 45%, var(--brand-hero-end, #1e88e5) 100%);
             box-shadow: 0 20px 48px -10px rgba(13, 71, 161, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
             border: 1px solid rgba(255, 255, 255, 0.18);
             min-height: 230px;
@@ -3280,7 +3492,7 @@ unset($_SESSION['flash_ortu']);
 
         /* ACADEMIC HERO CARD (MATCHING BERANDA SIGNATURE BLUE GRADIENT) */
         .hero-akademik-card {
-            background: linear-gradient(135deg, #092040 0%, #0d47a1 45%, #1565c0 80%, #1e88e5 100%);
+            background: linear-gradient(135deg, var(--brand-hero-start, #092040) 0%, var(--brand-hero-mid, #0d47a1) 45%, var(--brand-hero-end, #1e88e5) 100%);
             border-radius: 28px;
             padding: 1.5rem;
             color: #ffffff;
@@ -5309,6 +5521,75 @@ unset($_SESSION['flash_ortu']);
                     </div>
                 </div>
 
+                <!-- CARD 3: PILIHAN TEMA WARNA APLIKASI -->
+                <div class="widget-card mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h4 class="section-title-text mb-0">
+                            <i class="bi bi-palette-fill text-primary me-2"></i> Tema Warna Aplikasi
+                        </h4>
+                        <span class="badge bg-primary-subtle rounded-pill extra-small fw-bold px-2.5 py-1" id="activeThemeBadgeLabel">
+                            Ocean Blue
+                        </span>
+                    </div>
+                    <p class="text-muted extra-small mb-3">
+                        Pilih nuansa warna aplikasi yang paling nyaman di HP Anda:
+                    </p>
+
+                    <div class="theme-picker-grid">
+                        <div class="theme-swatch-item" data-theme="ocean" onclick="switchPortalTheme('ocean')" title="Ocean Blue (Default)">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #003b87 0%, #0284c7 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Ocean Blue</span>
+                        </div>
+                        <div class="theme-swatch-item" data-theme="emerald" onclick="switchPortalTheme('emerald')" title="Emerald Islami">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #064e3b 0%, #059669 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Emerald</span>
+                        </div>
+                        <div class="theme-swatch-item" data-theme="purple" onclick="switchPortalTheme('purple')" title="Royal Amethyst">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Amethyst</span>
+                        </div>
+                        <div class="theme-swatch-item" data-theme="rose" onclick="switchPortalTheme('rose')" title="Ruby Crimson">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #881337 0%, #e11d48 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Ruby Rose</span>
+                        </div>
+                        <div class="theme-swatch-item" data-theme="amber" onclick="switchPortalTheme('amber')" title="Sunset Amber">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #7c2d12 0%, #ea580c 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Amber</span>
+                        </div>
+                        <div class="theme-swatch-item" data-theme="teal" onclick="switchPortalTheme('teal')" title="Teal Tosca">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #134e4a 0%, #0d9488 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Teal Tosca</span>
+                        </div>
+                        <div class="theme-swatch-item" data-theme="slate" onclick="switchPortalTheme('slate')" title="Midnight Slate">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #0f172a 0%, #475569 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Slate Dark</span>
+                        </div>
+                        <div class="theme-swatch-item" data-theme="mocha" onclick="switchPortalTheme('mocha')" title="Warm Mocha">
+                            <div class="theme-swatch-circle" style="background: linear-gradient(135deg, #451a03 0%, #b45309 100%);">
+                                <i class="bi bi-check-lg swatch-check" style="display:none;"></i>
+                            </div>
+                            <span class="theme-swatch-name">Mocha</span>
+                        </div>
+                    </div>
+                    <div id="themeChangeToast" class="mt-2 text-center text-success extra-small fw-bold" style="display: none;">
+                        <i class="bi bi-check-circle-fill me-1"></i> Tema berhasil diterapkan!
+                    </div>
+                </div>
+
                 <?php if (!empty($portalConfig['profil_barcode'])): ?>
                     <!-- CARD BARCODE / QR NIS SISWA -->
                     <div class="widget-card mb-3 text-center">
@@ -6173,6 +6454,178 @@ unset($_SESSION['flash_ortu']);
     <script>
         let isBalanceHidden = false;
 
+        // SISTEM TEMA WARNA DINAMIS PORTAL ORANG TUA
+        const ORTU_THEMES = {
+            ocean: {
+                name: 'Ocean Blue',
+                vars: {
+                    '--brand-blue': '#003b87',
+                    '--brand-blue-light': '#0a4b9c',
+                    '--brand-accent': '#0284c7',
+                    '--brand-accent-soft': '#e0f2fe',
+                    '--brand-accent-border': '#bae6fd',
+                    '--brand-accent-shadow': 'rgba(2, 132, 199, 0.22)',
+                    '--brand-shadow': 'rgba(0, 59, 135, 0.25)',
+                    '--brand-hero-start': '#092040',
+                    '--brand-hero-mid': '#0d47a1',
+                    '--brand-hero-end': '#1e88e5'
+                }
+            },
+            emerald: {
+                name: 'Emerald Islami',
+                vars: {
+                    '--brand-blue': '#064e3b',
+                    '--brand-blue-light': '#047857',
+                    '--brand-accent': '#059669',
+                    '--brand-accent-soft': '#d1fae5',
+                    '--brand-accent-border': '#a7f3d0',
+                    '--brand-accent-shadow': 'rgba(5, 150, 105, 0.22)',
+                    '--brand-shadow': 'rgba(6, 78, 59, 0.25)',
+                    '--brand-hero-start': '#022c22',
+                    '--brand-hero-mid': '#065f46',
+                    '--brand-hero-end': '#059669'
+                }
+            },
+            purple: {
+                name: 'Royal Amethyst',
+                vars: {
+                    '--brand-blue': '#4c1d95',
+                    '--brand-blue-light': '#6d28d9',
+                    '--brand-accent': '#7c3aed',
+                    '--brand-accent-soft': '#ede9fe',
+                    '--brand-accent-border': '#ddd6fe',
+                    '--brand-accent-shadow': 'rgba(124, 58, 237, 0.22)',
+                    '--brand-shadow': 'rgba(76, 29, 149, 0.25)',
+                    '--brand-hero-start': '#2e1065',
+                    '--brand-hero-mid': '#581c87',
+                    '--brand-hero-end': '#7c3aed'
+                }
+            },
+            rose: {
+                name: 'Ruby Crimson',
+                vars: {
+                    '--brand-blue': '#881337',
+                    '--brand-blue-light': '#be123c',
+                    '--brand-accent': '#e11d48',
+                    '--brand-accent-soft': '#ffe4e6',
+                    '--brand-accent-border': '#fecdd3',
+                    '--brand-accent-shadow': 'rgba(225, 29, 72, 0.22)',
+                    '--brand-shadow': 'rgba(136, 19, 55, 0.25)',
+                    '--brand-hero-start': '#4c0519',
+                    '--brand-hero-mid': '#9f1239',
+                    '--brand-hero-end': '#e11d48'
+                }
+            },
+            amber: {
+                name: 'Sunset Amber',
+                vars: {
+                    '--brand-blue': '#7c2d12',
+                    '--brand-blue-light': '#c2410c',
+                    '--brand-accent': '#ea580c',
+                    '--brand-accent-soft': '#ffedd5',
+                    '--brand-accent-border': '#fed7aa',
+                    '--brand-accent-shadow': 'rgba(234, 88, 12, 0.22)',
+                    '--brand-shadow': 'rgba(124, 45, 18, 0.25)',
+                    '--brand-hero-start': '#431407',
+                    '--brand-hero-mid': '#9a3412',
+                    '--brand-hero-end': '#ea580c'
+                }
+            },
+            teal: {
+                name: 'Teal Tosca',
+                vars: {
+                    '--brand-blue': '#134e4a',
+                    '--brand-blue-light': '#0f766e',
+                    '--brand-accent': '#0d9488',
+                    '--brand-accent-soft': '#ccfbf1',
+                    '--brand-accent-border': '#99f6e4',
+                    '--brand-accent-shadow': 'rgba(13, 148, 136, 0.22)',
+                    '--brand-shadow': 'rgba(19, 78, 74, 0.25)',
+                    '--brand-hero-start': '#042f2e',
+                    '--brand-hero-mid': '#115e59',
+                    '--brand-hero-end': '#0d9488'
+                }
+            },
+            slate: {
+                name: 'Midnight Slate',
+                vars: {
+                    '--brand-blue': '#0f172a',
+                    '--brand-blue-light': '#334155',
+                    '--brand-accent': '#475569',
+                    '--brand-accent-soft': '#f1f5f9',
+                    '--brand-accent-border': '#cbd5e1',
+                    '--brand-accent-shadow': 'rgba(71, 85, 105, 0.22)',
+                    '--brand-shadow': 'rgba(15, 23, 42, 0.25)',
+                    '--brand-hero-start': '#020617',
+                    '--brand-hero-mid': '#1e293b',
+                    '--brand-hero-end': '#334155'
+                }
+            },
+            mocha: {
+                name: 'Warm Mocha',
+                vars: {
+                    '--brand-blue': '#451a03',
+                    '--brand-blue-light': '#78350f',
+                    '--brand-accent': '#b45309',
+                    '--brand-accent-soft': '#fef3c7',
+                    '--brand-accent-border': '#fde68a',
+                    '--brand-accent-shadow': 'rgba(180, 83, 9, 0.22)',
+                    '--brand-shadow': 'rgba(69, 26, 3, 0.25)',
+                    '--brand-hero-start': '#291002',
+                    '--brand-hero-mid': '#713f12',
+                    '--brand-hero-end': '#b45309'
+                }
+            }
+        };
+
+        function switchPortalTheme(key, showFeedback = true) {
+            const theme = ORTU_THEMES[key] || ORTU_THEMES.ocean;
+            const root = document.documentElement;
+            for (const [prop, val] of Object.entries(theme.vars)) {
+                root.style.setProperty(prop, val);
+            }
+            root.setAttribute('data-ortu-theme', key);
+            try {
+                localStorage.setItem('ortu_theme_color', key);
+            } catch (e) {}
+
+            syncPortalThemeUI(key);
+
+            if (showFeedback) {
+                const toast = document.getElementById('themeChangeToast');
+                if (toast) {
+                    toast.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Tema <strong>${theme.name}</strong> berhasil diterapkan!`;
+                    toast.style.display = 'block';
+                    clearTimeout(window._themeToastTimeout);
+                    window._themeToastTimeout = setTimeout(() => {
+                        toast.style.display = 'none';
+                    }, 2400);
+                }
+            }
+        }
+
+        function syncPortalThemeUI(activeKey) {
+            let key = activeKey;
+            if (!key) {
+                try {
+                    key = localStorage.getItem('ortu_theme_color') || 'ocean';
+                } catch (e) {
+                    key = 'ocean';
+                }
+            }
+            const theme = ORTU_THEMES[key] || ORTU_THEMES.ocean;
+            const badge = document.getElementById('activeThemeBadgeLabel');
+            if (badge) {
+                badge.textContent = theme.name;
+            }
+            document.querySelectorAll('.theme-swatch-item').forEach(el => {
+                const isCur = el.getAttribute('data-theme') === key;
+                el.classList.toggle('active', isCur);
+                const chk = el.querySelector('.swatch-check');
+                if (chk) chk.style.display = isCur ? 'inline-block' : 'none';
+            });
+        }
+
         function showUploadFotoModal() {
             const modal = new bootstrap.Modal(document.getElementById('modalGantiFoto'));
             modal.show();
@@ -6844,6 +7297,11 @@ unset($_SESSION['flash_ortu']);
 
         // AUTO-ATTACH KOMPRESI & ANTI ERR_UPLOAD_FILE_CHANGED PADA FORM UPLOAD
         document.addEventListener('DOMContentLoaded', function () {
+            // Sinkronisasi status aktif tema warna di Tab Profil
+            if (typeof syncPortalThemeUI === 'function') {
+                syncPortalThemeUI();
+            }
+
             // Inisialisasi tampilan Status Permohonan Top-Up, Mutasi Saldo, dan Riwayat Transaksi (Default kosong)
             const filterTopupEl = document.getElementById('filterBulanTopup');
             if (filterTopupEl) {
