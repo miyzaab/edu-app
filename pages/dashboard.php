@@ -701,6 +701,24 @@ require_once __DIR__ . '/../includes/header.php';
                             </a>
                         </div>
                     <?php endif; ?>
+                    <!-- 1b. Perangkat Guru (Pembuatan Soal) -->
+                    <?php if (hasPermission('perangkat_guru') || hasPermission('perangkat_ajar')): ?>
+                        <div class="col-lg-4 col-sm-6">
+                            <a href="<?= BASE_URL ?>/pages/perangkat-guru/index.php" class="sub-mod-card">
+                                <div class="sub-icon-wrapper">
+                                    <div class="sub-icon-aura"
+                                        style="background: linear-gradient(135deg, #6366f1, #4f46e5);"></div>
+                                    <div class="sub-icon-box"
+                                        style="background: linear-gradient(135deg, #6366f1, #4f46e5); --icon-shadow: rgba(99, 102, 241, 0.5);">
+                                        <i class="bi bi-pencil-square"></i>
+                                        <div class="sub-icon-shine"></div>
+                                    </div>
+                                </div>
+                                <div class="sub-card-title">Perangkat Guru</div>
+                                <div class="sub-card-desc">Pembuatan soal AAS, isian &amp; essay, cetak PDF / Word</div>
+                            </a>
+                        </div>
+                    <?php endif; ?>
                     <!-- 2. Input Nilai Siswa -->
                     <?php if (hasPermission('input_nilai')): ?>
                         <div class="col-lg-4 col-sm-6">

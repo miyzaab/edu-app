@@ -125,6 +125,14 @@ if (!function_exists('renderModuleSubnav')) {
                         'match' => ['/pages/perangkat-ajar/']
                     ],
                     [
+                        'url' => BASE_URL . '/pages/perangkat-guru/index.php',
+                        'icon' => 'bi-pencil-square',
+                        'label' => 'Perangkat Guru (Soal)',
+                        'permission' => 'perangkat_guru',
+                        'permissions' => ['perangkat_guru', 'perangkat_ajar'],
+                        'match' => ['/pages/perangkat-guru/']
+                    ],
+                    [
                         'url' => BASE_URL . '/pages/nilai/index.php',
                         'icon' => 'bi-calculator-fill',
                         'label' => 'Input Nilai (Guru)',

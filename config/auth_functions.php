@@ -59,6 +59,7 @@ if (!function_exists('getAllPermissions')) {
             'guru' => ['label' => 'Data Guru', 'icon' => 'bi-person-badge', 'group' => 'Master Data'],
             'jenis_pembayaran' => ['label' => 'Jenis Pembayaran', 'icon' => 'bi-tags-fill', 'group' => 'Master Data'],
             'perangkat_ajar' => ['label' => 'Perangkat Ajar (CP/TP/Modul)', 'icon' => 'bi-journal-text', 'group' => 'Akademik & Guru'],
+            'perangkat_guru' => ['label' => 'Perangkat Guru (Bank Soal & Asesmen)', 'icon' => 'bi-pencil-square', 'group' => 'Akademik & Guru'],
             'input_nilai' => ['label' => 'Input Nilai Siswa', 'icon' => 'bi-calculator-fill', 'group' => 'Akademik & Guru'],
             'wali_kelas' => ['label' => 'Wali Kelas (Rekap Nilai & Rapor)', 'icon' => 'bi-person-badge-fill', 'group' => 'Akademik & Guru'],
             'rapor' => ['label' => 'Rapor Siswa (PTS & PAS)', 'icon' => 'bi-file-earmark-person-fill', 'group' => 'Akademik & Guru'],
@@ -86,7 +87,7 @@ if (!function_exists('getDefaultPermissions')) {
             'admin' => $all,
             'bendahara' => array_values(array_diff($all, ['users', 'pengaturan'])),
             'operator' => array_values(array_diff($all, ['users', 'pengaturan'])),
-            'guru' => ['dashboard', 'perangkat_ajar', 'input_nilai', 'wali_kelas', 'rapor', 'halaqah', 'kesantrian'],
+            'guru' => ['dashboard', 'perangkat_ajar', 'perangkat_guru', 'input_nilai', 'wali_kelas', 'rapor', 'halaqah', 'kesantrian'],
             'kantin' => ['dashboard', 'kantin'],
             default => ['dashboard'],
         };
@@ -109,6 +110,9 @@ if (!function_exists('hasPermission')) {
 
         // Jika permissions sudah ada di database/session (array tidak kosong)
         if (is_array($permissions) && !empty($permissions)) {
+            if ($key === 'perangkat_guru' && (!empty($permissions['perangkat_guru']) || !empty($permissions['perangkat_ajar']))) {
+                return true;
+            }
             return !empty($permissions[$key]);
         }
 
@@ -135,6 +139,7 @@ if (!function_exists('requirePermission')) {
                 'dashboard' => '/pages/dashboard.php',
                 'kantin' => '/pages/kantin/manage.php',
                 'perangkat_ajar' => '/pages/perangkat-ajar/index.php',
+                'perangkat_guru' => '/pages/perangkat-guru/index.php',
                 'input_nilai' => '/pages/nilai/index.php',
                 'wali_kelas' => '/pages/wali-kelas/index.php',
                 'rapor' => '/pages/rapor/index.php',
