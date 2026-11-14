@@ -298,9 +298,14 @@ require_once __DIR__ . '/../../includes/header.php';
                                                 alt="KOP Surat" class="img-fluid rounded"
                                                 style="max-height: 110px; width: 100%; object-fit: contain;">
                                             <div class="mt-2 text-start d-flex justify-content-between align-items-center">
-                                                <small class="text-success fw-bold"><i
-                                                        class="bi bi-check-circle-fill me-1"></i> File aktif:
-                                                    <?= htmlspecialchars($kopImage) ?></small>
+                                                <div>
+                                                    <small class="text-success fw-bold d-block"><i
+                                                            class="bi bi-check-circle-fill me-1"></i> File aktif:
+                                                        <?= htmlspecialchars($kopImage) ?></small>
+                                                    <a href="<?= BASE_URL ?>/uploads/rapor/<?= htmlspecialchars($kopImage) ?>" download="<?= htmlspecialchars($kopImage) ?>" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-0.5 mt-1 fw-bold" style="font-size: 0.75rem;">
+                                                        <i class="bi bi-download me-1"></i> Unduh File KOP Ini
+                                                    </a>
+                                                </div>
                                                 <div class="form-check form-check-inline m-0">
                                                     <input class="form-check-input" type="checkbox" name="remove_kop_image"
                                                         value="1" id="removeKop">

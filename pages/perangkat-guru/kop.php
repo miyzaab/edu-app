@@ -42,6 +42,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ? 'Berhasil! Mode KOP Teks Vektor (Anti-Pecah & 100% Tajam) sekarang aktif untuk semua naskah ujian dan file Word!'
                 : 'Mode Gambar KOP PNG sekarang aktif.'
         ];
+    } elseif ($action === 'sync_from_rapor') {
+        $raporKopName = $settingsRaw['kop_image'] ?? '';
+        $raporKopPath = __DIR__ . '/../../uploads/rapor/' . $raporKopName;
+        if (!empty($raporKopName) && file_exists($raporKopPath)) {
+            copy($raporKopPath, $kopDestFile);
+            $stmtUpsert = $pdo->prepare("
+                INSERT INTO rapor_settings (setting_key, setting_value) 
+                VALUES ('kop_soal_mode', 'image')
+                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+            ");
+            $stmtUpsert->execute();
+            $_SESSION['flash'] = [
+                'type' => 'success',
+                'message' => 'Berhasil menyinkronkan KOP resmi dari Pengaturan Rapor (' . htmlspecialchars($raporKopName) . ') ke Naskah Soal!'
+            ];
+        } else {
+            $_SESSION['flash'] = ['type' => 'warning', 'message' => 'File KOP resmi di modul Rapor tidak ditemukan di server.'];
+        }
     } elseif ($action === 'upload') {
         if (isset($_FILES['kop_image']) && $_FILES['kop_image']['error'] === UPLOAD_ERR_OK) {
             $ext = strtolower(pathinfo($_FILES['kop_image']['name'], PATHINFO_EXTENSION));
@@ -219,6 +237,38 @@ require_once __DIR__ . '/subnav.php';
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- INFORMASI & DOWNLOAD KOP RESMI DARI PENGATURAN RAPOR -->
+                <?php 
+                $raporKopName = $settingsRaw['kop_image'] ?? '';
+                if (!empty($raporKopName)):
+                ?>
+                    <div class="card border border-primary border-opacity-25 rounded-4 p-3 bg-white mb-4 shadow-xs">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                                    <i class="bi bi-file-earmark-image-fill text-primary fs-5"></i>
+                                    <span>File KOP Resmi Sekolah (Pengaturan Rapor):</span>
+                                    <span class="badge bg-primary-subtle text-primary border"><?= htmlspecialchars($raporKopName) ?></span>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    File KOP resmi ini beresolusi HD (1600 &times; 252 px). Anda dapat langsung mengunduhnya ke laptop/HP Anda.
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="<?= BASE_URL ?>/uploads/rapor/<?= htmlspecialchars($raporKopName) ?>" download="<?= htmlspecialchars($raporKopName) ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
+                                    <i class="bi bi-download me-1"></i> Download KOP Ini (.PNG)
+                                </a>
+                                <form action="kop.php" method="POST" class="m-0">
+                                    <input type="hidden" name="action" value="sync_from_rapor">
+                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 fw-bold shadow-xs">
+                                        <i class="bi bi-check2-circle me-1"></i> Pasang ke Naskah Soal
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <!-- FORM UPLOAD GAMBAR BARU -->
                 <div class="card border rounded-4 p-3 bg-light mt-4">
