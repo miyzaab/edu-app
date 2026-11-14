@@ -68,11 +68,15 @@ try {
     $stmtSample = $pdo->prepare("
         INSERT INTO soal_butir (naskah_id, nomor_urut, tipe_soal, pertanyaan, pilihan_a, pilihan_b, pilihan_c, pilihan_d, kunci_jawaban, poin)
         VALUES 
-        (:nid, 1, 'pg', 'Contoh butir soal pilihan ganda pertama...', 'Pilihan Jawaban A', 'Pilihan Jawaban B', 'Pilihan Jawaban C', 'Pilihan Jawaban D', 'A', 2.00),
-        (:nid, 2, 'isian', 'Contoh butir pertanyaan isian singkat pertama...', NULL, NULL, NULL, NULL, 'Kunci Isian', 3.00),
-        (:nid, 3, 'essay', 'Contoh butir pertanyaan essay / uraian pertama...', NULL, NULL, NULL, NULL, 'Pedoman penskoran essay', 5.00)
+        (:nid1, 1, 'pg', 'Contoh butir soal pilihan ganda pertama...', 'Pilihan Jawaban A', 'Pilihan Jawaban B', 'Pilihan Jawaban C', 'Pilihan Jawaban D', 'A', 2.00),
+        (:nid2, 2, 'isian', 'Contoh butir pertanyaan isian singkat pertama...', NULL, NULL, NULL, NULL, 'Kunci Isian', 3.00),
+        (:nid3, 3, 'essay', 'Contoh butir pertanyaan essay / uraian pertama...', NULL, NULL, NULL, NULL, 'Pedoman penskoran essay', 5.00)
     ");
-    $stmtSample->execute([':nid' => $naskahId]);
+    $stmtSample->execute([
+        ':nid1' => $naskahId,
+        ':nid2' => $naskahId,
+        ':nid3' => $naskahId
+    ]);
 
     rehitungPoinNaskah($naskahId, $pdo);
 
