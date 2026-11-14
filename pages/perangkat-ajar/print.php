@@ -229,9 +229,12 @@ function resolveAssetSrc(string $settingPath, bool $forMpdf, string $fallbackRel
     }
 
     if ($clean !== '') {
-        return stripos($clean, 'http') === 0 ? $settingPath : '../../' . $clean;
+        $url = (stripos($clean, 'http') === 0) ? $settingPath : '../../' . $clean;
+        $local = $rootDir . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $clean);
+        $ver = is_file($local) ? filemtime($local) : time();
+        return $url . (strpos($url, '?') !== false ? '&' : '?') . 'v=' . $ver;
     }
-    return $fallbackRel !== '' ? '../../' . ltrim($fallbackRel, '/') : '';
+    return $fallbackRel !== '' ? ('../../' . ltrim($fallbackRel, '/') . '?v=' . time()) : '';
 }
 
 // Helper Render Kop Surat Resmi & Simetris
@@ -315,18 +318,18 @@ function renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $
                 </td>
             </tr>
             <tr>
-                <td class="ttd-space-cell" style="height:25mm; text-align:left; vertical-align:middle; padding:0;<?= $forMpdf ? '' : ' position:relative;' ?>">
+                <td class="ttd-space-cell" style="height:32mm; text-align:left; vertical-align:middle; padding:0;<?= $forMpdf ? '' : ' position:relative;' ?>">
                     <?php if ($stempelUrl !== ''): ?>
                         <?php if ($forMpdf): ?>
-                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:88px; max-width:280px; vertical-align:middle;">
+                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:115px; max-width:320px; vertical-align:middle;">
                         <?php else: ?>
-                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height:92px; max-width:280px; position:absolute; left:5px; top:50%; transform:translateY(-50%); opacity:0.95;">
+                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height:120px; max-width:320px; position:absolute; left:-5px; top:50%; transform:translateY(-50%); opacity:0.95;">
                         <?php endif; ?>
                     <?php else: ?>
                         &nbsp;
                     <?php endif; ?>
                 </td>
-                <td class="ttd-space-cell" style="height:25mm; text-align:right; vertical-align:middle; padding:0;">&nbsp;</td>
+                <td class="ttd-space-cell" style="height:32mm; text-align:right; vertical-align:middle; padding:0;">&nbsp;</td>
             </tr>
             <tr>
                 <td style="text-align:left; vertical-align:top; padding:0;">
