@@ -13,11 +13,11 @@ $navItems = [
 ];
 
 if ($soalId > 0) {
-    $navItems['edit.php?id=' . $soalId] = ['icon' => 'bi-pencil-square', 'label' => '✏️ Susun Butir Soal'];
-    $navItems['koreksi.php?id=' . $soalId] = ['icon' => 'bi-lightning-charge-fill', 'label' => '⚡ Meja Koreksi Cepat'];
-    $navItems['print.php?id=' . $soalId] = ['icon' => 'bi-printer-fill', 'label' => '🖨️ Cetak / PDF'];
-    $navItems['export_word.php?id=' . $soalId] = ['icon' => 'bi-file-earmark-word-fill', 'label' => '📥 Unduh Word (.doc)'];
-    $navItems['print_kunci.php?id=' . $soalId] = ['icon' => 'bi-key-fill', 'label' => '🔑 Kunci & Penskoran'];
+    $navItems['edit.php?id=' . $soalId] = ['icon' => 'bi-pencil-square', 'label' => 'Susun Butir Soal'];
+    $navItems['koreksi.php?id=' . $soalId] = ['icon' => 'bi-lightning-charge-fill', 'label' => 'Meja Koreksi Cepat'];
+    $navItems['print.php?id=' . $soalId] = ['icon' => 'bi-printer-fill', 'label' => 'Cetak / PDF'];
+    $navItems['export_word.php?id=' . $soalId] = ['icon' => 'bi-file-earmark-word-fill', 'label' => 'Unduh Word (.doc)'];
+    $navItems['print_kunci.php?id=' . $soalId] = ['icon' => 'bi-key-fill', 'label' => 'Kunci & Penskoran'];
 }
 ?>
 
