@@ -9,6 +9,7 @@ $userRole = strtolower($_SESSION['role'] ?? 'guru');
 $navItems = [
     'index.php' => ['icon' => 'bi-collection-fill', 'label' => 'Bank Soal & Naskah Ujian'],
     'create.php' => ['icon' => 'bi-plus-circle-fill', 'label' => 'Buat Naskah Soal Baru'],
+    'kop.php' => ['icon' => 'bi-image', 'label' => 'Upload KOP Soal (PNG)'],
 ];
 
 if ($soalId > 0) {

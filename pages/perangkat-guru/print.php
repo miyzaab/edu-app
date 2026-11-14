@@ -2,6 +2,10 @@
 /**
  * CETAK NASKAH SOAL UJIAN (A4 PRINT / PDF READY)
  * Presisi Format Sesuai Standar SMP ISMI
+ * - Kertas: A4 Portrait
+ * - Font Latin: Cambria 12pt, Line Height 1.5
+ * - Font Arab: Scheherazade New 15pt, Line Height 1.0
+ * - Nomor Halaman & Dynamic Footer: [Nama Mapel] [Tingkat Kelas] (e.g. Aqidah VIII)
  */
 require_once __DIR__ . '/../../config/auth.php';
 requirePermission('perangkat_guru');
@@ -23,6 +27,10 @@ if (!$naskah) {
     die('Naskah soal tidak ditemukan.');
 }
 
+// Dynamic Footer Text (Contoh: "Aqidah VIII")
+$cleanKelas = trim(preg_replace('/^Kelas\s+/i', '', $naskah['tingkat_kelas'] ?? ''));
+$footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
+
 // Ambil Butir Soal
 $stmtSoal = $pdo->prepare("SELECT * FROM soal_butir WHERE naskah_id = :nid ORDER BY FIELD(tipe_soal, 'pg', 'isian', 'essay'), nomor_urut ASC");
 $stmtSoal->execute([':nid' => $naskahId]);
@@ -42,7 +50,24 @@ foreach ($allSoal as $s) {
     }
 }
 
-// Pengaturan KOP dari rapor_settings
+// Helper untuk Render Teks Soal & Deteksi Font Arab
+function renderTeksSoal($text) {
+    if ($text === null || $text === '') return '';
+    $safe = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    
+    // Regex deteksi blok teks Arab (huruf, harakat, tanda baca Arab)
+    $pattern = '/([\p{Arabic}][\p{Arabic}\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}\s\p{P}\d]*[\p{Arabic}]|[\p{Arabic}])/u';
+    
+    $wrapped = preg_replace_callback($pattern, function($m) {
+        $clean = trim($m[0]);
+        if ($clean === '') return $m[0];
+        return '<span class="teks-arab" dir="rtl">' . $clean . '</span>';
+    }, $safe);
+    
+    return nl2br($wrapped);
+}
+
+// Pengaturan KOP dari rapor_settings (fallback jika belum upload KOP PNG)
 $settingsRaw = $pdo->query("SELECT setting_key, setting_value FROM rapor_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
 
 $kopNamaSekolah = !empty($settingsRaw['kop_nama_sekolah']) ? $settingsRaw['kop_nama_sekolah'] : 'SMP ISMI';
@@ -66,10 +91,28 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
+    <!-- GOOGLE FONT: Scheherazade New untuk Font Teks Arab -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+
     <style>
         @page {
             size: A4 portrait;
-            margin: 12mm 15mm 12mm 15mm;
+            margin: 15mm 15mm 20mm 15mm;
+            @bottom-left {
+                content: "<?= addslashes($footerText) ?>";
+                font-family: 'Cambria', Georgia, serif;
+                font-size: 10pt;
+                font-style: italic;
+                color: #222222;
+            }
+            @bottom-right {
+                content: "Halaman " counter(page);
+                font-family: 'Cambria', Georgia, serif;
+                font-size: 10pt;
+                color: #222222;
+            }
         }
 
         * {
@@ -80,12 +123,23 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
         body {
             font-family: 'Cambria', Georgia, serif;
-            font-size: 10.5pt;
-            line-height: 1.35;
+            font-size: 12pt;
+            line-height: 1.5;
             color: #000;
             background-color: #f1f5f9;
             margin: 0;
             padding: 0;
+        }
+
+        /* FONT ARAB: Scheherazade New 15pt, spasi 1.0 */
+        .teks-arab {
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.0 !important;
+            direction: rtl;
+            unicode-bidi: isolate;
+            display: inline-block;
+            vertical-align: middle;
         }
 
         .no-print {
@@ -113,9 +167,10 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             min-height: 297mm;
             margin: 20px auto;
             background: #ffffff;
-            padding: 14mm 16mm 14mm 16mm;
+            padding: 15mm 16mm 22mm 16mm;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
             position: relative;
+            box-sizing: border-box;
         }
 
         @media print {
@@ -134,6 +189,23 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 margin: 0 !important;
                 padding: 0 !important;
                 box-shadow: none !important;
+            }
+            .screen-footer {
+                display: none !important;
+            }
+            .print-footer-bar {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                justify-content: space-between;
+                align-items: center;
+                font-family: 'Cambria', Georgia, serif;
+                font-size: 10pt;
+                border-top: 0.75pt solid #888;
+                padding-top: 4px;
+                background: transparent;
             }
         }
 
@@ -199,6 +271,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             font-weight: bold;
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            line-height: 1.25;
         }
         .title-sub {
             font-size: 11.5pt;
@@ -206,6 +279,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             letter-spacing: 0.5px;
             text-transform: uppercase;
             margin-top: 2px;
+            line-height: 1.25;
         }
         .nilai-box {
             display: inline-block;
@@ -218,7 +292,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             background: #ffffff;
         }
         .nilai-box-title {
-            font-size: 9.5pt;
+            font-size: 10pt;
             font-weight: bold;
         }
 
@@ -226,7 +300,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         .identitas-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9.5pt;
+            font-size: 11pt;
+            line-height: 1.35;
             margin-bottom: 14px;
             border: 1.5px solid #000000;
         }
@@ -236,35 +311,26 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             vertical-align: middle;
         }
 
-        /* PETUNJUK */
-        .petunjuk-box {
-            font-size: 8.5pt;
-            font-style: italic;
-            margin-bottom: 14px;
-            padding: 5px 8px;
-            border-left: 3px solid #000;
-            background: #fafafa;
-            line-height: 1.35;
-        }
-
         /* SECTIONS & SOAL */
         .section-header {
-            font-size: 11pt;
+            font-size: 12pt;
             font-weight: bold;
             text-transform: uppercase;
             margin-top: 14px;
             margin-bottom: 4px;
             border-bottom: 1px dashed #666;
             padding-bottom: 2px;
+            line-height: 1.35;
         }
         .section-desc {
-            font-size: 9pt;
+            font-size: 10pt;
             font-style: italic;
             margin-bottom: 10px;
+            line-height: 1.35;
         }
 
         .soal-item {
-            margin-bottom: 11px;
+            margin-bottom: 12px;
             page-break-inside: avoid;
         }
         .soal-table {
@@ -273,16 +339,19 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
         .soal-table td {
             vertical-align: top;
-            padding: 1px 0;
+            padding: 2px 0;
         }
         .soal-no {
-            width: 24px;
+            width: 26px;
             font-weight: bold;
             text-align: left;
+            font-size: 12pt;
+            line-height: 1.5;
         }
         .soal-text {
+            font-size: 12pt;
+            line-height: 1.5;
             text-align: justify;
-            line-height: 1.38;
         }
         .soal-img-box {
             margin: 6px 0;
@@ -297,21 +366,39 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         /* PILIHAN A - D */
         .opsi-table {
             width: 100%;
-            margin-top: 4px;
+            margin-top: 6px;
             margin-left: 2px;
             border-collapse: collapse;
         }
         .opsi-table td {
             vertical-align: top;
-            padding: 2px 4px;
+            padding: 3px 6px;
             width: 50%;
-            font-size: 10pt;
+            font-size: 12pt;
+            line-height: 1.5;
         }
 
         .opsi-letter {
             font-weight: bold;
             display: inline-block;
-            width: 18px;
+            width: 20px;
+        }
+
+        /* FOOTER ON SCREEN PREVIEW */
+        .screen-footer {
+            margin-top: 30px;
+            padding-top: 8px;
+            border-top: 1px solid #ccc;
+            font-size: 10pt;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            font-style: italic;
+        }
+
+        /* PRINT FOOTER FALLBACK */
+        .print-footer-bar {
+            display: none;
         }
     </style>
 </head>
@@ -328,7 +415,10 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             </span>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="export_word.php?id=<?= $naskahId ?>" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold text-white border-white">
+            <a href="kop.php" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold">
+                <i class="bi bi-image me-1"></i> Upload KOP (PNG)
+            </a>
+            <a href="export_word.php?id=<?= $naskahId ?>" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold">
                 <i class="bi bi-file-earmark-word-fill me-1"></i> Unduh File Word (.doc)
             </a>
             <button onclick="window.print()" class="btn btn-danger btn-sm rounded-pill px-4 py-1.5 fw-bold shadow-sm"
@@ -380,7 +470,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <div class="kop-divider"></div>
         <?php endif; ?>
 
-        <!-- 2. JUDUL DOKUMEN & KOTAK NILAI -->
+        <!-- 2. JUDUL DOKUMEN & KOTAK NILAI (3 KOLOM PRESISI) -->
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px;">
             <tr>
                 <td style="width: 80px; vertical-align: top;">&nbsp;</td>
@@ -409,7 +499,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <tr>
                 <td>Kelas</td>
                 <td style="text-align: center;">:</td>
-                <td>Kelas <?= htmlspecialchars($naskah['tingkat_kelas']) ?></td>
+                <td>Kelas <?= htmlspecialchars($cleanKelas) ?></td>
                 <td>Tanggal</td>
                 <td style="text-align: center;">:</td>
                 <td><?= !empty($naskah['tanggal_ujian']) ? htmlspecialchars($naskah['tanggal_ujian']) : '' ?></td>
@@ -437,7 +527,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
                             <td class="soal-text">
-                                <?= nl2br(htmlspecialchars($s['pertanyaan'])) ?>
+                                <?= renderTeksSoal($s['pertanyaan']) ?>
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
@@ -449,18 +539,18 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                                 <table class="opsi-table">
                                     <tr>
                                         <td>
-                                            <span class="opsi-letter">a.</span> <?= htmlspecialchars($s['pilihan_a'] ?? '') ?>
+                                            <span class="opsi-letter">a.</span> <?= renderTeksSoal($s['pilihan_a'] ?? '') ?>
                                         </td>
                                         <td>
-                                            <span class="opsi-letter">c.</span> <?= htmlspecialchars($s['pilihan_c'] ?? '') ?>
+                                            <span class="opsi-letter">c.</span> <?= renderTeksSoal($s['pilihan_c'] ?? '') ?>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td>
-                                            <span class="opsi-letter">b.</span> <?= htmlspecialchars($s['pilihan_b'] ?? '') ?>
+                                            <span class="opsi-letter">b.</span> <?= renderTeksSoal($s['pilihan_b'] ?? '') ?>
                                         </td>
                                         <td>
-                                            <span class="opsi-letter">d.</span> <?= htmlspecialchars($s['pilihan_d'] ?? '') ?>
+                                            <span class="opsi-letter">d.</span> <?= renderTeksSoal($s['pilihan_d'] ?? '') ?>
                                         </td>
                                     </tr>
                                 </table>
@@ -484,7 +574,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
                             <td class="soal-text">
-                                <?= nl2br(htmlspecialchars($s['pertanyaan'])) ?>
+                                <?= renderTeksSoal($s['pertanyaan']) ?>
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
@@ -511,7 +601,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
                             <td class="soal-text">
-                                <?= nl2br(htmlspecialchars($s['pertanyaan'])) ?>
+                                <?= renderTeksSoal($s['pertanyaan']) ?>
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
@@ -524,6 +614,18 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
+
+        <!-- FOOTER TAMPILAN LAYAR (PRATINJAU) -->
+        <div class="screen-footer">
+            <span><?= htmlspecialchars($footerText) ?></span>
+            <span>Halaman 1</span>
+        </div>
+
+        <!-- PRINT FOOTER BAR (UNTUK PRINTER/BROWSER FALLBACK) -->
+        <div class="print-footer-bar">
+            <span><?= htmlspecialchars($footerText) ?></span>
+            <span>Naskah Ujian SMP ISMI</span>
+        </div>
     </div>
 
 </body>

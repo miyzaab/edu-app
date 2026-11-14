@@ -71,6 +71,10 @@ $kepsekJabatan = !empty($settingsRaw['kepsek_jabatan']) ? $settingsRaw['kepsek_j
 $kepsekNama = !empty($settingsRaw['kepsek_nama']) ? $settingsRaw['kepsek_nama'] : 'Riki Kaptanto, Lc';
 $kepsekNip = !empty($settingsRaw['kepsek_nip']) ? $settingsRaw['kepsek_nip'] : '20240711001';
 $tempatTerbit = !empty($settingsRaw['tempat_terbit']) ? $settingsRaw['tempat_terbit'] : 'Depok';
+
+// Dynamic Footer
+$cleanKelas = trim(preg_replace('/^Kelas\s+/i', '', $naskah['tingkat_kelas'] ?? ''));
+$footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -82,10 +86,28 @@ $tempatTerbit = !empty($settingsRaw['tempat_terbit']) ? $settingsRaw['tempat_ter
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
+    <!-- GOOGLE FONT: Scheherazade New untuk Font Teks Arab -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+
     <style>
         @page {
             size: A4 portrait;
-            margin: 12mm 15mm 12mm 15mm;
+            margin: 15mm 15mm 20mm 15mm;
+            @bottom-left {
+                content: "<?= addslashes($footerText) ?> • Kunci Jawaban";
+                font-family: 'Cambria', Georgia, serif;
+                font-size: 10pt;
+                font-style: italic;
+                color: #222222;
+            }
+            @bottom-right {
+                content: "Halaman " counter(page);
+                font-family: 'Cambria', Georgia, serif;
+                font-size: 10pt;
+                color: #222222;
+            }
         }
 
         * {
@@ -96,12 +118,21 @@ $tempatTerbit = !empty($settingsRaw['tempat_terbit']) ? $settingsRaw['tempat_ter
 
         body {
             font-family: 'Cambria', Georgia, serif;
-            font-size: 10pt;
-            line-height: 1.35;
+            font-size: 11pt;
+            line-height: 1.4;
             color: #000;
             background-color: #f1f5f9;
             margin: 0;
             padding: 0;
+        }
+
+        .teks-arab {
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.0 !important;
+            direction: rtl;
+            unicode-bidi: isolate;
+            display: inline-block;
         }
 
         .no-print {
