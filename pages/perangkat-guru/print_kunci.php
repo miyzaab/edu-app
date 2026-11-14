@@ -57,6 +57,7 @@ foreach ($allSoal as $s) {
 
 // KOP Settings
 $settingsRaw = $pdo->query("SELECT setting_key, setting_value FROM rapor_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+$kopSoalMode = $settingsRaw['kop_soal_mode'] ?? 'vector';
 
 $kopNamaSekolah = !empty($settingsRaw['kop_nama_sekolah']) ? $settingsRaw['kop_nama_sekolah'] : 'SMP ISMI';
 $kopYayasan = !empty($settingsRaw['kop_yayasan']) ? $settingsRaw['kop_yayasan'] : 'ISLAMIC SCHOOL OF MINHAJ AL-ILMI';
@@ -285,36 +286,42 @@ $footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
     </div>
 
     <div class="page-sheet">
-        <!-- KOP (UPLOADED PNG) -->
+        <!-- KOP (PILIHAN: TEKS VEKTOR ANTI-PECAH ATAU GAMBAR PNG) -->
         <?php 
         $kopImgPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
-        if (file_exists($kopImgPath)):
+        $cubeLogo = __DIR__ . '/../../assets/img/logo_ismi_cube.png';
+
+        if ($kopSoalMode === 'image' && file_exists($kopImgPath)):
         ?>
-            <div style="width: 100%; margin-bottom: 12px;">
-                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>" alt="KOP Ujian SMP ISMI" style="width: 100%; height: auto; display: block;">
+            <div style="width: 100%; margin-bottom: 12px; text-align: center;">
+                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>" alt="KOP Ujian SMP ISMI" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
             </div>
         <?php else: ?>
-            <table class="kop-table">
+            <table class="kop-table" style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
                 <tr>
-                    <td style="width: 65px;">
-                        <?php if (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
-                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" width="58" height="58" alt="Logo">
+                    <td style="width: 78px; vertical-align: middle; text-align: left;">
+                        <?php if (file_exists($cubeLogo)): ?>
+                            <img src="<?= BASE_URL ?>/assets/img/logo_ismi_cube.png?v=<?= filemtime($cubeLogo) ?>" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
+                        <?php elseif (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
+                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
                         <?php endif; ?>
                     </td>
-                    <td style="padding-left: 12px;">
-                        <div style="font-size: 16pt; font-weight: bold;"><?= htmlspecialchars($kopNamaSekolah) ?></div>
-                        <div style="font-size: 10.5pt; font-weight: bold;">ISLAMIC SCHOOL OF <span style="color: #0d9488;">MINHAJ AL-ILMI</span></div>
-                        <div style="font-size: 8.5pt; font-style: italic; color: #444;"><?= htmlspecialchars($kopSlogan) ?></div>
+                    <td style="vertical-align: middle; padding-left: 10px;">
+                        <div style="font-family: Arial, sans-serif; font-size: 17pt; font-weight: bold; line-height: 1.1; color: #000; letter-spacing: -0.3px;">SMP ISMI</div>
+                        <div style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; line-height: 1.15; color: #000;">ISLAMIC SCHOOL OF</div>
+                        <div style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; line-height: 1.15; color: #0d9488;">MINHAJ AL-ILMI</div>
+                        <div style="font-family: 'Segoe Print', 'Caveat', cursive, sans-serif; font-size: 8.5pt; font-style: italic; color: #222; margin-top: 2px;">Berakhlak Mulia, Berilmu, Mahir IT</div>
                     </td>
-                    <td style="text-align: right; font-size: 8pt; line-height: 1.25;">
-                        <div><?= htmlspecialchars($kopAlamat) ?></div>
-                        <div><?= htmlspecialchars($kopTelp) ?></div>
-                        <div>Email : <?= htmlspecialchars($kopEmail) ?></div>
-                        <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
+                    <td style="vertical-align: middle; text-align: right; font-family: Arial, sans-serif; font-size: 8.5pt; line-height: 1.35; color: #111;">
+                        <div style="font-weight: 700;">Jl. Nakula No.1 Harjamukti Cimanggis Depok</div>
+                        <div style="font-weight: 700;">Telp. (021) 4867 8793</div>
+                        <div>Email : <span style="color: #0284c7;"><?= htmlspecialchars($kopEmail) ?></span></div>
+                        <div>Website : <span style="color: #0284c7;"><?= htmlspecialchars($kopWebsite) ?></span></div>
+                        <div style="font-weight: 700;">Admin WA 0899-2244-111</div>
                     </td>
                 </tr>
             </table>
-            <div class="kop-divider"></div>
+            <div style="border-bottom: 2.5px solid #000000; margin-top: 6px; margin-bottom: 14px;"></div>
         <?php endif; ?>
 
         <!-- JUDUL -->

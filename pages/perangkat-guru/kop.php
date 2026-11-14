@@ -1,9 +1,10 @@
 <?php
 /**
- * PENGATURAN & UPLOAD KOP SOAL UJIAN (PNG)
+ * PENGATURAN & UPLOAD KOP SOAL UJIAN
+ * Fitur Anti-Pecah (Mode Teks Vektor / Gambar PNG HD)
  * SMP ISMI - Islamic School of Minhaj Al-Ilmi
  */
-$pageTitle = 'Upload KOP Soal (PNG) - Perangkat Guru';
+$pageTitle = 'Pengaturan KOP Soal (Anti-Pecah) - Perangkat Guru';
 $activePage = 'perangkat-guru';
 $activeModule = 'akademik';
 
@@ -15,18 +16,48 @@ require_once __DIR__ . '/init_soal.php';
 
 $kopDestFile = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
 
-// Handle Upload / Reset
+// Ambil Pengaturan KOP dari rapor_settings
+$settingsRaw = $pdo->query("SELECT setting_key, setting_value FROM rapor_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+$currentMode = $settingsRaw['kop_soal_mode'] ?? 'vector'; // default vector agar anti-pecah!
+
+// Handle Update Mode / Upload Gambar
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
-    if ($action === 'upload') {
+    if ($action === 'set_mode') {
+        $mode = $_POST['kop_mode'] ?? 'vector';
+        if (!in_array($mode, ['vector', 'image'])) {
+            $mode = 'vector';
+        }
+        $stmtUpsert = $pdo->prepare("
+            INSERT INTO rapor_settings (setting_key, setting_value) 
+            VALUES ('kop_soal_mode', :val)
+            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+        ");
+        $stmtUpsert->execute([':val' => $mode]);
+
+        $_SESSION['flash'] = [
+            'type' => 'success',
+            'message' => ($mode === 'vector') 
+                ? 'Berhasil! Mode KOP Teks Vektor (Anti-Pecah & 100% Tajam) sekarang aktif untuk semua naskah ujian dan file Word!'
+                : 'Mode Gambar KOP PNG sekarang aktif.'
+        ];
+    } elseif ($action === 'upload') {
         if (isset($_FILES['kop_image']) && $_FILES['kop_image']['error'] === UPLOAD_ERR_OK) {
             $ext = strtolower(pathinfo($_FILES['kop_image']['name'], PATHINFO_EXTENSION));
             if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp'])) {
                 if (move_uploaded_file($_FILES['kop_image']['tmp_name'], $kopDestFile)) {
+                    // Set mode otomatis ke image jika baru upload
+                    $stmtUpsert = $pdo->prepare("
+                        INSERT INTO rapor_settings (setting_key, setting_value) 
+                        VALUES ('kop_soal_mode', 'image')
+                        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+                    ");
+                    $stmtUpsert->execute();
+
                     $_SESSION['flash'] = [
                         'type' => 'success',
-                        'message' => 'Gambar KOP Soal (PNG) berhasil diperbarui dan aktif untuk semua naskah ujian!'
+                        'message' => 'Gambar KOP baru berhasil diunggah dan diaktifkan!'
                     ];
                 } else {
                     $_SESSION['flash'] = ['type' => 'danger', 'message' => 'Gagal menyimpan file gambar ke server.'];
@@ -44,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $hasKop = file_exists($kopDestFile);
+$cubeLogo = __DIR__ . '/../../assets/img/logo_ismi_cube.png';
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/subnav.php';
@@ -62,62 +94,169 @@ require_once __DIR__ . '/subnav.php';
 <?php endif; ?>
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-9">
+        
+        <!-- CARD PENGATURAN KOP ANTI-PECAH -->
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
             <div class="card-header text-white px-4 py-3" style="background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);">
                 <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
-                    <i class="bi bi-image fs-5 text-warning"></i> Upload &amp; Pengaturan KOP Soal (PNG)
+                    <i class="bi bi-patch-check-fill fs-5 text-warning"></i> Pengaturan Format KOP Soal (Anti-Pecah)
                 </h5>
             </div>
             <div class="card-body p-4">
-                <p class="text-muted small mb-4">
-                    KOP pada lembar naskah soal AAS dicetak langsung menggunakan file gambar <strong>PNG</strong> agar tata letak logo, nama sekolah, yayasan, dan kontak sekolah selalu presisi dan tidak bergeser saat dicetak maupun diunduh ke Microsoft Word.
-                </p>
+                
+                <!-- PENJELASAN MENGAPA GAMBAR PECAH & SOLUSINYA -->
+                <div class="alert alert-info border-0 rounded-4 p-3 mb-4 shadow-xs" style="background: #f0fdf4; border-left: 4px solid #16a34a !important;">
+                    <div class="d-flex gap-3">
+                        <i class="bi bi-shield-check fs-2 text-success"></i>
+                        <div>
+                            <h6 class="fw-bold text-success mb-1">Mengapa KOP Gambar Bisa Terlihat Pecah di Lembar Soal?</h6>
+                            <p class="small text-muted mb-2">
+                                Lembar soal dicetak dalam ukuran kertas <strong>A4</strong>. Pada saat dicetak atau diubah ke PDF/Word, kertas A4 membutuhkan kerapatan minimal <strong>2480 pixel (300 DPI)</strong>. Gambar hasil screenshot layar yang hanya berukuran ~690 pixel akan otomatis membesar 3-4 kali lipat sehingga huruf-huruf kecilnya terlihat buram/pecah.
+                            </p>
+                            <p class="small text-success fw-bold mb-0">
+                                <i class="bi bi-check-circle-fill me-1"></i> Solusi Terbaik: Gunakan <strong>Mode Teks Vektor</strong> di bawah ini. Teks sekolah &amp; kontak dicetak menggunakan font asli resolusi tinggi sehingga <strong>100% tajam, tidak akan pecah sama sekali</strong> pada zoom berapapun maupun di semua printer!
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-                <!-- PREVIEW KOP AKTIF -->
-                <div class="mb-4">
-                    <label class="form-label fw-bold text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-eye-fill text-primary"></i> Pratinjau KOP Soal Aktif Saat Ini:
+                <!-- FORM PEMILIHAN MODE KOP -->
+                <form action="kop.php" method="POST" class="mb-4">
+                    <input type="hidden" name="action" value="set_mode">
+                    <label class="form-label fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-sliders text-primary"></i> Pilih Mode Tampilan KOP yang Digunakan:
                     </label>
-                    <div class="p-3 bg-light rounded-3 border text-center">
-                        <?php if ($hasKop): ?>
-                            <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopDestFile) ?>" alt="KOP Soal Aktif" class="img-fluid border rounded shadow-xs" style="max-height: 140px; background: white;">
+
+                    <div class="row g-3">
+                        <!-- OPSI 1: VEKTOR ANTI-PECAH (RECOMMENDED) -->
+                        <div class="col-md-6">
+                            <label class="card h-100 p-3 rounded-4 border-2 cursor-pointer transition-all <?= ($currentMode === 'vector') ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 'border-light bg-light' ?>" style="cursor: pointer;">
+                                <div class="d-flex align-items-start gap-2">
+                                    <input type="radio" name="kop_mode" value="vector" class="form-check-input mt-1" <?= ($currentMode === 'vector') ? 'checked' : '' ?> onchange="this.form.submit()">
+                                    <div>
+                                        <div class="fw-bold text-primary d-flex align-items-center gap-1">
+                                            <span>KOP Teks Vektor</span>
+                                            <span class="badge bg-success small">100% Anti-Pecah</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">
+                                            Teks nama sekolah, yayasan, dan kontak dirender dengan font vektor tajam asli. <strong>Sangat jernih di printer fisik, PDF, dan Word.</strong>
+                                        </small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- OPSI 2: GAMBAR PNG -->
+                        <div class="col-md-6">
+                            <label class="card h-100 p-3 rounded-4 border-2 cursor-pointer transition-all <?= ($currentMode === 'image') ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 'border-light bg-light' ?>" style="cursor: pointer;">
+                                <div class="d-flex align-items-start gap-2">
+                                    <input type="radio" name="kop_mode" value="image" class="form-check-input mt-1" <?= ($currentMode === 'image') ? 'checked' : '' ?> onchange="this.form.submit()">
+                                    <div>
+                                        <div class="fw-bold text-dark">
+                                            <span>Gambar KOP PNG</span>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">
+                                            Menggunakan file gambar PNG yang diunggah. Pastikan file gambar beresolusi tinggi (~2400px, 300 DPI) agar tidak pecah.
+                                        </small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+
+                <!-- PRATINJAU KOP AKTIF SAAT INI -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-eye-fill text-primary"></i> Pratinjau KOP yang Sedang Aktif:
+                        </label>
+                        <span class="badge <?= ($currentMode === 'vector') ? 'bg-success' : 'bg-warning text-dark' ?> px-3 py-1.5 rounded-pill font-monospace">
+                            Mode Aktif: <?= ($currentMode === 'vector') ? 'Teks Vektor (Anti-Pecah)' : 'Gambar PNG' ?>
+                        </span>
+                    </div>
+
+                    <div class="p-3 bg-white rounded-3 border shadow-xs" style="background: #ffffff;">
+                        <?php if ($currentMode === 'vector'): ?>
+                            <!-- PRATINJAU VEKTOR -->
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
+                                <tr>
+                                    <td style="width: 78px; vertical-align: middle; text-align: left;">
+                                        <?php if (file_exists($cubeLogo)): ?>
+                                            <img src="<?= BASE_URL ?>/assets/img/logo_ismi_cube.png?v=<?= filemtime($cubeLogo) ?>" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
+                                        <?php else: ?>
+                                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="vertical-align: middle; padding-left: 10px;">
+                                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 17pt; font-weight: 800; line-height: 1.1; color: #000; letter-spacing: -0.3px;">SMP ISMI</div>
+                                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; font-weight: 800; line-height: 1.15; color: #000;">ISLAMIC SCHOOL OF</div>
+                                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11pt; font-weight: 800; line-height: 1.15; color: #0d9488;">MINHAJ AL-ILMI</div>
+                                        <div style="font-family: 'Segoe Print', 'Caveat', cursive, sans-serif; font-size: 8.5pt; font-style: italic; color: #222; margin-top: 2px;">Berakhlak Mulia, Berilmu, Mahir IT</div>
+                                    </td>
+                                    <td style="vertical-align: middle; text-align: right; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; line-height: 1.35; color: #111;">
+                                        <div style="font-weight: 700;">Jl. Nakula No.1 Harjamukti Cimanggis Depok</div>
+                                        <div style="font-weight: 700;">Telp. (021) 4867 8793</div>
+                                        <div>Email : <span style="color: #0284c7;">smp.minhaj.al.ilmi@gmail.com</span></div>
+                                        <div>Website : <span style="color: #0284c7;">sekolahismi.sch.id &amp; ismi.sch.id</span></div>
+                                        <div style="font-weight: 700;">Admin WA 0899-2244-111</div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div style="border-bottom: 2.5px solid #000000; margin-top: 6px;"></div>
                         <?php else: ?>
-                            <div class="text-muted py-4">Belum ada file KOP PNG yang diunggah.</div>
+                            <!-- PRATINJAU GAMBAR PNG -->
+                            <div class="text-center">
+                                <?php if ($hasKop): ?>
+                                    <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopDestFile) ?>" alt="KOP Soal Aktif" class="img-fluid border rounded" style="max-height: 130px; background: white;">
+                                <?php else: ?>
+                                    <div class="text-muted py-4">Belum ada file KOP PNG yang diunggah.</div>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <!-- FORM UPLOAD KOP BARU -->
-                <form action="kop.php" method="POST" enctype="multipart/form-data">
-                    <input type="hidden" name="action" value="upload">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-dark">Pilih File Gambar KOP Baru (.PNG) <span class="text-danger">*</span></label>
-                        <input type="file" name="kop_image" class="form-control" accept="image/png, image/jpeg, image/webp" required onchange="previewNewKop(this)">
-                        <div class="form-text text-muted">
-                            <i class="bi bi-info-circle me-1"></i> Rekomendasi: Gunakan file PNG dengan latar belakang putih atau transparan, dengan rasio lebar penuh (~700 x 120 px atau 2100 x 360 px).
-                        </div>
-                    </div>
+                <!-- FORM UPLOAD GAMBAR BARU -->
+                <div class="card border rounded-4 p-3 bg-light mt-4">
+                    <h6 class="fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                        <i class="bi bi-cloud-arrow-up-fill text-primary"></i> Upload Gambar KOP Baru (Opsional)
+                    </h6>
+                    <p class="small text-muted mb-3">
+                        Jika Anda ingin memakai gambar kreasi sendiri, gunakan format <strong>PNG dengan resolusi tinggi (lebar minimal 2400 px / 300 DPI)</strong> agar teks alamat dan nomor telepon tidak pecah saat dicetak di lembar soal A4.
+                    </p>
 
-                    <!-- Live Preview Upload -->
-                    <div id="newKopPreviewBox" class="mb-4 d-none">
-                        <label class="form-label fw-bold small text-muted">Pratinjau File yang Baru Dipilih:</label>
-                        <div class="p-3 bg-light rounded-3 border text-center">
-                            <img id="newKopImg" src="#" alt="Pratinjau Baru" class="img-fluid border rounded" style="max-height: 140px; background: white;">
+                    <form action="kop.php" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="upload">
+                        <div class="mb-3">
+                            <input type="file" name="kop_image" class="form-control" accept="image/png, image/jpeg, image/webp" required onchange="previewNewKop(this)">
                         </div>
-                    </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                        <a href="index.php" class="btn btn-outline-secondary rounded-pill px-4">
-                            <i class="bi bi-arrow-left me-1"></i> Kembali ke Bank Soal
-                        </a>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
-                            <i class="bi bi-upload me-1.5"></i> Simpan Gambar KOP
-                        </button>
-                    </div>
-                </form>
+                        <!-- Live Preview Upload -->
+                        <div id="newKopPreviewBox" class="mb-3 d-none">
+                            <label class="form-label fw-bold small text-muted">Pratinjau File yang Baru Dipilih:</label>
+                            <div class="p-3 bg-white rounded-3 border text-center">
+                                <img id="newKopImg" src="#" alt="Pratinjau Baru" class="img-fluid border rounded" style="max-height: 130px; background: white;">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="index.php" class="btn btn-outline-secondary rounded-pill px-4">
+                                <i class="bi bi-arrow-left me-1"></i> Kembali ke Bank Soal
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                                <i class="bi bi-upload me-1.5"></i> Unggah &amp; Pasang Gambar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
             </div>
         </div>
+
     </div>
 </div>
 

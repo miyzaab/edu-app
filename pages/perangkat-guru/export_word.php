@@ -69,6 +69,7 @@ function renderTeksWord($text) {
 
 // KOP Settings
 $settingsRaw = $pdo->query("SELECT setting_key, setting_value FROM rapor_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+$kopSoalMode = $settingsRaw['kop_soal_mode'] ?? 'vector'; // default vector agar anti-pecah!
 
 $kopNamaSekolah = !empty($settingsRaw['kop_nama_sekolah']) ? $settingsRaw['kop_nama_sekolah'] : 'SMP ISMI';
 $kopYayasan = !empty($settingsRaw['kop_yayasan']) ? $settingsRaw['kop_yayasan'] : 'ISLAMIC SCHOOL OF MINHAJ AL-ILMI';
@@ -93,6 +94,14 @@ $logoPath = __DIR__ . '/../../assets/img/logo_1776435927.png';
 if (file_exists($logoPath)) {
     $logoData = file_get_contents($logoPath);
     $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+}
+
+// Base64 cube logo
+$cubeBase64 = '';
+$cubePath = __DIR__ . '/../../assets/img/logo_ismi_cube.png';
+if (file_exists($cubePath)) {
+    $cubeData = file_get_contents($cubePath);
+    $cubeBase64 = 'data:image/png;base64,' . base64_encode($cubeData);
 }
 
 $cleanMapel = preg_replace('/[^a-zA-Z0-9]/', '_', $naskah['nama_mapel']);
@@ -275,34 +284,37 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 
 <div class="Section1">
 
-    <!-- 1. KOP SURAT RESMI (PNG) -->
-    <?php if (!empty($kopBase64)): ?>
+    <!-- 1. KOP SURAT (PILIHAN: TEKS VEKTOR ANTI-PECAH ATAU GAMBAR PNG) -->
+    <?php if ($kopSoalMode === 'image' && !empty($kopBase64)): ?>
         <p align="center" style="margin-top: 0; margin-bottom: 12pt;">
             <img src="<?= $kopBase64 ?>" style="width: 100%; max-width: 650px; height: auto;" alt="KOP Ujian SMP ISMI">
         </p>
     <?php else: ?>
-        <table class="kop-table">
+        <table width="100%" style="width: 100%; border-collapse: collapse; margin-bottom: 4pt;">
             <tr>
-                <td style="width: 70px;">
-                    <?php if (!empty($logoBase64)): ?>
-                        <img src="<?= $logoBase64 ?>" width="60" height="60" alt="Logo">
+                <td width="75" style="width: 75px; vertical-align: middle; text-align: left; border: none;">
+                    <?php if (!empty($cubeBase64)): ?>
+                        <img src="<?= $cubeBase64 ?>" width="68" height="68" alt="Logo">
+                    <?php elseif (!empty($logoBase64)): ?>
+                        <img src="<?= $logoBase64 ?>" width="68" height="68" alt="Logo">
                     <?php endif; ?>
                 </td>
-                <td>
-                    <div class="kop-school-name"><?= htmlspecialchars($kopNamaSekolah) ?></div>
-                    <div class="kop-sub"><?= htmlspecialchars($kopYayasan) ?></div>
-                    <div class="kop-slogan"><?= htmlspecialchars($kopSlogan) ?></div>
+                <td style="vertical-align: middle; padding-left: 8pt; border: none;">
+                    <div style="font-family: Arial, sans-serif; font-size: 17pt; font-weight: bold; line-height: 1.1; color: #000000;">SMP ISMI</div>
+                    <div style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; line-height: 1.15; color: #000000;">ISLAMIC SCHOOL OF</div>
+                    <div style="font-family: Arial, sans-serif; font-size: 11pt; font-weight: bold; line-height: 1.15; color: #0d9488;">MINHAJ AL-ILMI</div>
+                    <div style="font-family: Arial, sans-serif; font-size: 8.5pt; font-style: italic; color: #333333; margin-top: 2pt;">Berakhlak Mulia, Berilmu, Mahir IT</div>
                 </td>
-                <td class="kop-contact">
-                    <div><?= htmlspecialchars($kopAlamat) ?></div>
-                    <div><?= htmlspecialchars($kopTelp) ?></div>
-                    <div>Email : <?= htmlspecialchars($kopEmail) ?></div>
-                    <div>Website : <?= htmlspecialchars($kopWebsite) ?></div>
-                    <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
+                <td style="vertical-align: middle; text-align: right; font-family: Arial, sans-serif; font-size: 8.5pt; line-height: 1.3; color: #000000; border: none;">
+                    <div><b>Jl. Nakula No.1 Harjamukti Cimanggis Depok</b></div>
+                    <div><b>Telp. (021) 4867 8793</b></div>
+                    <div>Email : <span style="color: #0284c7;">smp.minhaj.al.ilmi@gmail.com</span></div>
+                    <div>Website : <span style="color: #0284c7;">sekolahismi.sch.id &amp; ismi.sch.id</span></div>
+                    <div><b>Admin WA 0899-2244-111</b></div>
                 </td>
             </tr>
         </table>
-        <div class="kop-divider"></div>
+        <div style="border-bottom: 2.5pt solid #000000; margin-top: 4pt; margin-bottom: 14pt;"></div>
     <?php endif; ?>
 
     <!-- 2. JUDUL DOKUMEN & KOTAK NILAI (3 KOLOM PRESISI) -->

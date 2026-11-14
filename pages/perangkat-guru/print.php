@@ -69,6 +69,7 @@ function renderTeksSoal($text) {
 
 // Pengaturan KOP dari rapor_settings (fallback jika belum upload KOP PNG)
 $settingsRaw = $pdo->query("SELECT setting_key, setting_value FROM rapor_settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+$kopSoalMode = $settingsRaw['kop_soal_mode'] ?? 'vector'; // default vector agar 100% anti-pecah!
 
 $kopNamaSekolah = !empty($settingsRaw['kop_nama_sekolah']) ? $settingsRaw['kop_nama_sekolah'] : 'SMP ISMI';
 $kopYayasan = !empty($settingsRaw['kop_yayasan']) ? $settingsRaw['kop_yayasan'] : 'ISLAMIC SCHOOL OF MINHAJ AL-ILMI';
@@ -430,44 +431,48 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
     <!-- LEMBAR DOKUMEN A4 -->
     <div class="page-sheet">
-        <!-- 1. KOP SURAT (UPLOADED PNG) -->
+        <!-- 1. KOP SURAT (PILIHAN: TEKS VEKTOR ANTI-PECAH ATAU GAMBAR PNG) -->
         <?php 
         $kopImgPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
-        if (file_exists($kopImgPath)):
+        $cubeLogo = __DIR__ . '/../../assets/img/logo_ismi_cube.png';
+
+        if ($kopSoalMode === 'image' && file_exists($kopImgPath)):
         ?>
-            <div style="width: 100%; margin-bottom: 12px;">
-                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>" alt="KOP Ujian SMP ISMI" style="width: 100%; height: auto; display: block;">
+            <div style="width: 100%; margin-bottom: 12px; text-align: center;">
+                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>" alt="KOP Ujian SMP ISMI" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
             </div>
         <?php else: ?>
-            <table class="kop-table">
+            <table class="kop-table" style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
                 <tr>
-                    <td class="kop-logo-box">
-                        <?php if (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
-                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI">
+                    <td class="kop-logo-box" style="width: 78px; vertical-align: middle; text-align: left;">
+                        <?php if (file_exists($cubeLogo)): ?>
+                            <img src="<?= BASE_URL ?>/assets/img/logo_ismi_cube.png?v=<?= filemtime($cubeLogo) ?>" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
+                        <?php elseif (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
+                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
                         <?php else: ?>
-                            <svg width="58" height="58" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg width="68" height="68" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M50 5L90 28V72L50 95L10 72V28L50 5Z" stroke="#0d9488" stroke-width="5.5" fill="none" />
                                 <path d="M50 18L78 34V66L50 82L22 66V34L50 18Z" stroke="#0d9488" stroke-width="4.5" fill="none" />
                                 <path d="M35 38H65M35 50H65M35 62H65M50 30V70" stroke="#0d9488" stroke-width="4" stroke-linecap="round" />
                             </svg>
                         <?php endif; ?>
                     </td>
-                    <td class="kop-title-box">
-                        <div class="kop-school-name"><?= htmlspecialchars($kopNamaSekolah) ?></div>
-                        <div class="kop-sub-yayasan">ISLAMIC SCHOOL OF</div>
-                        <div class="kop-sub-yayasan kop-sub-yayasan-green">MINHAJ AL-ILMI</div>
-                        <div class="kop-slogan"><?= htmlspecialchars($kopSlogan) ?></div>
+                    <td class="kop-title-box" style="vertical-align: middle; padding-left: 10px;">
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 18pt; font-weight: 800; line-height: 1.1; color: #000; letter-spacing: -0.3px;">SMP ISMI</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; font-weight: 800; line-height: 1.15; color: #000;">ISLAMIC SCHOOL OF</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; font-weight: 800; line-height: 1.15; color: #0d9488;">MINHAJ AL-ILMI</div>
+                        <div style="font-family: 'Segoe Print', 'Caveat', cursive, sans-serif; font-size: 8.5pt; font-style: italic; color: #222; margin-top: 2px;">Berakhlak Mulia, Berilmu, Mahir IT</div>
                     </td>
-                    <td class="kop-contact-box">
-                        <div><?= htmlspecialchars($kopAlamat) ?></div>
-                        <div><?= htmlspecialchars($kopTelp) ?></div>
+                    <td class="kop-contact-box" style="vertical-align: middle; text-align: right; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; line-height: 1.35; color: #111;">
+                        <div style="font-weight: 700;">Jl. Nakula No.1 Harjamukti Cimanggis Depok</div>
+                        <div style="font-weight: 700;">Telp. (021) 4867 8793</div>
                         <div>Email : <span style="color: #0284c7;"><?= htmlspecialchars($kopEmail) ?></span></div>
                         <div>Website : <span style="color: #0284c7;"><?= htmlspecialchars($kopWebsite) ?></span></div>
-                        <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
+                        <div style="font-weight: 700;">Admin WA 0899-2244-111</div>
                     </td>
                 </tr>
             </table>
-            <div class="kop-divider"></div>
+            <div style="border-bottom: 2.5px solid #000000; margin-top: 6px; margin-bottom: 14px;"></div>
         <?php endif; ?>
 
         <!-- 2. JUDUL DOKUMEN & KOTAK NILAI (3 KOLOM PRESISI) -->
