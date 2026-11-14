@@ -51,9 +51,19 @@ require_once __DIR__ . '/subnav.php';
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Tipe &amp; Judul Ujian <span class="text-danger">*</span></label>
-                            <input type="text" name="judul_ujian" class="form-control" value="UJIAN AKHIR SEMESTER" required>
-                            <input type="hidden" name="tipe_ujian" value="AAS">
+                            <label class="form-label fw-bold small text-muted">Target Kolom Penilaian Guru <span class="text-danger">*</span></label>
+                            <select name="tipe_ujian" class="form-select fw-bold" id="tipeUjianSelect" required onchange="syncJudulUjian(this)">
+                                <option value="sumatif_1">Sumatif 1 (Lingkup Materi 1 / Bab 1)</option>
+                                <option value="sumatif_2">Sumatif 2 (Lingkup Materi 2 / Bab 2)</option>
+                                <option value="sumatif_3">Sumatif 3 (Lingkup Materi 3 / Bab 3)</option>
+                                <option value="sumatif_4">Sumatif 4 (Lingkup Materi 4 / Bab 4)</option>
+                                <option value="ats">ATS (Asesmen Tengah Semester / PTS)</option>
+                                <option value="aas" selected>AAS (Asesmen Akhir Semester / PAS)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Judul Kop Lembar Ujian <span class="text-danger">*</span></label>
+                            <input type="text" name="judul_ujian" id="judulUjianInput" class="form-control" value="ASESMEN AKHIR SEMESTER (AAS)" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-bold small text-muted">Semester <span class="text-danger">*</span></label>
@@ -95,6 +105,33 @@ function syncMapelName(select) {
     var opt = select.options[select.selectedIndex];
     var name = opt.getAttribute('data-name') || '';
     document.getElementById('namaMapelInput').value = name;
+}
+
+function syncJudulUjian(select) {
+    var val = select.value;
+    var judulInput = document.getElementById('judulUjianInput');
+    if (!judulInput) return;
+    
+    switch(val) {
+        case 'sumatif_1':
+            judulInput.value = 'PENILAIAN SUMATIF 1 (BAB 1)';
+            break;
+        case 'sumatif_2':
+            judulInput.value = 'PENILAIAN SUMATIF 2 (BAB 2)';
+            break;
+        case 'sumatif_3':
+            judulInput.value = 'PENILAIAN SUMATIF 3 (BAB 3)';
+            break;
+        case 'sumatif_4':
+            judulInput.value = 'PENILAIAN SUMATIF 4 (BAB 4)';
+            break;
+        case 'ats':
+            judulInput.value = 'ASESMEN TENGAH SEMESTER (ATS)';
+            break;
+        case 'aas':
+            judulInput.value = 'ASESMEN AKHIR SEMESTER (AAS)';
+            break;
+    }
 }
 </script>
 

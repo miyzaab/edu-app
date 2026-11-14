@@ -46,6 +46,7 @@ $uploadDir = __DIR__ . '/../../uploads/soal';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 1. Update Header Naskah
     $judulUjian = trim($_POST['judul_ujian'] ?? $naskah['judul_ujian']);
+    $tipeUjian = trim($_POST['tipe_ujian'] ?? $naskah['tipe_ujian']);
     $tingkatKelas = trim($_POST['tingkat_kelas'] ?? $naskah['tingkat_kelas']);
     $semester = trim($_POST['semester'] ?? $naskah['semester']);
     $tahunAjaran = trim($_POST['tahun_ajaran'] ?? $naskah['tahun_ajaran']);
@@ -57,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmtUpdH = $pdo->prepare("
         UPDATE soal_naskah SET 
             judul_ujian = :judul,
+            tipe_ujian = :tipe,
             tingkat_kelas = :tingkat,
             semester = :semester,
             tahun_ajaran = :tahun,
@@ -69,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ");
     $stmtUpdH->execute([
         ':judul' => $judulUjian,
+        ':tipe' => $tipeUjian,
         ':tingkat' => $tingkatKelas,
         ':semester' => $semester,
         ':tahun' => $tahunAjaran,
@@ -311,7 +314,18 @@ require_once __DIR__ . '/subnav.php';
         <div class="collapse show" id="collapseIdentitas">
             <div class="card-body p-4">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Target Kolom Penilaian <span class="text-danger">*</span></label>
+                        <select name="tipe_ujian" class="form-select fw-bold">
+                            <option value="sumatif_1" <?= $naskah['tipe_ujian'] === 'sumatif_1' ? 'selected' : '' ?>>Sumatif 1 (Lingkup Materi 1)</option>
+                            <option value="sumatif_2" <?= $naskah['tipe_ujian'] === 'sumatif_2' ? 'selected' : '' ?>>Sumatif 2 (Lingkup Materi 2)</option>
+                            <option value="sumatif_3" <?= $naskah['tipe_ujian'] === 'sumatif_3' ? 'selected' : '' ?>>Sumatif 3 (Lingkup Materi 3)</option>
+                            <option value="sumatif_4" <?= $naskah['tipe_ujian'] === 'sumatif_4' ? 'selected' : '' ?>>Sumatif 4 (Lingkup Materi 4)</option>
+                            <option value="ats" <?= strtolower($naskah['tipe_ujian']) === 'ats' ? 'selected' : '' ?>>ATS (Tengah Semester / PTS)</option>
+                            <option value="aas" <?= strtolower($naskah['tipe_ujian']) === 'aas' ? 'selected' : '' ?>>AAS (Akhir Semester / PAS)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label fw-bold small text-muted">Judul Dokumen Ujian</label>
                         <input type="text" name="judul_ujian" class="form-control" value="<?= htmlspecialchars($naskah['judul_ujian']) ?>" required>
                     </div>

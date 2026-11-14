@@ -3,9 +3,10 @@
  * MEJA KOREKSI CEPAT & REKAP NILAI OTOMATIS
  * Islamic School of Minhaj Al-Ilmi
  * - Auto-Calculate Skor PG, Isian, Essay (0 - 100)
+ * - Pemetaan Kolom Fleksibel: Sumatif 1 - 4, ATS, AAS
+ * - Proteksi Anti-Tertiban (Penolakan Otomatis jika Nilai Rapor Sudah Terisi)
  * - Keyboard Fast-Navigation (Enter / ArrowDown)
  * - Checklist Kunci Soal PG
- * - 1-Klik Sinkronisasi ke Modul Nilai & Rapor Siswa
  */
 $pageTitle = 'Meja Koreksi Cepat Ujian - Perangkat Guru';
 $activePage = 'perangkat-guru';
@@ -30,6 +31,31 @@ $naskah = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$naskah) {
     die('Naskah soal tidak ditemukan.');
+}
+
+// Target Kolom Penilaian Nilai Siswa
+$rawTipe = strtolower(trim($naskah['tipe_ujian'] ?? 'aas'));
+$targetCol = 'aas';
+$targetLabel = 'AAS (Akhir Semester)';
+
+if ($rawTipe === 'sumatif_1') {
+    $targetCol = 'sumatif_1';
+    $targetLabel = 'Sumatif 1';
+} elseif ($rawTipe === 'sumatif_2') {
+    $targetCol = 'sumatif_2';
+    $targetLabel = 'Sumatif 2';
+} elseif ($rawTipe === 'sumatif_3') {
+    $targetCol = 'sumatif_3';
+    $targetLabel = 'Sumatif 3';
+} elseif ($rawTipe === 'sumatif_4') {
+    $targetCol = 'sumatif_4';
+    $targetLabel = 'Sumatif 4';
+} elseif ($rawTipe === 'ats' || $rawTipe === 'pts') {
+    $targetCol = 'ats';
+    $targetLabel = 'ATS (Tengah Semester)';
+} else {
+    $targetCol = 'aas';
+    $targetLabel = 'AAS (Akhir Semester)';
 }
 
 // 2. Ambil Butir Soal & Hitung Bobot Maksimal
@@ -92,7 +118,7 @@ if ($selectedKelasId <= 0) {
     }
 }
 
-// 4. PROSES SIMPAN KOREKSI / SINKRONISASI KE RAPOR
+// 4. PROSES SIMPAN KOREKSI & SINKRONISASI DENGAN PROTEKSI ANTI-TERTIMPA
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $postAction = $_POST['action'] ?? '';
     $postKelasId = (int) ($_POST['kelas_id'] ?? $selectedKelasId);
@@ -150,45 +176,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // JIKA USER MEMILIH "SIMPAN & SINKRONKAN KE NILAI RAPOR"
     if ($postAction === 'save_and_sync') {
-        $tipeUjian = strtoupper($naskah['tipe_ujian'] ?? 'AAS');
-        $isAts = ($tipeUjian === 'ATS' || $tipeUjian === 'PTS');
         $mapelName = trim($naskah['nama_mapel']);
         $sem = trim($naskah['semester']);
         $th = trim($naskah['tahun_ajaran']);
         $userId = (int) ($_SESSION['user_id'] ?? 1);
 
-        $stmtUpsertNilai = $pdo->prepare("
-            INSERT INTO nilai_siswa 
-            (siswa_id, kelas_id, mapel, semester, tahun_ajaran, sumatif_1, sumatif_2, sumatif_3, sumatif_4, ats, aas, nilai_akhir, predikat, catatan, user_id)
-            VALUES 
-            (:sid, :kid, :mapel, :sem, :th, 0, 0, 0, 0, :ats, :aas, :na, :pred, :cat, :uid)
-            ON DUPLICATE KEY UPDATE
-            " . ($isAts ? "ats = VALUES(ats)" : "aas = VALUES(aas)") . ",
-            nilai_akhir = VALUES(nilai_akhir),
-            predikat = VALUES(predikat),
-            user_id = VALUES(user_id)
-        ");
+        $syncedCount = 0;
+        $blockedCount = 0;
+        $blockedNames = [];
 
         foreach ($siswaIds as $idx => $sid) {
             $sid = (int) $sid;
             $naUjian = (float) ($nilaiAkhirArr[$idx] ?? 0);
 
-            // Ambil data nilai siswa eksisting untuk kalkulasi pembobotan nilai akhir rapor
+            // Ambil data nilai santri eksisting di nilai_siswa
             $stmtEx = $pdo->prepare("SELECT * FROM nilai_siswa WHERE siswa_id = :sid AND kelas_id = :kid AND mapel = :mapel AND semester = :sem AND tahun_ajaran = :th LIMIT 1");
             $stmtEx->execute([':sid' => $sid, ':kid' => $postKelasId, ':mapel' => $mapelName, ':sem' => $sem, ':th' => $th]);
             $existing = $stmtEx->fetch(PDO::FETCH_ASSOC);
 
+            // ================================================================
+            // PROTEKSI ANTI-TERTIMPA: 
+            // Jika kolom target sudah memiliki nilai (> 0), TOLAK penimpaan!
+            // ================================================================
+            $existingTargetVal = (float) ($existing[$targetCol] ?? 0);
+            if ($existingTargetVal > 0) {
+                $blockedCount++;
+                $stmtNama = $pdo->prepare("SELECT nama FROM siswa WHERE id = :id LIMIT 1");
+                $stmtNama->execute([':id' => $sid]);
+                $sName = $stmtNama->fetchColumn();
+                $blockedNames[] = $sName ?: "ID {$sid}";
+                continue; // LEWATI SANTRI INI AGAR NILAI YANG SUDAH ADA TIDAK TERTIBAN!
+            }
+
+            // Ambil nilai kolom lain yang sudah ada agar tetap utuh
             $s1 = (float) ($existing['sumatif_1'] ?? 0);
             $s2 = (float) ($existing['sumatif_2'] ?? 0);
             $s3 = (float) ($existing['sumatif_3'] ?? 0);
             $s4 = (float) ($existing['sumatif_4'] ?? 0);
-            $currentAts = $isAts ? $naUjian : (float) ($existing['ats'] ?? 0);
-            $currentAas = !$isAts ? $naUjian : (float) ($existing['aas'] ?? 0);
+            $curAts = (float) ($existing['ats'] ?? 0);
+            $curAas = (float) ($existing['aas'] ?? 0);
+
+            // Masukkan nilai ujian ke kolom target yang sesuai
+            if ($targetCol === 'sumatif_1') $s1 = $naUjian;
+            elseif ($targetCol === 'sumatif_2') $s2 = $naUjian;
+            elseif ($targetCol === 'sumatif_3') $s3 = $naUjian;
+            elseif ($targetCol === 'sumatif_4') $s4 = $naUjian;
+            elseif ($targetCol === 'ats') $curAts = $naUjian;
+            elseif ($targetCol === 'aas') $curAas = $naUjian;
 
             // Formula Pembobotan Kurikulum Merdeka SMP ISMI: Sumatif 80%, ATS 10%, AAS 10%
             $sumArr = array_filter([$s1, $s2, $s3, $s4], fn($v) => $v > 0);
             $rSumatif = !empty($sumArr) ? (array_sum($sumArr) / count($sumArr)) : $naUjian;
-            $naRapor = ($rSumatif * 0.80) + ($currentAts * 0.10) + ($currentAas * 0.10);
+            $naRapor = ($rSumatif * 0.80) + ($curAts * 0.10) + ($curAas * 0.10);
             $naRapor = round($naRapor, 2);
 
             if ($naRapor >= 90) $pred = 'A';
@@ -196,25 +235,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             elseif ($naRapor >= 70) $pred = 'C';
             else $pred = 'D';
 
+            $stmtUpsertNilai = $pdo->prepare("
+                INSERT INTO nilai_siswa 
+                (siswa_id, kelas_id, mapel, semester, tahun_ajaran, sumatif_1, sumatif_2, sumatif_3, sumatif_4, ats, aas, nilai_akhir, predikat, catatan, user_id)
+                VALUES 
+                (:sid, :kid, :mapel, :sem, :th, :s1, :s2, :s3, :s4, :ats, :aas, :na, :pred, :cat, :uid)
+                ON DUPLICATE KEY UPDATE
+                {$targetCol} = VALUES({$targetCol}),
+                nilai_akhir = VALUES(nilai_akhir),
+                predikat = VALUES(predikat),
+                user_id = VALUES(user_id)
+            ");
             $stmtUpsertNilai->execute([
                 ':sid' => $sid,
                 ':kid' => $postKelasId,
                 ':mapel' => $mapelName,
                 ':sem' => $sem,
                 ':th' => $th,
-                ':ats' => $currentAts,
-                ':aas' => $currentAas,
+                ':s1' => $s1,
+                ':s2' => $s2,
+                ':s3' => $s3,
+                ':s4' => $s4,
+                ':ats' => $curAts,
+                ':aas' => $curAas,
                 ':na' => $naRapor,
                 ':pred' => $pred,
                 ':cat' => trim($catatanArr[$idx] ?? ''),
                 ':uid' => $userId
             ]);
+            $syncedCount++;
         }
 
-        $_SESSION['flash'] = [
-            'type' => 'success',
-            'message' => "Alhamdulillah! Nilai {$countSaved} santri berhasil disimpan dan otomatis disinkronkan ke Modul Nilai & Rapor Siswa!"
-        ];
+        // Susun notifikasi hasil proteksi
+        if ($blockedCount > 0 && $syncedCount > 0) {
+            $_SESSION['flash'] = [
+                'type' => 'warning',
+                'message' => "Hasil koreksi disimpan! {$syncedCount} santri berhasil disinkronkan ke kolom {$targetLabel}. PERINGATAN: {$blockedCount} santri DITOLAK/DIPROTEKSI karena kolom {$targetLabel} sudah ada isinya di Buku Nilai Guru (" . htmlspecialchars(implode(', ', array_slice($blockedNames, 0, 4))) . (count($blockedNames) > 4 ? '...' : '') . ") agar tidak tertiban!"
+            ];
+        } elseif ($blockedCount > 0 && $syncedCount === 0) {
+            $_SESSION['flash'] = [
+                'type' => 'danger',
+                'message' => "SINKRONISASI DITOLAK: Seluruh santri di kelas ini sudah memiliki nilai pada kolom {$targetLabel} di Buku Nilai Guru. Tidak ada nilai yang tertiban!"
+            ];
+        } else {
+            $_SESSION['flash'] = [
+                'type' => 'success',
+                'message' => "Alhamdulillah! Nilai {$syncedCount} santri berhasil disimpan dan otomatis masuk ke kolom {$targetLabel} di Modul Nilai & Rapor Siswa!"
+            ];
+        }
     } else {
         $_SESSION['flash'] = [
             'type' => 'success',
@@ -226,14 +294,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// 5. Ambil Daftar Santri & Data Koreksi Tersimpan
+// 5. Ambil Daftar Santri & Data Koreksi Tersimpan beserta Nilai Rapor Eksisting
 $listSiswa = [];
 if ($selectedKelasId > 0) {
     $stmtSiswa = $pdo->prepare("
         SELECT 
             s.id AS siswa_id, s.nis, s.nama,
             hk.benar_pg, hk.skor_pg, hk.skor_isian, hk.skor_essay, hk.nilai_akhir, hk.catatan, hk.detail_pg,
-            ns.aas AS nilai_aas_rapor, ns.ats AS nilai_ats_rapor
+            ns.sumatif_1, ns.sumatif_2, ns.sumatif_3, ns.sumatif_4, ns.ats, ns.aas, ns.nilai_akhir AS nilai_akhir_rapor
         FROM siswa s
         LEFT JOIN soal_hasil_koreksi hk ON s.id = hk.siswa_id AND hk.naskah_id = :nid
         LEFT JOIN nilai_siswa ns ON s.id = ns.siswa_id 
@@ -284,8 +352,14 @@ require_once __DIR__ . '/subnav.php';
 <?php if (isset($_SESSION['flash'])): ?>
     <div class="alert alert-<?= htmlspecialchars($_SESSION['flash']['type']) ?> alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
         <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-check-circle-fill fs-5"></i>
-            <div><?= htmlspecialchars($_SESSION['flash']['message']) ?></div>
+            <?php if ($_SESSION['flash']['type'] === 'success'): ?>
+                <i class="bi bi-check-circle-fill fs-5"></i>
+            <?php elseif ($_SESSION['flash']['type'] === 'warning'): ?>
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            <?php else: ?>
+                <i class="bi bi-x-octagon-fill fs-5"></i>
+            <?php endif; ?>
+            <div><?= $_SESSION['flash']['message'] ?></div>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
@@ -298,8 +372,8 @@ require_once __DIR__ . '/subnav.php';
         <div>
             <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
                 style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25);">
-                <i class="bi bi-lightning-charge-fill text-warning"></i>
-                <span class="small fw-bold text-white font-monospace">MEJA KOREKSI CEPAT UJIAN (SPEED GRADING)</span>
+                <i class="bi bi-bullseye text-warning"></i>
+                <span class="small fw-bold text-white font-monospace">TARGET PENILAIAN GURU: <?= strtoupper($targetLabel) ?></span>
             </div>
             <h3 class="fw-bold mb-1 text-white">
                 <?= htmlspecialchars($naskah['nama_mapel']) ?> • Kelas <?= htmlspecialchars($naskah['tingkat_kelas']) ?>
@@ -329,6 +403,26 @@ require_once __DIR__ . '/subnav.php';
             </div>
         </div>
     </div>
+</div>
+
+<!-- ALERT BANNER PROTEKSI ANTI-TERTIMPA -->
+<div class="alert alert-light border rounded-4 p-3 mb-4 d-flex align-items-center justify-content-between shadow-xs" style="background: #ffffff;">
+    <div class="d-flex align-items-center gap-3">
+        <div class="p-2.5 rounded-3 bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center">
+            <i class="bi bi-shield-lock-fill fs-4"></i>
+        </div>
+        <div>
+            <div class="fw-bold text-dark" style="font-size: 0.92rem;">
+                Proteksi Anti-Tertiban Aktif untuk Kolom: <span class="badge bg-primary px-2.5 py-1 rounded-pill"><?= $targetLabel ?></span>
+            </div>
+            <div class="text-muted small" style="font-size: 0.8rem;">
+                Jika santri sudah memiliki nilai (> 0) di kolom <strong><?= $targetLabel ?></strong> pada modul Input Nilai Guru, sistem akan otomatis <strong>menolak penimpaan</strong> agar nilai yang sudah diinput sebelumnya tidak tertiban atau hilang.
+            </div>
+        </div>
+    </div>
+    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1.5 rounded-pill font-monospace" style="font-size: 0.78rem;">
+        <i class="bi bi-check2-circle me-1"></i> Anti-Overwrite Protected
+    </span>
 </div>
 
 <!-- PILIHAN KELAS & STATISTIK REALTIME -->
@@ -434,7 +528,7 @@ require_once __DIR__ . '/subnav.php';
                     <tr>
                         <th class="text-center" style="width: 45px;">No.</th>
                         <th style="width: 100px;">NIS</th>
-                        <th style="min-width: 200px;">Nama Santri</th>
+                        <th style="min-width: 220px;">Nama Santri &amp; Status Rapor</th>
                         <th class="text-center bg-warning bg-opacity-10" style="width: 150px;">
                             Benar PG
                             <span class="d-block text-muted" style="font-size: 0.72rem; font-weight: normal;">Maks: <?= $countPg ?> Soal</span>
@@ -476,6 +570,7 @@ require_once __DIR__ . '/subnav.php';
                             $cat = $s['catatan'] ?? '';
                             $detPg = $s['detail_pg'] ?? '';
                             $isTuntas = ($na >= 75);
+                            $existingTargetVal = (float) ($s[$targetCol] ?? 0);
                         ?>
                             <tr id="row-<?= $idx ?>" class="koreksi-row">
                                 <td class="text-center text-muted fw-bold"><?= $idx + 1 ?></td>
@@ -484,6 +579,19 @@ require_once __DIR__ . '/subnav.php';
                                     <div class="fw-bold text-dark student-name"><?= htmlspecialchars($s['nama']) ?></div>
                                     <input type="hidden" name="siswa_id[]" value="<?= $s['siswa_id'] ?>">
                                     <input type="hidden" name="detail_pg[]" id="detail_pg_<?= $idx ?>" value="<?= htmlspecialchars($detPg) ?>">
+
+                                    <!-- STATUS KOLOM DI BUKU NILAI GURU -->
+                                    <div class="mt-1">
+                                        <?php if ($existingTargetVal > 0): ?>
+                                            <span class="badge bg-secondary-subtle text-dark border font-monospace" style="font-size: 0.72rem;" title="Nilai di buku nilai guru sudah ada (<?= $existingTargetVal ?>). Sistem akan menolak penimpaan agar tidak tertiban.">
+                                                <i class="bi bi-lock-fill text-warning me-1"></i> <?= $targetLabel ?>: <strong><?= $existingTargetVal ?></strong> (Terkunci)
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace" style="font-size: 0.72rem;">
+                                                <i class="bi bi-check-circle me-1"></i> <?= $targetLabel ?>: Kosong (Siap Masuk)
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
 
                                 <!-- 1. INPUT BENAR PG -->
@@ -560,7 +668,7 @@ require_once __DIR__ . '/subnav.php';
                 </button>
                 <button type="submit" onclick="submitFormAction('save_and_sync')" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm"
                     style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
-                    <i class="bi bi-cloud-arrow-up-fill me-1.5"></i> Simpan &amp; Sinkronkan ke Rapor
+                    <i class="bi bi-cloud-arrow-up-fill me-1.5"></i> Simpan &amp; Sinkronkan ke <?= $targetLabel ?>
                 </button>
             </div>
         </div>
@@ -770,7 +878,6 @@ function openChecklistModal(idx) {
         if (detailMap && detailMap.hasOwnProperty(s.no)) {
             isCorrect = detailMap[s.no] === 1;
         } else {
-            // Default check from bpg input if fresh
             let currentBpg = parseInt(document.getElementById('bpg_' + idx).value) || 0;
             isCorrect = (sIdx < currentBpg);
         }
