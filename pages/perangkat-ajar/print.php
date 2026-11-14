@@ -318,18 +318,18 @@ function renderTTD($namaSekolah, $namaKepsek, $nipKepsek, $namaGuru, $nipGuru, $
                 </td>
             </tr>
             <tr>
-                <td class="ttd-space-cell" style="height:32mm; text-align:left; vertical-align:middle; padding:0;<?= $forMpdf ? '' : ' position:relative;' ?>">
+                <td class="ttd-space-cell" style="height:20mm; text-align:left; vertical-align:middle; padding:0;<?= $forMpdf ? '' : ' position:relative;' ?>">
                     <?php if ($stempelUrl !== ''): ?>
                         <?php if ($forMpdf): ?>
-                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:115px; max-width:320px; vertical-align:middle;">
+                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:70px; max-width:220px; vertical-align:middle;">
                         <?php else: ?>
-                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="max-height:120px; max-width:320px; position:absolute; left:-5px; top:50%; transform:translateY(-50%); opacity:0.95;">
+                            <img src="<?= htmlspecialchars($stempelUrl) ?>" alt="Stempel" style="height:72px; max-height:75px; max-width:220px; position:absolute; left:0px; top:50%; transform:translateY(-50%); opacity:0.95;">
                         <?php endif; ?>
                     <?php else: ?>
                         &nbsp;
                     <?php endif; ?>
                 </td>
-                <td class="ttd-space-cell" style="height:32mm; text-align:right; vertical-align:middle; padding:0;">&nbsp;</td>
+                <td class="ttd-space-cell" style="height:20mm; text-align:right; vertical-align:middle; padding:0;">&nbsp;</td>
             </tr>
             <tr>
                 <td style="text-align:left; vertical-align:top; padding:0;">
