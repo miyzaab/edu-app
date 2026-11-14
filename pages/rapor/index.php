@@ -421,11 +421,11 @@ require_once __DIR__ . '/../../includes/header.php';
                                 <i class="bi bi-arrow-repeat fs-6"></i> Sinkronkan Deskripsi Guru
                             </a>
 
-                            <a href="auto_generate.php?kelas_id=<?= $selectedKelasId ?>&tipe=<?= $selectedTipe ?>&semester=<?= $selectedSem ?>&tahun_ajaran=<?= urlencode($selectedTahun) ?>"
+                            <a href="auto_generate.php?kelas_id=<?= $selectedKelasId ?>&tipe=<?= $selectedTipe ?>&semester=<?= $selectedSem ?>&tahun_ajaran=<?= urlencode($selectedTahun) ?>&overwrite=1"
                                 class="btn btn-outline-primary rounded-pill px-3.5 fw-bold d-inline-flex align-items-center gap-1.5"
                                 style="height: 42px; font-size: 0.84rem;"
-                                onclick="return confirm('Apakah Anda ingin men-generate otomatis deskripsi capaian kompetensi untuk seluruh siswa di kelas ini berdasarkan nilai & perangkat ajar? Data deskripsi yang belum diisi akan otomatis terisi.');">
-                                <i class="bi bi-magic"></i> Generate Otomatis
+                                onclick="return confirm('Apakah Anda ingin men-generate otomatis deskripsi capaian kompetensi untuk seluruh santri di kelas ini berdasarkan rentang nilai akhir (88-100, 74-87, 60-73, <60)? Data deskripsi yang ada akan disesuaikan.');">
+                                <i class="bi bi-magic"></i> Generate Otomatis Capaian
                             </a>
                         <?php endif; ?>
 

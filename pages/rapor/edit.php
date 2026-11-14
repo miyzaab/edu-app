@@ -534,18 +534,32 @@ require_once __DIR__ . '/../../includes/header.php';
                             </button>
                         </div>
                         <div class="card-body p-3.5">
+                            <datalist id="listEkskulPreset">
+                                <option value="Bela Diri">
+                                <option value="Tahfidz Al-Qur'an">
+                                <option value="Pramuka">
+                                <option value="Panahan">
+                                <option value="Futsal">
+                                <option value="Bulu Tangkis">
+                                <option value="Robotik">
+                                <option value="Jurnalistik">
+                                <option value="Desain & Multimedia">
+                                <option value="Renang">
+                                <option value="Kaligrafi">
+                            </datalist>
                             <div id="ekskulContainer">
                                 <?php if (empty($savedEkskul)): ?>
                                     <div class="row g-2 mb-2 ekskul-row">
                                         <div class="col-4">
                                             <input type="text" name="ekskul_nama[]" class="form-control form-control-sm"
-                                                placeholder="Nama Ekskul (mis: Pramuka)">
+                                                list="listEkskulPreset" placeholder="Nama Ekskul (Pilih/Ketik)">
                                         </div>
                                         <div class="col-3">
                                             <select name="ekskul_predikat[]" class="form-select form-select-sm">
-                                                <option value="Sangat Baik">Sangat Baik</option>
-                                                <option value="Baik" selected>Baik</option>
-                                                <option value="Cukup">Cukup</option>
+                                                <option value="A">A (Sangat Baik)</option>
+                                                <option value="B" selected>B (Baik)</option>
+                                                <option value="C">C (Cukup)</option>
+                                                <option value="D">D (Kurang)</option>
                                             </select>
                                         </div>
                                         <div class="col-4">
@@ -558,19 +572,24 @@ require_once __DIR__ . '/../../includes/header.php';
                                         </div>
                                     </div>
                                 <?php else: ?>
-                                    <?php foreach ($savedEkskul as $ek): ?>
+                                    <?php foreach ($savedEkskul as $ek): 
+                                        $curPred = trim($ek['predikat'] ?? 'B');
+                                        $isA = ($curPred === 'A' || $curPred === 'Sangat Baik');
+                                        $isB = ($curPred === 'B' || $curPred === 'Baik');
+                                        $isC = ($curPred === 'C' || $curPred === 'Cukup');
+                                        $isD = ($curPred === 'D' || $curPred === 'Kurang');
+                                    ?>
                                         <div class="row g-2 mb-2 ekskul-row">
                                             <div class="col-4">
                                                 <input type="text" name="ekskul_nama[]" class="form-control form-control-sm"
-                                                    value="<?= htmlspecialchars($ek['nama'] ?? '') ?>" placeholder="Nama Ekskul">
+                                                    list="listEkskulPreset" value="<?= htmlspecialchars($ek['nama'] ?? '') ?>" placeholder="Nama Ekskul (Pilih/Ketik)">
                                             </div>
                                             <div class="col-3">
                                                 <select name="ekskul_predikat[]" class="form-select form-select-sm">
-                                                    <option value="Sangat Baik" <?= ($ek['predikat'] ?? '') === 'Sangat Baik' ? 'selected' : '' ?>>Sangat Baik</option>
-                                                    <option value="Baik" <?= ($ek['predikat'] ?? '') === 'Baik' ? 'selected' : '' ?>>
-                                                        Baik</option>
-                                                    <option value="Cukup" <?= ($ek['predikat'] ?? '') === 'Cukup' ? 'selected' : '' ?>>
-                                                        Cukup</option>
+                                                    <option value="A" <?= $isA ? 'selected' : '' ?>>A (Sangat Baik)</option>
+                                                    <option value="B" <?= $isB ? 'selected' : '' ?>>B (Baik)</option>
+                                                    <option value="C" <?= $isC ? 'selected' : '' ?>>C (Cukup)</option>
+                                                    <option value="D" <?= $isD ? 'selected' : '' ?>>D (Kurang)</option>
                                                 </select>
                                             </div>
                                             <div class="col-4">
@@ -914,13 +933,14 @@ require_once __DIR__ . '/../../includes/header.php';
         div.className = 'row g-2 mb-2 ekskul-row';
         div.innerHTML = `
         <div class="col-4">
-            <input type="text" name="ekskul_nama[]" class="form-control form-control-sm" placeholder="Nama Ekskul">
+            <input type="text" name="ekskul_nama[]" class="form-control form-control-sm" list="listEkskulPreset" placeholder="Nama Ekskul (Pilih/Ketik)">
         </div>
         <div class="col-3">
             <select name="ekskul_predikat[]" class="form-select form-select-sm">
-                <option value="Sangat Baik">Sangat Baik</option>
-                <option value="Baik" selected>Baik</option>
-                <option value="Cukup">Cukup</option>
+                <option value="A">A (Sangat Baik)</option>
+                <option value="B" selected>B (Baik)</option>
+                <option value="C">C (Cukup)</option>
+                <option value="D">D (Kurang)</option>
             </select>
         </div>
         <div class="col-4">

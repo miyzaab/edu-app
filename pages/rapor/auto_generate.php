@@ -8,6 +8,7 @@ requirePermission('rapor');
 
 $pdo = getConnection();
 require_once __DIR__ . '/init_rapor.php';
+require_once __DIR__ . '/../../includes/rapor_helpers.php';
 $kelasId = (int) ($_GET['kelas_id'] ?? 0);
 $rawTipe = strtolower($_GET['tipe'] ?? 'ats');
 $isAts = in_array($rawTipe, ['ats', 'pts', 'tengah']);
@@ -97,10 +98,89 @@ try {
         tempat_terbit = VALUES(tempat_terbit)
     ");
 
-    $defaultEkskulJson = json_encode([
-        ['nama' => 'Pramuka', 'predikat' => 'Sangat Baik', 'keterangan' => 'Aktif dan disiplin dalam kepramukaan'],
-        ['nama' => 'Tahfidz Al-Qur\'an', 'predikat' => 'Baik', 'keterangan' => 'Menunjukkan hafalan yang mutqin']
-    ], JSON_UNESCAPED_UNICODE);
+// Helper Kamus Materi / Tujuan Pembelajaran Mapel untuk Rapor AAS
+function getMateriMapelAas(string $mapelName, PDO $pdo, int $kelasId, string $semester): string {
+    // 1. Coba cari dari perangkat ajar
+    try {
+        $stmtPa = $pdo->prepare("
+            SELECT tujuan_pembelajaran, alur_tujuan_pembelajaran 
+            FROM perangkat_ajar 
+            WHERE mapel LIKE :m 
+            ORDER BY id DESC LIMIT 1
+        ");
+        $stmtPa->execute([':m' => '%' . trim($mapelName) . '%']);
+        $pa = $stmtPa->fetch(PDO::FETCH_ASSOC);
+        if ($pa && !empty($pa['tujuan_pembelajaran'])) {
+            $lines = array_filter(array_map('trim', explode("\n", $pa['tujuan_pembelajaran'])));
+            $cleanLines = [];
+            foreach ($lines as $l) {
+                $l = preg_replace('/^[\d\.\-\*\•\s]+/', '', $l);
+                if (strlen($l) > 10) {
+                    $cleanLines[] = rtrim($l, ".,;");
+                }
+                if (count($cleanLines) >= 3) break;
+            }
+            if (!empty($cleanLines)) {
+                return implode(", ", $cleanLines);
+            }
+        }
+    } catch (Exception $e) {}
+
+    // 2. Fallback kamus kompetensi Kurikulum Merdeka SMP (Fase D)
+    $lower = strtolower($mapelName);
+    if (strpos($lower, 'agama') !== false || strpos($lower, 'pai') !== false) {
+        return "makna iman kepada Allah dan rukun iman, Meneladani akhlak terpuji dalam kehidupan sehari-hari, Mempraktikkan ibadah wajib dengan benar, Menunjukkan sikap jujur, disiplin, dan tanggung jawab";
+    } elseif (strpos($lower, 'pancasila') !== false || strpos($lower, 'pkn') !== false) {
+        return "Mengidentifikasi norma dan aturan dalam kehidupan, Menunjukkan sikap bertanggung jawab sebagai warga sekolah dan masyarakat, Menjelaskan hak dan kewajiban sebagai warga sekolah, Menunjukkan sikap toleransi dan tanggung jawab";
+    } elseif (strpos($lower, 'indonesia') !== false) {
+        return "Mengidentifikasi informasi dalam teks deskripsi dan narasi, Menyusun teks deskripsi sesuai struktur dan kaidah, Menyampaikan gagasan secara lisan dengan runtut, Menulis teks sederhana dengan ejaan yang tepat";
+    } elseif (strpos($lower, 'matematika') !== false) {
+        return "konsep bilangan bulat dan operasinya, Menyelesaikan masalah pecahan dan desimal, Menggunakan bentuk aljabar sederhana, Menyelesaikan persamaan linear satu variabel";
+    } elseif (strpos($lower, 'ipa') !== false || strpos($lower, 'alam') !== false) {
+        return "hakikat ilmu IPA dan metode ilmiah, Mengidentifikasi klasifikasi makhluk hidup, Memahami ciri-ciri makhluk hidup, Menggunakan alat laboratorium sederhana dengan benar";
+    } elseif (strpos($lower, 'ips') !== false || strpos($lower, 'sosial') !== false) {
+        return "konsep ruang dan interaksi antar ruang, Mengidentifikasi kondisi geografis Indonesia, Menganalisis aktivitas sosial dan ekonomi masyarakat, Menunjukkan kepedulian terhadap lingkungan sosial";
+    } elseif (strpos($lower, 'inggris') !== false) {
+        return "ungkapan sapaan dan perkenalan diri, Menggunakan kosakata tentang identitas dan lingkungan sekitar, Menulis teks deskriptif sederhana, Memahami instruksi dan pesan pendek";
+    } elseif (strpos($lower, 'arab') !== false) {
+        return "tata bahasa dasar, ungkapan ta'aruf harian, penguasaan mufrodat tematik, serta pelafalan dan pemahaman teks sederhana";
+    } elseif (strpos($lower, 'tahfidz') !== false || strpos($lower, 'qur') !== false) {
+        return "kelancaran makharijul huruf, kaidah tajwid, hafalan ayat pilihan secara mutqin, serta adab tilawah Al-Qur'an";
+    } elseif (strpos($lower, 'fiqih') !== false) {
+        return "ketentuan bersuci (thaharah), shalat fardhu dan sunnah, adab ibadah harian, serta muamalah dasar";
+    } elseif (strpos($lower, 'akidah') !== false || strpos($lower, 'akhlak') !== false) {
+        return "pemahaman rukun iman, penghayatan asmaul husna, adab pergaulan islami, serta pencegahan akhlak tercela";
+    } elseif (strpos($lower, 'pjok') !== false || strpos($lower, 'olahraga') !== false) {
+        return "keterampilan gerak dasar olahraga, kebugaran jasmani, sportivitas, serta pembiasaan pola hidup sehat";
+    } elseif (strpos($lower, 'informatika') !== false || strpos($lower, 'komputer') !== false) {
+        return "berpikir komputasional, literasi digital, pengolahan data sederhana, serta etika penggunaan teknologi informasi";
+    } elseif (strpos($lower, 'seni') !== false || strpos($lower, 'prakarya') !== false) {
+        return "eksplorasi unsur seni budaya nusantara, apresiasi karya seni, serta kreasi produk fungsional secara mandiri";
+    }
+    return "materi pokok dan kompetensi capaian pembelajaran " . $mapelName;
+}
+
+// Helper perakit kalimat deskripsi AAS sesuai rentang nilai yang ditentukan user:
+// 88 - 100 : Sangat Baik dalam memahami...
+// 74 - 87  : Baik dalam memahami...
+// 60 - 73  : Cukup baik dalam memahami...
+// 0 - 59   : Butuh bimbingan dalam memahami...
+function buildDeskripsiAas(float $na, string $materi): string {
+    if ($na >= 88) {
+        return "Ananda menunjukkan pemahaman yang Sangat Baik dalam memahami " . $materi . ".";
+    } elseif ($na >= 74) {
+        return "Ananda menunjukkan pemahaman yang Baik dalam memahami " . $materi . ".";
+    } elseif ($na >= 60) {
+        return "Ananda Cukup baik dalam memahami " . $materi . ", namun membutuhkan penguatan lebih lanjut.";
+    } else {
+        return "Ananda Butuh bimbingan dalam memahami " . $materi . ".";
+    }
+}
+
+$defaultEkskulJson = json_encode([
+    ['nama' => 'Bela Diri', 'predikat' => 'A', 'keterangan' => 'Ananda mampu dan aktif mengikuti kegiatan bela diri serta menunjukkan disiplin dan sportivitas yang baik.'],
+    ['nama' => 'Tahfidz Al-Qur\'an', 'predikat' => 'A', 'keterangan' => 'Menunjukkan kelancaran hafalan dan adab tilawah yang baik.']
+], JSON_UNESCAPED_UNICODE);
 
     $countProcessed = 0;
     $countGuruSynced = 0;
@@ -132,17 +212,23 @@ try {
             if (!empty($guruD)) {
                 $deskripsiMapel[$mName] = $guruD;
                 $countGuruSynced++;
-            } elseif (empty($deskripsiMapel[$mName])) {
+            } elseif (empty($deskripsiMapel[$mName]) || isset($_GET['overwrite'])) {
                 $scoreColumn = $isAts ? 'ats' : 'nilai_akhir';
                 $na = ($matched && isset($matched[$scoreColumn]) && $matched[$scoreColumn] !== null && (float) $matched[$scoreColumn] > 0)
                     ? (float) $matched[$scoreColumn]
                     : 75;
-                if ($na >= 85) {
-                    $deskripsiMapel[$mName] = "Menunjukkan penguasaan yang sangat baik dalam memahami materi pokok " . $mName . ", mampu menerapkan konsep secara mandiri dan bernalar kritis.";
-                } elseif ($na >= 75) {
-                    $deskripsiMapel[$mName] = "Menunjukkan penguasaan yang baik dalam memahami konsep dasar " . $mName . ", perlu pemantapan pada beberapa indikator capaian.";
+                if ($isAts) {
+                    if ($na >= 85) {
+                        $deskripsiMapel[$mName] = "Menunjukkan penguasaan yang sangat baik dalam memahami materi pokok " . $mName . ", mampu menerapkan konsep secara mandiri dan bernalar kritis.";
+                    } elseif ($na >= 75) {
+                        $deskripsiMapel[$mName] = "Menunjukkan penguasaan yang baik dalam memahami konsep dasar " . $mName . ", perlu pemantapan pada beberapa indikator capaian.";
+                    } else {
+                        $deskripsiMapel[$mName] = "Cukup memahami materi pokok " . $mName . ", membutuhkan bimbingan dan pendampingan lebih lanjut untuk penguatan kompetensi dasar.";
+                    }
                 } else {
-                    $deskripsiMapel[$mName] = "Cukup memahami materi pokok " . $mName . ", membutuhkan bimbingan dan pendampingan lebih lanjut untuk penguatan kompetensi dasar.";
+                    // Rapor AAS (Akhir Semester) Kurikulum Merdeka Sesuai Rentang Nilai
+                    $materi = getMateriMapelAas($mName, $pdo, $kelasId, $semester);
+                    $deskripsiMapel[$mName] = buildDeskripsiAas($na, $materi);
                 }
             }
         }
