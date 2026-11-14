@@ -3,7 +3,7 @@
  * RAPOR KURIKULUM MERDEKA (PTS & PAS) - SMP Islamic School of Minhaj Al-Ilmi
  * Pengelolaan Rapor Siswa oleh Wali Kelas & Guru
  */
-$pageTitle = 'Rapor Siswa (PTS & PAS)';
+$pageTitle = 'Rapor Siswa (ATS & AAS)';
 $activePage = 'rapor';
 require_once __DIR__ . '/../../config/auth.php';
 requirePermission('rapor');
@@ -225,13 +225,16 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="d-flex align-items-center gap-3">
                 <div class="p-3 rounded-4 text-white d-flex align-items-center justify-content-center shadow-sm"
                     style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); width: 58px; height: 58px;">
-                    <i class="bi bi-file-earmark-person-fill fs-2"></i>
+                    <i class="<?= $selectedTipe === 'ats' ? 'bi bi-file-earmark-text-fill' : 'bi bi-journal-bookmark-fill' ?> fs-2"></i>
                 </div>
                 <div>
-                    <h3 class="fw-black m-0 text-white" style="letter-spacing: -0.5px;">Manajemen Rapor Siswa</h3>
+                    <h3 class="fw-black m-0 text-white" style="letter-spacing: -0.5px;">
+                        <?= $selectedTipe === 'ats' ? 'Manajemen Rapor ATS (Tengah Semester)' : 'Manajemen Rapor AAS (Akhir Semester)' ?>
+                    </h3>
                     <small class="text-white text-opacity-80">
-                        Penyusunan Rapor <strong>ATS & AAS</strong> terintegrasi otomatis dengan Nilai Siswa, Perangkat
-                        Ajar, dan Absensi
+                        <?= $selectedTipe === 'ats'
+                            ? 'Penyusunan Rapor <strong>ATS (Tengah Semester)</strong> ringkas & siap cetak untuk pertemuan wali santri'
+                            : 'Penyusunan Rapor <strong>AAS (Akhir Semester)</strong> Kurikulum Merdeka terintegrasi Capaian Pembelajaran & Nilai Akhir' ?>
                     </small>
                 </div>
             </div>
@@ -262,10 +265,17 @@ require_once __DIR__ . '/../../includes/header.php';
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link active fw-bold text-primary"
-                style="border:none; border-bottom: 3px solid #1e3a8a; padding: 0.75rem 1.25rem; background:transparent;"
-                href="<?= BASE_URL ?>/pages/rapor/index.php?kelas_id=<?= $selectedKelasId ?>&semester=<?= urlencode($selectedSem) ?>&tahun_ajaran=<?= urlencode($selectedTahun) ?>">
-                <i class="bi bi-file-earmark-person-fill fs-5 text-success"></i> Pengelolaan Rapor (ATS & AAS)
+            <a class="nav-link <?= $selectedTipe === 'ats' ? 'active fw-bold text-primary' : 'text-secondary fw-bold' ?>"
+                style="border:none; border-bottom: 3px solid <?= $selectedTipe === 'ats' ? '#1e3a8a' : 'transparent' ?>; padding: 0.75rem 1.25rem; <?= $selectedTipe === 'ats' ? 'background:transparent;' : '' ?>"
+                href="<?= BASE_URL ?>/pages/rapor/index.php?tipe=ats&kelas_id=<?= $selectedKelasId ?>&semester=<?= urlencode($selectedSem) ?>&tahun_ajaran=<?= urlencode($selectedTahun) ?>">
+                <i class="bi bi-file-earmark-text-fill fs-5 text-success"></i> Rapor ATS (Tengah Sem)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link <?= $selectedTipe !== 'ats' ? 'active fw-bold text-primary' : 'text-secondary fw-bold' ?>"
+                style="border:none; border-bottom: 3px solid <?= $selectedTipe !== 'ats' ? '#1e3a8a' : 'transparent' ?>; padding: 0.75rem 1.25rem; <?= $selectedTipe !== 'ats' ? 'background:transparent;' : '' ?>"
+                href="<?= BASE_URL ?>/pages/rapor/index.php?tipe=pas&kelas_id=<?= $selectedKelasId ?>&semester=<?= urlencode($selectedSem) ?>&tahun_ajaran=<?= urlencode($selectedTahun) ?>">
+                <i class="bi bi-journal-bookmark-fill fs-5" style="color: #6366f1;"></i> Rapor AAS (Akhir Sem)
             </a>
         </li>
         <li class="nav-item">
@@ -322,7 +332,7 @@ require_once __DIR__ . '/../../includes/header.php';
                 <div>
                     <div class="text-muted small fw-bold text-uppercase"
                         style="font-size: 0.7rem; letter-spacing: 0.4px;">Tipe Rapor Aktif</div>
-                    <h4 class="fw-black mb-0 text-dark" style="font-size: 1.35rem;"><?= strtoupper($selectedTipe) ?>
+                    <h4 class="fw-black mb-0 text-dark" style="font-size: 1.35rem;"><?= $selectedTipe === 'ats' ? 'ATS' : 'AAS' ?>
                         <span class="fs-7 fw-semibold text-primary">(<?= $selectedSem ?>)</span>
                     </h4>
                 </div>
@@ -352,7 +362,8 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="d-flex flex-wrap align-items-end justify-content-between gap-3">
                 <!-- FORM FILTER -->
                 <form method="GET" class="row g-2.5 align-items-end flex-grow-1" style="max-width: 780px;">
-                    <div class="col-md-3 col-6">
+                    <input type="hidden" name="tipe" value="<?= $selectedTipe ?>">
+                    <div class="col-md-5 col-6">
                         <label class="form-label small fw-bold text-secondary mb-1"
                             style="font-size: 0.75rem; letter-spacing: 0.4px;">
                             <i class="bi bi-building me-1"></i> KELAS
@@ -371,20 +382,8 @@ require_once __DIR__ . '/../../includes/header.php';
                     <div class="col-md-3 col-6">
                         <label class="form-label small fw-bold text-secondary mb-1"
                             style="font-size: 0.75rem; letter-spacing: 0.4px;">
-                            <i class="bi bi-bookmark-star me-1"></i> JENIS RAPOR
+                            <i class="bi bi-calendar3 me-1"></i> SEMESTER
                         </label>
-                        <select name="tipe" class="form-select fw-semibold" style="height: 42px; font-size: 0.85rem;"
-                            onchange="this.form.submit()">
-                            <option value="ats" <?= $selectedTipe === 'ats' ? 'selected' : '' ?>>📊 Rapor ATS (Tengah Sem)
-                            </option>
-                            <option value="pas" <?= $selectedTipe === 'pas' ? 'selected' : '' ?>>📑 Rapor AAS / PAS (Akhir
-                                Sem)</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-2 col-6">
-                        <label class="form-label small fw-bold text-secondary mb-1"
-                            style="font-size: 0.75rem; letter-spacing: 0.4px;">SEMESTER</label>
                         <select name="semester" class="form-select fw-semibold"
                             style="height: 42px; font-size: 0.85rem;" onchange="this.form.submit()">
                             <option value="Ganjil" <?= $selectedSem === 'Ganjil' ? 'selected' : '' ?>>Ganjil</option>
@@ -394,13 +393,15 @@ require_once __DIR__ . '/../../includes/header.php';
 
                     <div class="col-md-2 col-6">
                         <label class="form-label small fw-bold text-secondary mb-1"
-                            style="font-size: 0.75rem; letter-spacing: 0.4px;">THN AJARAN</label>
+                            style="font-size: 0.75rem; letter-spacing: 0.4px;">
+                            <i class="bi bi-clock-history me-1"></i> THN AJARAN
+                        </label>
                         <input type="text" name="tahun_ajaran" class="form-control font-monospace fw-bold"
                             style="height: 42px; font-size: 0.85rem;" value="<?= htmlspecialchars($selectedTahun) ?>"
                             placeholder="2026/2027">
                     </div>
 
-                    <div class="col-md-2 col-12">
+                    <div class="col-md-2 col-6">
                         <button type="submit"
                             class="btn text-white w-100 fw-bold rounded-3 shadow-sm d-inline-flex align-items-center justify-content-center gap-1"
                             style="height: 42px; background: linear-gradient(135deg, #1e3a8a 0%, #1e1b4b 100%); border: none; font-size: 0.86rem;">
@@ -457,7 +458,7 @@ require_once __DIR__ . '/../../includes/header.php';
                     <?= htmlspecialchars($currentKelas['nama_kelas'] ?? '') ?>
                 </h5>
                 <p class="text-muted small mb-0">
-                    Tipe: <strong><?= strtoupper($selectedTipe) ?></strong> | Semester:
+                    Tipe: <strong><?= $selectedTipe === 'ats' ? 'ATS (Tengah Semester)' : 'AAS (Akhir Semester)' ?></strong> | Semester:
                     <strong><?= $selectedSem ?></strong> | Tahun:
                     <strong><?= htmlspecialchars($selectedTahun) ?></strong>
                 </p>

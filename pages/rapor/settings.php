@@ -208,8 +208,15 @@ require_once __DIR__ . '/../../includes/header.php';
         <li class="nav-item">
             <a class="nav-link text-secondary fw-bold"
                 style="border:none; border-bottom: 3px solid transparent; padding: 0.75rem 1.25rem;"
-                href="<?= BASE_URL ?>/pages/rapor/index.php">
-                <i class="bi bi-file-earmark-person-fill fs-5 text-success"></i> Pengelolaan Rapor (ATS & AAS)
+                href="<?= BASE_URL ?>/pages/rapor/index.php?tipe=ats">
+                <i class="bi bi-file-earmark-text-fill fs-5 text-success"></i> Rapor ATS (Tengah Sem)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-secondary fw-bold"
+                style="border:none; border-bottom: 3px solid transparent; padding: 0.75rem 1.25rem;"
+                href="<?= BASE_URL ?>/pages/rapor/index.php?tipe=pas">
+                <i class="bi bi-journal-bookmark-fill fs-5" style="color: #6366f1;"></i> Rapor AAS (Akhir Sem)
             </a>
         </li>
         <li class="nav-item">
