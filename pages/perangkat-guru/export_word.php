@@ -226,14 +226,15 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
     <?php endif; ?>
 
     <!-- JUDUL DOKUMEN & KOTAK NILAI -->
-    <table style="width: 100%; margin-bottom: 12px;">
+    <table style="width: 100%; margin-bottom: 14pt; border-collapse: collapse;">
         <tr>
+            <td style="width: 75px; vertical-align: top;">&nbsp;</td>
             <td style="text-align: center; vertical-align: middle;">
                 <div class="title-main"><?= htmlspecialchars($naskah['judul_ujian']) ?></div>
                 <div class="title-sub">SEMESTER <?= strtoupper($naskah['semester']) ?> TP. <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
             </td>
-            <td style="width: 75px; text-align: center; vertical-align: top;">
-                <table style="width: 75px; height: 65px; border: 1.5pt solid #000000; border-collapse: collapse;">
+            <td style="width: 75px; text-align: right; vertical-align: top;">
+                <table style="width: 75px; height: 65px; border: 1.5pt solid #000000; border-collapse: collapse; margin-left: auto;">
                     <tr>
                         <td style="height: 18px; text-align: center; font-weight: bold; font-size: 9.5pt; border-bottom: 1pt solid #000000;">Nilai</td>
                     </tr>

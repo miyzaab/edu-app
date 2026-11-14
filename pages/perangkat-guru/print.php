@@ -194,13 +194,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
 
         /* JUDUL & KOTAK NILAI */
-        .title-wrapper {
-            position: relative;
-            text-align: center;
-            margin-bottom: 12px;
-        }
         .title-main {
-            font-size: 12.5pt;
+            font-size: 13pt;
             font-weight: bold;
             letter-spacing: 0.5px;
             text-transform: uppercase;
@@ -213,14 +208,14 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-top: 2px;
         }
         .nilai-box {
-            position: absolute;
-            right: 0;
-            top: -5px;
-            width: 78px;
-            height: 68px;
+            display: inline-block;
+            width: 76px;
+            height: 64px;
             border: 1.5px solid #000;
             text-align: center;
             padding-top: 4px;
+            box-sizing: border-box;
+            background: #ffffff;
         }
         .nilai-box-title {
             font-size: 9.5pt;
@@ -386,13 +381,20 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         <?php endif; ?>
 
         <!-- 2. JUDUL DOKUMEN & KOTAK NILAI -->
-        <div class="title-wrapper">
-            <div class="title-main"><?= htmlspecialchars($naskah['judul_ujian']) ?></div>
-            <div class="title-sub">SEMESTER <?= strtoupper($naskah['semester']) ?> TP. <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
-            <div class="nilai-box">
-                <div class="nilai-box-title">Nilai</div>
-            </div>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 14px;">
+            <tr>
+                <td style="width: 80px; vertical-align: top;">&nbsp;</td>
+                <td style="text-align: center; vertical-align: middle;">
+                    <div class="title-main"><?= htmlspecialchars($naskah['judul_ujian']) ?></div>
+                    <div class="title-sub">SEMESTER <?= strtoupper($naskah['semester']) ?> TP. <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
+                </td>
+                <td style="width: 80px; vertical-align: top; text-align: right;">
+                    <div class="nilai-box">
+                        <div class="nilai-box-title">Nilai</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
         <!-- 3. TABEL IDENTITAS PESERTA (2 KOLOM PERSIS REFERENSI) -->
         <table class="identitas-table">
