@@ -277,6 +277,9 @@ require_once __DIR__ . '/subnav.php';
                 <span class="small text-muted">/ 100</span>
             </div>
 
+            <a href="koreksi.php?id=<?= $naskahId ?>" class="btn btn-sm btn-warning text-dark rounded-pill px-3 fw-bold">
+                <i class="bi bi-lightning-charge-fill text-danger me-1"></i> Koreksi Cepat
+            </a>
             <a href="print.php?id=<?= $naskahId ?>" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
                 <i class="bi bi-printer-fill me-1"></i> Cetak / PDF
             </a>

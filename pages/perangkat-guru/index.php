@@ -341,6 +341,9 @@ require_once __DIR__ . '/subnav.php';
                             </td>
                             <td class="text-end px-4">
                                 <div class="btn-group shadow-xs">
+                                    <a href="koreksi.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-warning text-dark fw-bold px-2.5" title="Meja Koreksi Cepat &amp; Rekap Nilai">
+                                        <i class="bi bi-lightning-charge-fill text-danger me-1"></i> Koreksi
+                                    </a>
                                     <a href="edit.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-primary px-2.5" title="Susun &amp; Edit Soal">
                                         <i class="bi bi-pencil-square me-1"></i> Susun
                                     </a>

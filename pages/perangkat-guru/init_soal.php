@@ -66,6 +66,28 @@ if (!defined('SOAL_INIT_RUN')) {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
 
+        // 3. Buat Tabel soal_hasil_koreksi (Meja Koreksi Cepat & Rekap Otomatis)
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `soal_hasil_koreksi` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `naskah_id` int(11) NOT NULL,
+              `siswa_id` int(11) NOT NULL,
+              `kelas_id` int(11) NOT NULL,
+              `benar_pg` int(11) NOT NULL DEFAULT 0,
+              `skor_pg` decimal(6,2) NOT NULL DEFAULT 0.00,
+              `skor_isian` decimal(6,2) NOT NULL DEFAULT 0.00,
+              `skor_essay` decimal(6,2) NOT NULL DEFAULT 0.00,
+              `nilai_akhir` decimal(6,2) NOT NULL DEFAULT 0.00,
+              `catatan` text DEFAULT NULL,
+              `detail_pg` longtext DEFAULT NULL,
+              `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              PRIMARY KEY (`id`),
+              UNIQUE KEY `uk_naskah_siswa` (`naskah_id`, `siswa_id`),
+              KEY `idx_naskah_kelas` (`naskah_id`, `kelas_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
         // Pastikan folder upload tersedia
         $uploadDir = __DIR__ . '/../../uploads/soal';
         if (!is_dir($uploadDir)) {

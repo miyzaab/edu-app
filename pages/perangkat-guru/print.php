@@ -51,19 +51,22 @@ foreach ($allSoal as $s) {
 }
 
 // Helper untuk Render Teks Soal & Deteksi Font Arab
-function renderTeksSoal($text) {
-    if ($text === null || $text === '') return '';
+function renderTeksSoal($text)
+{
+    if ($text === null || $text === '')
+        return '';
     $safe = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-    
+
     // Regex deteksi blok teks Arab (huruf, harakat, tanda baca Arab)
     $pattern = '/([\p{Arabic}][\p{Arabic}\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}\s\p{P}\d]*[\p{Arabic}]|[\p{Arabic}])/u';
-    
-    $wrapped = preg_replace_callback($pattern, function($m) {
+
+    $wrapped = preg_replace_callback($pattern, function ($m) {
         $clean = trim($m[0]);
-        if ($clean === '') return $m[0];
+        if ($clean === '')
+            return $m[0];
         return '<span class="teks-arab" dir="rtl">' . $clean . '</span>';
     }, $safe);
-    
+
     return nl2br($wrapped);
 }
 
@@ -84,10 +87,13 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Naskah_Soal_<?= preg_replace('/[^a-zA-Z0-9]/', '_', $naskah['nama_mapel']) ?>_Kelas_<?= $naskah['tingkat_kelas'] ?></title>
+    <title>
+        Naskah_Soal_<?= preg_replace('/[^a-zA-Z0-9]/', '_', $naskah['nama_mapel']) ?>_Kelas_<?= $naskah['tingkat_kelas'] ?>
+    </title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -101,6 +107,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         @page {
             size: A4 portrait;
             margin: 15mm 15mm 20mm 15mm;
+
             @bottom-left {
                 content: "<?= addslashes($footerText) ?>";
                 font-family: 'Cambria', Georgia, serif;
@@ -108,6 +115,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 font-style: italic;
                 color: #222222;
             }
+
             @bottom-right {
                 content: "Halaman " counter(page);
                 font-family: 'Cambria', Georgia, serif;
@@ -180,9 +188,11 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 padding: 0 !important;
                 margin: 0 !important;
             }
+
             .no-print {
                 display: none !important;
             }
+
             .page-sheet {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -191,9 +201,11 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 padding: 0 !important;
                 box-shadow: none !important;
             }
+
             .screen-footer {
                 display: none !important;
             }
+
             .print-footer-bar {
                 display: flex !important;
                 position: fixed;
@@ -216,21 +228,26 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             border-collapse: collapse;
             margin-bottom: 3px;
         }
+
         .kop-table td {
             vertical-align: middle;
         }
+
         .kop-logo-box {
             width: 65px;
             text-align: left;
         }
+
         .kop-logo-box img {
             width: 58px;
             height: 58px;
             object-fit: contain;
         }
+
         .kop-title-box {
             padding-left: 12px;
         }
+
         .kop-school-name {
             font-size: 17pt;
             font-weight: bold;
@@ -238,22 +255,26 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             color: #000;
             letter-spacing: -0.3px;
         }
+
         .kop-sub-yayasan {
             font-size: 11pt;
             font-weight: bold;
             line-height: 1.15;
             color: #000;
         }
+
         .kop-sub-yayasan-green {
             color: #0d9488;
             font-weight: bold;
         }
+
         .kop-slogan {
             font-size: 8.5pt;
             font-style: italic;
             color: #333;
             margin-top: 2px;
         }
+
         .kop-contact-box {
             text-align: right;
             font-size: 8pt;
@@ -274,6 +295,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             text-transform: uppercase;
             line-height: 1.25;
         }
+
         .title-sub {
             font-size: 11.5pt;
             font-weight: bold;
@@ -282,6 +304,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-top: 2px;
             line-height: 1.25;
         }
+
         .nilai-box {
             display: inline-block;
             width: 76px;
@@ -292,6 +315,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             box-sizing: border-box;
             background: #ffffff;
         }
+
         .nilai-box-title {
             font-size: 10pt;
             font-weight: bold;
@@ -306,6 +330,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-bottom: 14px;
             border: 1.5px solid #000000;
         }
+
         .identitas-table td {
             border: 1px solid #000000;
             padding: 4px 8px;
@@ -323,6 +348,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             padding-bottom: 2px;
             line-height: 1.35;
         }
+
         .section-desc {
             font-size: 10pt;
             font-style: italic;
@@ -334,14 +360,17 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-bottom: 12px;
             page-break-inside: avoid;
         }
+
         .soal-table {
             width: 100%;
             border-collapse: collapse;
         }
+
         .soal-table td {
             vertical-align: top;
             padding: 2px 0;
         }
+
         .soal-no {
             width: 26px;
             font-weight: bold;
@@ -349,14 +378,17 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             font-size: 12pt;
             line-height: 1.5;
         }
+
         .soal-text {
             font-size: 12pt;
             line-height: 1.5;
             text-align: justify;
         }
+
         .soal-img-box {
             margin: 6px 0;
         }
+
         .soal-img-box img {
             max-height: 160px;
             max-width: 280px;
@@ -371,6 +403,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-left: 2px;
             border-collapse: collapse;
         }
+
         .opsi-table td {
             vertical-align: top;
             padding: 3px 6px;
@@ -403,6 +436,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
     </style>
 </head>
+
 <body>
 
     <!-- PRINT CONTROL BAR (SCREEN ONLY) -->
@@ -432,38 +466,52 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
     <!-- LEMBAR DOKUMEN A4 -->
     <div class="page-sheet">
         <!-- 1. KOP SURAT (PILIHAN: TEKS VEKTOR ANTI-PECAH ATAU GAMBAR PNG) -->
-        <?php 
+        <?php
         $kopImgPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
         $cubeLogo = __DIR__ . '/../../assets/img/logo_ismi_cube.png';
 
         if ($kopSoalMode === 'image' && file_exists($kopImgPath)):
-        ?>
+            ?>
             <div style="width: 100%; margin-bottom: 12px; text-align: center;">
-                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>" alt="KOP Ujian SMP ISMI" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>"
+                    alt="KOP Ujian SMP ISMI" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
             </div>
         <?php else: ?>
             <table class="kop-table" style="width: 100%; border-collapse: collapse; margin-bottom: 2px;">
                 <tr>
                     <td class="kop-logo-box" style="width: 78px; vertical-align: middle; text-align: left;">
                         <?php if (file_exists($cubeLogo)): ?>
-                            <img src="<?= BASE_URL ?>/assets/img/logo_ismi_cube.png?v=<?= filemtime($cubeLogo) ?>" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
+                            <img src="<?= BASE_URL ?>/assets/img/logo_ismi_cube.png?v=<?= filemtime($cubeLogo) ?>"
+                                alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
                         <?php elseif (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
-                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI" style="width: 70px; height: 70px; object-fit: contain; display: block;">
+                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI"
+                                style="width: 70px; height: 70px; object-fit: contain; display: block;">
                         <?php else: ?>
                             <svg width="68" height="68" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M50 5L90 28V72L50 95L10 72V28L50 5Z" stroke="#0d9488" stroke-width="5.5" fill="none" />
-                                <path d="M50 18L78 34V66L50 82L22 66V34L50 18Z" stroke="#0d9488" stroke-width="4.5" fill="none" />
-                                <path d="M35 38H65M35 50H65M35 62H65M50 30V70" stroke="#0d9488" stroke-width="4" stroke-linecap="round" />
+                                <path d="M50 18L78 34V66L50 82L22 66V34L50 18Z" stroke="#0d9488" stroke-width="4.5"
+                                    fill="none" />
+                                <path d="M35 38H65M35 50H65M35 62H65M50 30V70" stroke="#0d9488" stroke-width="4"
+                                    stroke-linecap="round" />
                             </svg>
                         <?php endif; ?>
                     </td>
                     <td class="kop-title-box" style="vertical-align: middle; padding-left: 10px;">
-                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 18pt; font-weight: 800; line-height: 1.1; color: #000; letter-spacing: -0.3px;">SMP ISMI</div>
-                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; font-weight: 800; line-height: 1.15; color: #000;">ISLAMIC SCHOOL OF</div>
-                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; font-weight: 800; line-height: 1.15; color: #0d9488;">MINHAJ AL-ILMI</div>
-                        <div style="font-family: 'Segoe Print', 'Caveat', cursive, sans-serif; font-size: 8.5pt; font-style: italic; color: #222; margin-top: 2px;">Berakhlak Mulia, Berilmu, Mahir IT</div>
+                        <div
+                            style="font-family: Arial, Helvetica, sans-serif; font-size: 18pt; font-weight: 800; line-height: 1.1; color: #000; letter-spacing: -0.3px;">
+                            SMP ISMI</div>
+                        <div
+                            style="font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; font-weight: 800; line-height: 1.15; color: #000;">
+                            ISLAMIC SCHOOL OF</div>
+                        <div
+                            style="font-family: Arial, Helvetica, sans-serif; font-size: 11.5pt; font-weight: 800; line-height: 1.15; color: #0d9488;">
+                            MINHAJ AL-ILMI</div>
+                        <div
+                            style="font-family: 'Segoe Print', 'Caveat', cursive, sans-serif; font-size: 8.5pt; font-style: italic; color: #222; margin-top: 2px;">
+                            Berakhlak Mulia, Berilmu, Mahir IT</div>
                     </td>
-                    <td class="kop-contact-box" style="vertical-align: middle; text-align: right; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; line-height: 1.35; color: #111;">
+                    <td class="kop-contact-box"
+                        style="vertical-align: middle; text-align: right; font-family: Arial, Helvetica, sans-serif; font-size: 8.5pt; line-height: 1.35; color: #111;">
                         <div style="font-weight: 700;">Jl. Nakula No.1 Harjamukti Cimanggis Depok</div>
                         <div style="font-weight: 700;">Telp. (021) 4867 8793</div>
                         <div>Email : <span style="color: #0284c7;"><?= htmlspecialchars($kopEmail) ?></span></div>
@@ -481,7 +529,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 <td style="width: 80px; vertical-align: top;">&nbsp;</td>
                 <td style="text-align: center; vertical-align: middle;">
                     <div class="title-main"><?= htmlspecialchars($naskah['judul_ujian']) ?></div>
-                    <div class="title-sub">SEMESTER <?= strtoupper($naskah['semester']) ?> TP. <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
+                    <div class="title-sub">SEMESTER <?= strtoupper($naskah['semester']) ?> TP.
+                        <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
                 </td>
                 <td style="width: 80px; vertical-align: top; text-align: right;">
                     <div class="nilai-box">
@@ -515,7 +564,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 <td></td>
                 <td>Waktu</td>
                 <td style="text-align: center;">:</td>
-                <td><?= (int)$naskah['alokasi_waktu'] ?> Menit</td>
+                <td><?= (int) $naskah['alokasi_waktu'] ?> Menit</td>
             </tr>
         </table>
 
@@ -524,7 +573,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         <!-- ================================================================ -->
         <?php if (!empty($soalPg)): ?>
             <div class="section-header">A. PILIHAN GANDA</div>
-            <div class="section-desc">Pilihlah salah satu jawaban yang paling tepat dengan memberi tanda silang (X) pada huruf a, b, c, atau d!</div>
+            <div class="section-desc">Pilihlah salah satu jawaban yang paling tepat dengan memberi tanda silang (X) pada
+                huruf a, b, c, atau d!</div>
 
             <?php foreach ($soalPg as $idx => $s): ?>
                 <div class="soal-item">
@@ -536,7 +586,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
-                                        <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>" alt="Soal <?= $idx + 1 ?>">
+                                        <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>"
+                                            alt="Soal <?= $idx + 1 ?>">
                                     </div>
                                 <?php endif; ?>
 
@@ -583,7 +634,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
-                                        <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>" alt="Soal <?= $idx + 1 ?>">
+                                        <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>"
+                                            alt="Soal <?= $idx + 1 ?>">
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -598,7 +650,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         <!-- ================================================================ -->
         <?php if (!empty($soalEssay)): ?>
             <div class="section-header" style="margin-top: 18px;">C. URAIAN / ESSAY</div>
-            <div class="section-desc">Jawablah pertanyaan-pertanyaan di bawah ini secara jelas, lengkap, dan sistematis!</div>
+            <div class="section-desc">Jawablah pertanyaan-pertanyaan di bawah ini secara jelas, lengkap, dan sistematis!
+            </div>
 
             <?php foreach ($soalEssay as $idx => $s): ?>
                 <div class="soal-item">
@@ -610,7 +663,8 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
-                                        <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>" alt="Soal <?= $idx + 1 ?>">
+                                        <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>"
+                                            alt="Soal <?= $idx + 1 ?>">
                                     </div>
                                 <?php endif; ?>
                             </td>
@@ -623,7 +677,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         <!-- FOOTER TAMPILAN LAYAR (PRATINJAU) -->
         <div class="screen-footer">
             <span><?= htmlspecialchars($footerText) ?></span>
-            <span>Halaman 1</span>
+            <span>1</span>
         </div>
 
         <!-- PRINT FOOTER BAR (UNTUK PRINTER/BROWSER FALLBACK) -->
@@ -634,4 +688,5 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
     </div>
 
 </body>
+
 </html>
