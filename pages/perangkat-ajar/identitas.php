@@ -68,7 +68,47 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['action']) 
                 @mkdir($uploadDir, 0755, true);
             }
             $filenameStempel = 'stempel_' . time() . '.' . $extStempel;
-            if (move_uploaded_file($fileStempel['tmp_name'], $uploadDir . $filenameStempel)) {
+            $targetPath = $uploadDir . $filenameStempel;
+            if (move_uploaded_file($fileStempel['tmp_name'], $targetPath)) {
+                // Auto-trim transparent borders if PNG to ensure signature/stamp displays at full size
+                if ($extStempel === 'png' && function_exists('imagecreatefrompng')) {
+                    $im = @imagecreatefrompng($targetPath);
+                    if ($im) {
+                        $w = imagesx($im);
+                        $h = imagesy($im);
+                        $minX = $w; $maxX = 0; $minY = $h; $maxY = 0;
+                        for ($y = 0; $y < $h; $y += 2) {
+                            for ($x = 0; $x < $w; $x += 2) {
+                                $rgba = imagecolorat($im, $x, $y);
+                                $alpha = ($rgba & 0x7F000000) >> 24;
+                                if ($alpha < 120) {
+                                    if ($x < $minX) $minX = $x;
+                                    if ($x > $maxX) $maxX = $x;
+                                    if ($y < $minY) $minY = $y;
+                                    if ($y > $maxY) $maxY = $y;
+                                }
+                            }
+                        }
+                        if ($minX <= $maxX && $minY <= $maxY) {
+                            $pad = 10;
+                            $minX = max(0, $minX - $pad);
+                            $minY = max(0, $minY - $pad);
+                            $maxX = min($w - 1, $maxX + $pad);
+                            $maxY = min($h - 1, $maxY + $pad);
+                            $nw = $maxX - $minX + 1;
+                            $nh = $maxY - $minY + 1;
+                            $trimmed = imagecreatetruecolor($nw, $nh);
+                            imagealphablending($trimmed, false);
+                            imagesavealpha($trimmed, true);
+                            $trans = imagecolorallocatealpha($trimmed, 0, 0, 0, 127);
+                            imagefilledrectangle($trimmed, 0, 0, $nw, $nh, $trans);
+                            imagecopy($trimmed, $im, 0, 0, $minX, $minY, $nw, $nh);
+                            imagepng($trimmed, $targetPath);
+                            imagedestroy($trimmed);
+                        }
+                        imagedestroy($im);
+                    }
+                }
                 updateSetting('stempel_path', '/assets/img/' . $filenameStempel);
             }
         }
