@@ -54,6 +54,14 @@ $kopEmail = !empty($settingsRaw['kop_email']) ? $settingsRaw['kop_email'] : 'smp
 $kopWebsite = !empty($settingsRaw['kop_website']) ? $settingsRaw['kop_website'] : 'sekolahismi.sch.id & ismi.sch.id';
 $kopWa = !empty($settingsRaw['kop_wa']) ? $settingsRaw['kop_wa'] : 'Admin WA 0899-2244-111';
 
+// Base64 KOP PNG for Word compatibility
+$kopBase64 = '';
+$kopPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
+if (file_exists($kopPath)) {
+    $kopData = file_get_contents($kopPath);
+    $kopBase64 = 'data:image/png;base64,' . base64_encode($kopData);
+}
+
 // Base64 logo for Word compatibility
 $logoBase64 = '';
 $logoPath = __DIR__ . '/../../assets/img/logo_1776435927.png';
@@ -92,7 +100,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             mso-page-orientation: portrait;
         }
         body {
-            font-family: 'Times New Roman', serif;
+            font-family: 'Cambria', Georgia, serif;
             font-size: 11pt;
             line-height: 1.35;
             color: #000000;
@@ -187,30 +195,35 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 </head>
 <body>
 
-    <!-- KOP SURAT RESMI -->
-    <table class="kop-table">
-        <tr>
-            <?php if (!empty($logoBase64)): ?>
-                <td style="width: 70px;">
-                    <img src="<?= $logoBase64 ?>" width="60" height="60" alt="Logo">
+    <!-- KOP SURAT RESMI (PNG) -->
+    <?php if (!empty($kopBase64)): ?>
+        <p align="center" style="margin-top: 0; margin-bottom: 12pt;">
+            <img src="<?= $kopBase64 ?>" width="670" alt="KOP Ujian SMP ISMI">
+        </p>
+    <?php else: ?>
+        <table class="kop-table">
+            <tr>
+                <?php if (!empty($logoBase64)): ?>
+                    <td style="width: 70px;">
+                        <img src="<?= $logoBase64 ?>" width="60" height="60" alt="Logo">
+                    </td>
+                <?php endif; ?>
+                <td style="padding-left: 10px;">
+                    <div class="kop-school-name"><?= htmlspecialchars($kopNamaSekolah) ?></div>
+                    <div class="kop-sub">ISLAMIC SCHOOL OF <span style="color: #0d9488;">MINHAJ AL-ILMI</span></div>
+                    <div class="kop-slogan"><?= htmlspecialchars($kopSlogan) ?></div>
                 </td>
-            <?php endif; ?>
-            <td style="padding-left: 10px;">
-                <div class="kop-school-name"><?= htmlspecialchars($kopNamaSekolah) ?></div>
-                <div class="kop-sub">ISLAMIC SCHOOL OF <span style="color: #0d9488;">MINHAJ AL-ILMI</span></div>
-                <div class="kop-slogan"><?= htmlspecialchars($kopSlogan) ?></div>
-            </td>
-            <td class="kop-contact">
-                <div><?= htmlspecialchars($kopAlamat) ?></div>
-                <div><?= htmlspecialchars($kopTelp) ?></div>
-                <div>Email : <span style="color: #0284c7;"><?= htmlspecialchars($kopEmail) ?></span></div>
-                <div>Website : <span style="color: #0284c7;"><?= htmlspecialchars($kopWebsite) ?></span></div>
-                <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="kop-divider"></div>
+                <td class="kop-contact">
+                    <div><?= htmlspecialchars($kopAlamat) ?></div>
+                    <div><?= htmlspecialchars($kopTelp) ?></div>
+                    <div>Email : <span style="color: #0284c7;"><?= htmlspecialchars($kopEmail) ?></span></div>
+                    <div>Website : <span style="color: #0284c7;"><?= htmlspecialchars($kopWebsite) ?></span></div>
+                    <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
+                </td>
+            </tr>
+        </table>
+        <div class="kop-divider"></div>
+    <?php endif; ?>
 
     <!-- JUDUL DOKUMEN & KOTAK NILAI -->
     <table style="width: 100%; margin-bottom: 12px;">
@@ -259,14 +272,6 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             <td><?= (int)$naskah['alokasi_waktu'] ?> Menit</td>
         </tr>
     </table>
-
-    <!-- PETUNJUK UMUM -->
-    <?php if (!empty($naskah['petunjuk_umum'])): ?>
-        <div style="font-size: 9pt; font-style: italic; margin-bottom: 12px; border-left: 2pt solid #000; padding-left: 6pt;">
-            <strong>Petunjuk Umum:</strong><br>
-            <?= nl2br(htmlspecialchars($naskah['petunjuk_umum'])) ?>
-        </div>
-    <?php endif; ?>
 
     <!-- BAGIAN A: PILIHAN GANDA -->
     <?php if (!empty($soalPg)): ?>

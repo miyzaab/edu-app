@@ -77,13 +77,6 @@ require_once __DIR__ . '/subnav.php';
                             <label class="form-label fw-bold small text-muted">Tanggal Ujian (Opsional)</label>
                             <input type="date" name="tanggal_ujian" class="form-control">
                         </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-muted">Petunjuk Umum</label>
-                            <textarea name="petunjuk_umum" class="form-control" rows="4" placeholder="Petunjuk pengerjaan soal...">1. Berdoalah sebelum mengerjakan soal.
-2. Tulislah nama, kelas, dan nomor absen pada lembar jawaban yang telah disediakan.
-3. Periksa dan bacalah soal-soal dengan teliti sebelum Anda menjawabnya.
-4. Dahulukan menjawab soal-soal yang Anda anggap mudah.</textarea>
-                        </div>
                     </div>
                 </div>
                 <div class="card-footer bg-light px-4 py-3 d-flex justify-content-between align-items-center">

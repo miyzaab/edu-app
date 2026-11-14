@@ -16,6 +16,21 @@ require_once __DIR__ . '/init_soal.php';
 $userId = (int) $_SESSION['user_id'];
 $userRole = strtolower($_SESSION['role'] ?? 'guru');
 
+// Handle Upload KOP Soal PNG
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_kop_soal') {
+    if (isset($_FILES['kop_file']) && $_FILES['kop_file']['error'] === UPLOAD_ERR_OK) {
+        $ext = strtolower(pathinfo($_FILES['kop_file']['name'], PATHINFO_EXTENSION));
+        if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp'])) {
+            $destFile = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
+            if (move_uploaded_file($_FILES['kop_file']['tmp_name'], $destFile)) {
+                $_SESSION['flash'] = ['type' => 'success', 'message' => 'Gambar KOP Soal (PNG) berhasil diperbarui!'];
+            }
+        }
+    }
+    header('Location: index.php');
+    exit;
+}
+
 // Handle Filter
 $filterMapel = trim($_GET['mapel'] ?? '');
 $filterTingkat = trim($_GET['tingkat'] ?? '');
@@ -118,6 +133,11 @@ require_once __DIR__ . '/subnav.php';
             </p>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-light px-3 py-3 fw-bold rounded-pill shadow-xs d-inline-flex align-items-center gap-2"
+                data-bs-toggle="modal" data-bs-target="#modalKopSoal" style="font-size: 0.95rem; border-color: rgba(255,255,255,0.4);">
+                <i class="bi bi-image fs-5"></i>
+                <span>Upload KOP Soal (PNG)</span>
+            </button>
             <button type="button" class="btn btn-light px-4 py-3 fw-bold rounded-pill shadow-lg d-inline-flex align-items-center gap-2"
                 data-bs-toggle="modal" data-bs-target="#modalCreateNaskah" style="color: #312e81; font-size: 0.95rem;">
                 <i class="bi bi-plus-circle-fill text-primary fs-5"></i>
@@ -411,19 +431,59 @@ require_once __DIR__ . '/subnav.php';
                             <label class="form-label fw-bold small text-muted">Tanggal Ujian (Opsional)</label>
                             <input type="date" name="tanggal_ujian" class="form-control">
                         </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-muted">Petunjuk Umum</label>
-                            <textarea name="petunjuk_umum" class="form-control" rows="3" placeholder="Petunjuk pengerjaan soal...">1. Berdoalah sebelum mengerjakan soal.
-2. Tulislah nama, kelas, dan nomor absen pada lembar jawaban yang telah disediakan.
-3. Periksa dan bacalah soal-soal dengan teliti sebelum Anda menjawabnya.
-4. Dahulukan menjawab soal-soal yang Anda anggap mudah.</textarea>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-light px-4 py-3">
                     <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
                         <i class="bi bi-arrow-right-circle me-1"></i> Simpan &amp; Lanjut Susun Soal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL UPLOAD KOP SOAL PNG -->
+<div class="modal fade" id="modalKopSoal" tabindex="-1" aria-labelledby="modalKopSoalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header text-white px-4 py-3" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalKopSoalLabel">
+                    <i class="bi bi-image fs-5 text-warning"></i> Upload &amp; Pengaturan KOP Soal (PNG)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="index.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="upload_kop_soal">
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        KOP naskah soal dicetak dalam bentuk gambar <strong>PNG</strong> agar presisi, rapi, dan sesuai standar sekolah. Anda dapat mengunggah file KOP PNG baru di sini.
+                    </p>
+
+                    <!-- Preview KOP Saat Ini -->
+                    <div class="mb-4 p-3 bg-light rounded-3 border text-center">
+                        <label class="form-label fw-bold small text-muted d-block text-start mb-2">Pratinjau KOP Soal Aktif:</label>
+                        <?php 
+                        $kopPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
+                        if (file_exists($kopPath)):
+                        ?>
+                            <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopPath) ?>" alt="KOP Soal" class="img-fluid border rounded shadow-xs" style="max-height: 120px;">
+                        <?php else: ?>
+                            <div class="text-muted py-3">Belum ada file KOP PNG.</div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark">Pilih File KOP Baru (.PNG) <span class="text-danger">*</span></label>
+                        <input type="file" name="kop_file" class="form-control" accept="image/png, image/jpeg, image/webp" required>
+                        <small class="text-muted d-block mt-1">Rekomendasi format: PNG transparan atau putih, rasio lebar ~700 x 120 px.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light px-4 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="bi bi-upload me-1"></i> Simpan Gambar KOP
                     </button>
                 </div>
             </form>

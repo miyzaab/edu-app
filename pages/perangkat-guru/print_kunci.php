@@ -95,7 +95,7 @@ $tempatTerbit = !empty($settingsRaw['tempat_terbit']) ? $settingsRaw['tempat_ter
         }
 
         body {
-            font-family: 'Times New Roman', Times, Georgia, serif;
+            font-family: 'Cambria', Georgia, serif;
             font-size: 10pt;
             line-height: 1.35;
             color: #000;
@@ -254,28 +254,37 @@ $tempatTerbit = !empty($settingsRaw['tempat_terbit']) ? $settingsRaw['tempat_ter
     </div>
 
     <div class="page-sheet">
-        <!-- KOP -->
-        <table class="kop-table">
-            <tr>
-                <td style="width: 65px;">
-                    <?php if (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
-                        <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" width="58" height="58" alt="Logo">
-                    <?php endif; ?>
-                </td>
-                <td style="padding-left: 12px;">
-                    <div style="font-size: 16pt; font-weight: bold;"><?= htmlspecialchars($kopNamaSekolah) ?></div>
-                    <div style="font-size: 10.5pt; font-weight: bold;">ISLAMIC SCHOOL OF <span style="color: #0d9488;">MINHAJ AL-ILMI</span></div>
-                    <div style="font-size: 8.5pt; font-style: italic; color: #444;"><?= htmlspecialchars($kopSlogan) ?></div>
-                </td>
-                <td style="text-align: right; font-size: 8pt; line-height: 1.25;">
-                    <div><?= htmlspecialchars($kopAlamat) ?></div>
-                    <div><?= htmlspecialchars($kopTelp) ?></div>
-                    <div>Email : <?= htmlspecialchars($kopEmail) ?></div>
-                    <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
-                </td>
-            </tr>
-        </table>
-        <div class="kop-divider"></div>
+        <!-- KOP (UPLOADED PNG) -->
+        <?php 
+        $kopImgPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
+        if (file_exists($kopImgPath)):
+        ?>
+            <div style="width: 100%; margin-bottom: 12px;">
+                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>" alt="KOP Ujian SMP ISMI" style="width: 100%; height: auto; display: block;">
+            </div>
+        <?php else: ?>
+            <table class="kop-table">
+                <tr>
+                    <td style="width: 65px;">
+                        <?php if (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
+                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" width="58" height="58" alt="Logo">
+                        <?php endif; ?>
+                    </td>
+                    <td style="padding-left: 12px;">
+                        <div style="font-size: 16pt; font-weight: bold;"><?= htmlspecialchars($kopNamaSekolah) ?></div>
+                        <div style="font-size: 10.5pt; font-weight: bold;">ISLAMIC SCHOOL OF <span style="color: #0d9488;">MINHAJ AL-ILMI</span></div>
+                        <div style="font-size: 8.5pt; font-style: italic; color: #444;"><?= htmlspecialchars($kopSlogan) ?></div>
+                    </td>
+                    <td style="text-align: right; font-size: 8pt; line-height: 1.25;">
+                        <div><?= htmlspecialchars($kopAlamat) ?></div>
+                        <div><?= htmlspecialchars($kopTelp) ?></div>
+                        <div>Email : <?= htmlspecialchars($kopEmail) ?></div>
+                        <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
+                    </td>
+                </tr>
+            </table>
+            <div class="kop-divider"></div>
+        <?php endif; ?>
 
         <!-- JUDUL -->
         <div class="title-wrapper">

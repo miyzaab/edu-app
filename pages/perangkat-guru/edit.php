@@ -349,10 +349,6 @@ require_once __DIR__ . '/subnav.php';
                         <label class="form-label fw-bold small text-muted">Tanggal Pelaksanaan (Opsional)</label>
                         <input type="date" name="tanggal_ujian" class="form-control" value="<?= htmlspecialchars($naskah['tanggal_ujian'] ?? '') ?>">
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted">Petunjuk Umum Pengerjaan</label>
-                        <textarea name="petunjuk_umum" class="form-control" rows="2"><?= htmlspecialchars($naskah['petunjuk_umum'] ?? '') ?></textarea>
-                    </div>
                 </div>
             </div>
         </div>

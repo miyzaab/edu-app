@@ -79,7 +79,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
 
         body {
-            font-family: 'Times New Roman', Times, Georgia, serif;
+            font-family: 'Cambria', Georgia, serif;
             font-size: 10.5pt;
             line-height: 1.35;
             color: #000;
@@ -345,38 +345,45 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
     <!-- LEMBAR DOKUMEN A4 -->
     <div class="page-sheet">
-        <!-- 1. KOP SURAT (PERSIS REFERENSI) -->
-        <table class="kop-table">
-            <tr>
-                <td class="kop-logo-box">
-                    <?php if (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
-                        <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI">
-                    <?php else: ?>
-                        <svg width="58" height="58" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M50 5L90 28V72L50 95L10 72V28L50 5Z" stroke="#0d9488" stroke-width="5.5" fill="none" />
-                            <path d="M50 18L78 34V66L50 82L22 66V34L50 18Z" stroke="#0d9488" stroke-width="4.5" fill="none" />
-                            <path d="M35 38H65M35 50H65M35 62H65M50 30V70" stroke="#0d9488" stroke-width="4" stroke-linecap="round" />
-                        </svg>
-                    <?php endif; ?>
-                </td>
-                <td class="kop-title-box">
-                    <div class="kop-school-name"><?= htmlspecialchars($kopNamaSekolah) ?></div>
-                    <div class="kop-sub-yayasan">ISLAMIC SCHOOL OF</div>
-                    <div class="kop-sub-yayasan kop-sub-yayasan-green">MINHAJ AL-ILMI</div>
-                    <div class="kop-slogan"><?= htmlspecialchars($kopSlogan) ?></div>
-                </td>
-                <td class="kop-contact-box">
-                    <div><?= htmlspecialchars($kopAlamat) ?></div>
-                    <div><?= htmlspecialchars($kopTelp) ?></div>
-                    <div>Email : <span style="color: #0284c7;"><?= htmlspecialchars($kopEmail) ?></span></div>
-                    <div>Website : <span style="color: #0284c7;"><?= htmlspecialchars($kopWebsite) ?></span></div>
-                    <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
-                </td>
-            </tr>
-        </table>
-
-        <!-- GARIS PEMISAH KOP -->
-        <div class="kop-divider"></div>
+        <!-- 1. KOP SURAT (UPLOADED PNG) -->
+        <?php 
+        $kopImgPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
+        if (file_exists($kopImgPath)):
+        ?>
+            <div style="width: 100%; margin-bottom: 12px;">
+                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopImgPath) ?>" alt="KOP Ujian SMP ISMI" style="width: 100%; height: auto; display: block;">
+            </div>
+        <?php else: ?>
+            <table class="kop-table">
+                <tr>
+                    <td class="kop-logo-box">
+                        <?php if (file_exists(__DIR__ . '/../../assets/img/logo_1776435927.png')): ?>
+                            <img src="<?= BASE_URL ?>/assets/img/logo_1776435927.png" alt="Logo SMP ISMI">
+                        <?php else: ?>
+                            <svg width="58" height="58" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M50 5L90 28V72L50 95L10 72V28L50 5Z" stroke="#0d9488" stroke-width="5.5" fill="none" />
+                                <path d="M50 18L78 34V66L50 82L22 66V34L50 18Z" stroke="#0d9488" stroke-width="4.5" fill="none" />
+                                <path d="M35 38H65M35 50H65M35 62H65M50 30V70" stroke="#0d9488" stroke-width="4" stroke-linecap="round" />
+                            </svg>
+                        <?php endif; ?>
+                    </td>
+                    <td class="kop-title-box">
+                        <div class="kop-school-name"><?= htmlspecialchars($kopNamaSekolah) ?></div>
+                        <div class="kop-sub-yayasan">ISLAMIC SCHOOL OF</div>
+                        <div class="kop-sub-yayasan kop-sub-yayasan-green">MINHAJ AL-ILMI</div>
+                        <div class="kop-slogan"><?= htmlspecialchars($kopSlogan) ?></div>
+                    </td>
+                    <td class="kop-contact-box">
+                        <div><?= htmlspecialchars($kopAlamat) ?></div>
+                        <div><?= htmlspecialchars($kopTelp) ?></div>
+                        <div>Email : <span style="color: #0284c7;"><?= htmlspecialchars($kopEmail) ?></span></div>
+                        <div>Website : <span style="color: #0284c7;"><?= htmlspecialchars($kopWebsite) ?></span></div>
+                        <div style="font-weight: bold;"><?= htmlspecialchars($kopWa) ?></div>
+                    </td>
+                </tr>
+            </table>
+            <div class="kop-divider"></div>
+        <?php endif; ?>
 
         <!-- 2. JUDUL DOKUMEN & KOTAK NILAI -->
         <div class="title-wrapper">
@@ -414,14 +421,6 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 <td><?= (int)$naskah['alokasi_waktu'] ?> Menit</td>
             </tr>
         </table>
-
-        <!-- 4. PETUNJUK UMUM (OPSIONAL) -->
-        <?php if (!empty($naskah['petunjuk_umum'])): ?>
-            <div class="petunjuk-box">
-                <strong>Petunjuk Umum:</strong><br>
-                <?= nl2br(htmlspecialchars($naskah['petunjuk_umum'])) ?>
-            </div>
-        <?php endif; ?>
 
         <!-- ================================================================ -->
         <!-- BAGIAN A: PILIHAN GANDA -->
