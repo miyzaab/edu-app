@@ -23,7 +23,7 @@ if (!defined('SOAL_INIT_RUN')) {
               `tingkat_kelas` varchar(20) NOT NULL DEFAULT 'VII',
               `kelas_id` int(11) DEFAULT NULL,
               `tipe_ujian` varchar(30) NOT NULL DEFAULT 'AAS',
-              `judul_ujian` varchar(255) NOT NULL DEFAULT 'UJIAN AKHIR SEMESTER',
+              `judul_ujian` varchar(255) NOT NULL DEFAULT 'ASESMEN AKHIR SEMESTER',
               `semester` enum('Ganjil','Genap') NOT NULL DEFAULT 'Ganjil',
               `tahun_ajaran` varchar(30) NOT NULL DEFAULT '2025 – 2026',
               `alokasi_waktu` int(11) NOT NULL DEFAULT 90,
@@ -105,6 +105,9 @@ if (!defined('SOAL_INIT_RUN')) {
             if (!$chkMatching) {
                 $pdo->exec("ALTER TABLE `soal_butir` ADD COLUMN `opsi_matching` LONGTEXT NULL DEFAULT NULL AFTER `kunci_jawaban`");
             }
+
+            // 4C. Update judul_ujian yang masih 'UJIAN AKHIR SEMESTER' atau 'ASESMEN AKHIR SEMESTER (AAS)' menjadi 'ASESMEN AKHIR SEMESTER'
+            $pdo->exec("UPDATE `soal_naskah` SET `judul_ujian` = 'ASESMEN AKHIR SEMESTER' WHERE `judul_ujian` IN ('UJIAN AKHIR SEMESTER', 'UJIAN AKHIR SEMESTER (AAS)', 'ASESMEN AKHIR SEMESTER (AAS)')");
         } catch (Exception $e) {
             // Abaikan jika sudah ada
         }

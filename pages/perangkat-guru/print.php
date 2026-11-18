@@ -840,7 +840,13 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <tr>
                 <td style="width: 80px; vertical-align: top;">&nbsp;</td>
                 <td style="text-align: center; vertical-align: middle;">
-                    <div class="title-main"><?= htmlspecialchars($naskah['judul_ujian']) ?></div>
+                    <?php
+                    $judulUjianTampil = trim($naskah['judul_ujian'] ?? '');
+                    if ($judulUjianTampil === '' || in_array(strtoupper($judulUjianTampil), ['UJIAN AKHIR SEMESTER', 'UJIAN AKHIR SEMESTER (AAS)', 'ASESMEN AKHIR SEMESTER (AAS)'])) {
+                        $judulUjianTampil = 'ASESMEN AKHIR SEMESTER';
+                    }
+                    ?>
+                    <div class="title-main"><?= htmlspecialchars($judulUjianTampil) ?></div>
                     <div class="title-sub">SEMESTER <?= strtoupper($naskah['semester']) ?> TP.
                         <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
                 </td>

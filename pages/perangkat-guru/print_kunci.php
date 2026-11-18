@@ -339,7 +339,13 @@ $footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
         <!-- JUDUL -->
         <div class="title-wrapper">
             <div class="title-main">KUNCI JAWABAN &amp; PEDOMAN PENSKORAN</div>
-            <div class="title-sub"><?= htmlspecialchars($naskah['judul_ujian']) ?> - TP. <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
+            <?php
+            $judulUjianKunci = trim($naskah['judul_ujian'] ?? '');
+            if ($judulUjianKunci === '' || in_array(strtoupper($judulUjianKunci), ['UJIAN AKHIR SEMESTER', 'UJIAN AKHIR SEMESTER (AAS)', 'ASESMEN AKHIR SEMESTER (AAS)'])) {
+                $judulUjianKunci = 'ASESMEN AKHIR SEMESTER';
+            }
+            ?>
+            <div class="title-sub"><?= htmlspecialchars($judulUjianKunci) ?> - TP. <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
         </div>
 
         <!-- IDENTITAS -->

@@ -572,7 +572,13 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             <tr>
                 <td width="80" style="width: 80px;">&nbsp;</td>
                 <td align="center" style="text-align: center;">
-                    <div class="title-main"><?= htmlspecialchars($naskah['judul_ujian']) ?></div>
+                    <?php
+                    $judulUjianWord = trim($naskah['judul_ujian'] ?? '');
+                    if ($judulUjianWord === '' || in_array(strtoupper($judulUjianWord), ['UJIAN AKHIR SEMESTER', 'UJIAN AKHIR SEMESTER (AAS)', 'ASESMEN AKHIR SEMESTER (AAS)'])) {
+                        $judulUjianWord = 'ASESMEN AKHIR SEMESTER';
+                    }
+                    ?>
+                    <div class="title-main"><?= htmlspecialchars($judulUjianWord) ?></div>
                     <div class="title-sub">SEMESTER <?= strtoupper($naskah['semester']) ?> TP.
                         <?= htmlspecialchars($naskah['tahun_ajaran']) ?></div>
                 </td>

@@ -680,7 +680,7 @@ require_once __DIR__ . '/subnav.php';
                             <label class="form-label fw-bold small text-muted">Judul Kop Lembar Ujian <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="judul_ujian" id="modalJudulUjianInput" class="form-control"
-                                value="ASESMEN AKHIR SEMESTER (AAS)" required>
+                                value="ASESMEN AKHIR SEMESTER" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-bold small text-muted">Semester <span
@@ -810,7 +810,7 @@ require_once __DIR__ . '/subnav.php';
                 judulInput.value = 'ASESMEN TENGAH SEMESTER (ATS)';
                 break;
             case 'aas':
-                judulInput.value = 'ASESMEN AKHIR SEMESTER (AAS)';
+                judulInput.value = 'ASESMEN AKHIR SEMESTER';
                 break;
         }
     }

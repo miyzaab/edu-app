@@ -85,7 +85,7 @@ require_once __DIR__ . '/subnav.php';
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-muted">Judul Kop Lembar Ujian <span class="text-danger">*</span></label>
-                            <input type="text" name="judul_ujian" id="judulUjianInput" class="form-control" value="ASESMEN AKHIR SEMESTER (AAS)" required>
+                            <input type="text" name="judul_ujian" id="judulUjianInput" class="form-control" value="ASESMEN AKHIR SEMESTER" required>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-bold small text-muted">Semester <span class="text-danger">*</span></label>
@@ -151,7 +151,7 @@ function syncJudulUjian(select) {
             judulInput.value = 'ASESMEN TENGAH SEMESTER (ATS)';
             break;
         case 'aas':
-            judulInput.value = 'ASESMEN AKHIR SEMESTER (AAS)';
+            judulInput.value = 'ASESMEN AKHIR SEMESTER';
             break;
     }
 }

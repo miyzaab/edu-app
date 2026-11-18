@@ -54,7 +54,7 @@ if ($namaMapel === '') {
 
 $tingkatKelas = trim($_POST['tingkat_kelas'] ?? 'VII');
 $tipeUjian = trim($_POST['tipe_ujian'] ?? 'AAS');
-$judulUjian = trim($_POST['judul_ujian'] ?? 'UJIAN AKHIR SEMESTER');
+$judulUjian = trim($_POST['judul_ujian'] ?? 'ASESMEN AKHIR SEMESTER');
 $semester = in_array($_POST['semester'] ?? '', ['Ganjil', 'Genap']) ? $_POST['semester'] : 'Ganjil';
 $tahunAjaran = trim($_POST['tahun_ajaran'] ?? '2025 – 2026');
 $alokasiWaktu = (int) ($_POST['alokasi_waktu'] ?? 90);
