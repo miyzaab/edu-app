@@ -284,12 +284,17 @@ require_once __DIR__ . '/subnav.php';
             </div>
         </div>
 
-        <div class="d-flex align-items-center gap-1.5 ms-auto">
-            <!-- COUNTER POIN RINGKAS -->
-            <div class="px-2.5 py-1 rounded-pill d-flex align-items-center gap-1 bg-primary bg-opacity-10 border border-primary border-opacity-25" style="font-size: 0.8rem;">
-                <i class="bi bi-award-fill text-primary"></i>
-                <span class="text-muted small d-none d-md-inline">Poin:</span>
-                <span class="fw-bold text-primary font-monospace" id="liveTotalPoinDisplay"><?= (float)$naskah['total_poin'] ?></span><span class="text-muted small">/100</span>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <!-- COUNTER TOTAL POIN (ELEGANT & LEGA) -->
+            <div class="d-flex align-items-center bg-white border shadow-2xs rounded-pill px-3 py-1.5" style="border-color: #cbd5e1 !important;">
+                <div class="d-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle me-2" style="width: 24px; height: 24px;">
+                    <i class="bi bi-award-fill" style="font-size: 0.82rem;"></i>
+                </div>
+                <div class="d-flex align-items-baseline gap-1">
+                    <span class="text-secondary small fw-medium d-none d-sm-inline" style="font-size: 0.8rem;">Poin:</span>
+                    <span class="fw-bold text-dark font-monospace fs-6 px-0.5" id="liveTotalPoinDisplay"><?= (float)$naskah['total_poin'] ?></span>
+                    <span class="text-muted" style="font-size: 0.76rem;">/ 100</span>
+                </div>
             </div>
 
             <!-- PASTE CEPAT -->
@@ -674,6 +679,10 @@ require_once __DIR__ . '/subnav.php';
     </div>
 </div>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+
 <style>
 @keyframes fadeInUp {
     from {
@@ -690,6 +699,28 @@ require_once __DIR__ . '/subnav.php';
 }
 .soal-card:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+
+/* GAYA INPUT TEKS ARAB OTOMATIS (RTL - KANAN KE KIRI) */
+.arabic-input,
+[dir="rtl"].form-control,
+[dir="rtl"].question-textarea,
+[dir="rtl"].opsi-text-input {
+    direction: rtl !important;
+    text-align: right !important;
+    font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+    font-size: 1.28rem !important;
+    line-height: 1.85 !important;
+}
+
+[dir="rtl"]::placeholder {
+    direction: rtl !important;
+    text-align: right !important;
+}
+
+/* Desain Poin Counter Lega & Elegan */
+.shadow-2xs {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 </style>
 
@@ -738,6 +769,7 @@ function tambahSoalAjax(tipe, count = 1) {
             temp.innerHTML = item.html.trim();
             const cardEl = temp.firstElementChild;
             cardEl.style.animation = 'fadeInUp 0.35s ease-out';
+            cardEl.querySelectorAll('textarea, input[type="text"]').forEach(checkAndApplyArabic);
             container.appendChild(cardEl);
             if (!firstNewEl) firstNewEl = cardEl;
         });
@@ -988,6 +1020,7 @@ function prosesPasteSoal() {
             temp.innerHTML = item.html.trim();
             const cardEl = temp.firstElementChild;
             cardEl.style.animation = 'fadeInUp 0.35s ease-out';
+            cardEl.querySelectorAll('textarea, input[type="text"]').forEach(checkAndApplyArabic);
             container.appendChild(cardEl);
             if (!firstNewEl) firstNewEl = cardEl;
         });
@@ -1080,6 +1113,39 @@ function showToast(msg) {
     const bsToast = new bootstrap.Toast(toast.querySelector('.toast'), { delay: 3500 });
     bsToast.show();
 }
+
+// =========================================================================
+// 10. DETEKSI OTOMATIS TEKS ARAB & ALIGNMENT KANAN KE KIRI (RTL) REAL-TIME
+// =========================================================================
+function checkAndApplyArabic(el) {
+    if (!el) return;
+    const val = el.value || '';
+    // Regex mendeteksi karakter Arab standar, harakat, tanwin, dan simbol Arab
+    const isArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(val);
+    if (isArabic) {
+        el.setAttribute('dir', 'rtl');
+        el.classList.add('arabic-input');
+    } else {
+        el.removeAttribute('dir');
+        el.classList.remove('arabic-input');
+    }
+}
+
+// Inisialisasi otomatis seluruh input saat halaman dimuat
+function initArabicDetection() {
+    document.querySelectorAll('#formSoalEditor textarea, #formSoalEditor input[type="text"]').forEach(checkAndApplyArabic);
+}
+
+// Real-time Event Delegation saat guru mengetik atau paste teks
+document.addEventListener('input', function(e) {
+    const t = e.target;
+    if (t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type === 'text'))) {
+        checkAndApplyArabic(t);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', initArabicDetection);
+setTimeout(initArabicDetection, 50);
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

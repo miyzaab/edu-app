@@ -7,6 +7,13 @@
  * - 100% Mobile Friendly (Opsi 1 Kolom di HP & Touch-Friendly)
  */
 
+if (!function_exists('isTeksArabCard')) {
+    function isTeksArabCard($text): bool {
+        if ($text === null || $text === '') return false;
+        return (bool) preg_match('/[\p{Arabic}]/u', $text);
+    }
+}
+
 if (!function_exists('renderSoalCard')) {
     function renderSoalCard(array $s, int $displayNo, int $naskahId): string
     {
@@ -17,6 +24,10 @@ if (!function_exists('renderSoalCard')) {
         
         $hasWacana = !empty(trim($s['wacana_teks'] ?? ''));
         $hasGambar = !empty($s['gambar']) && file_exists($uploadDir . '/' . $s['gambar']);
+
+        $isArabPertanyaan = isTeksArabCard($s['pertanyaan'] ?? '');
+        $isArabWacanaJudul = isTeksArabCard($s['wacana_judul'] ?? '');
+        $isArabWacanaTeks = isTeksArabCard($s['wacana_teks'] ?? '');
 
         ob_start();
         ?>
@@ -47,13 +58,16 @@ if (!function_exists('renderSoalCard')) {
                     </div>
                     <div class="mb-2">
                         <input type="text" name="soal[<?= $sId ?>][wacana_judul]" id="wacana_judul_<?= $sId ?>" 
-                            class="form-control form-control-sm bg-white" 
+                            class="form-control form-control-sm bg-white <?= $isArabWacanaJudul ? 'arabic-input' : '' ?>" 
+                            <?= $isArabWacanaJudul ? 'dir="rtl"' : '' ?>
                             value="<?= htmlspecialchars($s['wacana_judul'] ?? '') ?>" 
                             placeholder="Petunjuk wacana (Contoh: Bacalah teks cerita berikut untuk menjawab soal nomor <?= $displayNo ?> – ... :)">
                     </div>
                     <div>
                         <textarea name="soal[<?= $sId ?>][wacana_teks]" id="wacana_teks_<?= $sId ?>" 
-                            class="form-control form-control-sm bg-white" rows="3" 
+                            class="form-control form-control-sm bg-white <?= $isArabWacanaTeks ? 'arabic-input' : '' ?>" 
+                            <?= $isArabWacanaTeks ? 'dir="rtl"' : '' ?>
+                            rows="3" 
                             placeholder="Tuliskan isi cerita, dialog muhadatsah, ayat/hadits, atau narasi soal di sini..."><?= htmlspecialchars($s['wacana_teks'] ?? '') ?></textarea>
                     </div>
                 </div>
@@ -110,7 +124,8 @@ if (!function_exists('renderSoalCard')) {
 
             <!-- TEKS PERTANYAAN -->
             <div class="mb-2.5">
-                <textarea name="soal[<?= $sId ?>][pertanyaan]" class="form-control question-textarea" 
+                <textarea name="soal[<?= $sId ?>][pertanyaan]" class="form-control question-textarea <?= $isArabPertanyaan ? 'arabic-input' : '' ?>" 
+                    <?= $isArabPertanyaan ? 'dir="rtl"' : '' ?>
                     rows="<?= $tipe === 'isian' ? 2 : 3 ?>" required 
                     placeholder="<?= $tipe === 'isian' ? 'Tuliskan pertanyaan / kalimat rumpang di sini...' : ($tipe === 'essay' ? 'Tuliskan teks pertanyaan uraian / kasus di sini...' : 'Tuliskan pertanyaan soal di sini...') ?>" 
                     style="font-size: 0.95rem; line-height: 1.55;"><?= htmlspecialchars($s['pertanyaan']) ?></textarea>
@@ -153,6 +168,7 @@ if (!function_exists('renderSoalCard')) {
                     $currentKey = strtoupper(trim($s['kunci_jawaban'] ?? 'A'));
                     foreach ($opsiCols as $huruf => $val):
                         $isKey = ($currentKey === $huruf);
+                        $isArabVal = isTeksArabCard($val ?? '');
                     ?>
                         <!-- 1 KOLOM DI MOBILE (col-12), 2 KOLOM DI TABLET/DESKTOP (col-md-6) -->
                         <div class="col-12 col-md-6">
@@ -161,7 +177,8 @@ if (!function_exists('renderSoalCard')) {
                                     <?= $huruf ?>.
                                 </span>
                                 <input type="text" name="soal[<?= $sId ?>][pilihan_<?= strtolower($huruf) ?>]" 
-                                    class="form-control opsi-text-input <?= $isKey ? 'border-success bg-success-subtle' : '' ?>" 
+                                    class="form-control opsi-text-input <?= $isKey ? 'border-success bg-success-subtle' : '' ?> <?= $isArabVal ? 'arabic-input' : '' ?>" 
+                                    <?= $isArabVal ? 'dir="rtl"' : '' ?>
                                     value="<?= htmlspecialchars($val ?? '') ?>" placeholder="Pilihan <?= $huruf ?>" required 
                                     style="font-size: 0.92rem;">
                                 <div class="input-group-text bg-white px-2.5">
@@ -178,19 +195,28 @@ if (!function_exists('renderSoalCard')) {
                     <?php endforeach; ?>
                 </div>
 
-            <?php elseif ($tipe === 'isian'): ?>
+            <?php elseif ($tipe === 'isian'): 
+                $isArabKunci = isTeksArabCard($s['kunci_jawaban'] ?? '');
+            ?>
                 <!-- KUNCI ISIAN -->
                 <div>
                     <label class="form-label fw-bold text-muted" style="font-size: 0.78rem;">Kunci Jawaban Singkat (Pedoman Guru):</label>
-                    <input type="text" name="soal[<?= $sId ?>][kunci_jawaban]" class="form-control form-control-sm bg-white" 
+                    <input type="text" name="soal[<?= $sId ?>][kunci_jawaban]" 
+                        class="form-control form-control-sm bg-white <?= $isArabKunci ? 'arabic-input' : '' ?>" 
+                        <?= $isArabKunci ? 'dir="rtl"' : '' ?>
                         value="<?= htmlspecialchars($s['kunci_jawaban'] ?? '') ?>" placeholder="Jawaban singkat yang benar...">
                 </div>
 
-            <?php else: ?>
+            <?php else: 
+                $isArabKunci = isTeksArabCard($s['kunci_jawaban'] ?? '');
+            ?>
                 <!-- RUBRIK ESSAY -->
                 <div>
                     <label class="form-label fw-bold text-muted" style="font-size: 0.78rem;">Pedoman Penskoran / Rubrik Guru:</label>
-                    <textarea name="soal[<?= $sId ?>][kunci_jawaban]" class="form-control form-control-sm bg-white" rows="2" 
+                    <textarea name="soal[<?= $sId ?>][kunci_jawaban]" 
+                        class="form-control form-control-sm bg-white <?= $isArabKunci ? 'arabic-input' : '' ?>" 
+                        <?= $isArabKunci ? 'dir="rtl"' : '' ?>
+                        rows="2" 
                         placeholder="Rubrik penilaian atau rincian poin jawaban lengkap..."><?= htmlspecialchars($s['kunci_jawaban'] ?? '') ?></textarea>
                 </div>
             <?php endif; ?>
