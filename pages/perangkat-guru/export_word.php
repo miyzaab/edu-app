@@ -327,6 +327,46 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             font-size: 12pt !important;
         }
 
+        /* WACANA / TEKS CERITA BERSAMA (WORD COMPATIBLE) */
+        .wacana-box {
+            margin: 10pt 0 8pt 0;
+            padding: 8pt 10pt;
+            background-color: #f8fafc;
+            border: 1pt solid #cbd5e1;
+            border-left: 3.5pt solid #0d9488;
+            page-break-inside: avoid;
+        }
+        .wacana-box.wacana-arab {
+            direction: rtl;
+            text-align: right;
+            border-left: 1pt solid #cbd5e1;
+            border-right: 3.5pt solid #0d9488;
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.85 !important;
+        }
+        .wacana-title {
+            font-size: 10.5pt;
+            margin-bottom: 4pt;
+            color: #1e293b;
+            font-style: italic;
+            font-weight: bold;
+        }
+        .wacana-arab .wacana-title {
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 14pt !important;
+            font-style: normal;
+        }
+        .wacana-content {
+            text-align: justify;
+            line-height: 1.5;
+        }
+        .wacana-arab .wacana-content {
+            direction: rtl;
+            text-align: right;
+            line-height: 1.85 !important;
+        }
+
         /* NATIVE WORD FOOTER STYLES */
         p.MsoFooter, li.MsoFooter, div.MsoFooter {
             margin: 0;
@@ -427,6 +467,16 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         <?php foreach ($soalPg as $idx => $s): 
             $isArab = isTeksArabWord($s['pertanyaan']) || isTeksArabWord($s['pilihan_a'] ?? '');
         ?>
+            <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                $isWacanaArab = isTeksArabWord($s['wacana_teks']) || isTeksArabWord($s['wacana_judul'] ?? '');
+            ?>
+                <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                    <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                        <div class="wacana-title"><?= renderTeksWord($s['wacana_judul'], $isWacanaArab) ?></div>
+                    <?php endif; ?>
+                    <div class="wacana-content"><?= renderTeksWord($s['wacana_teks'], $isWacanaArab) ?></div>
+                </div>
+            <?php endif; ?>
             <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                 <tr>
                     <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
@@ -480,6 +530,16 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         <?php foreach ($soalIsian as $idx => $s): 
             $isArab = isTeksArabWord($s['pertanyaan']);
         ?>
+            <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                $isWacanaArab = isTeksArabWord($s['wacana_teks']) || isTeksArabWord($s['wacana_judul'] ?? '');
+            ?>
+                <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                    <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                        <div class="wacana-title"><?= renderTeksWord($s['wacana_judul'], $isWacanaArab) ?></div>
+                    <?php endif; ?>
+                    <div class="wacana-content"><?= renderTeksWord($s['wacana_teks'], $isWacanaArab) ?></div>
+                </div>
+            <?php endif; ?>
             <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                 <tr>
                     <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
@@ -513,6 +573,16 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         <?php foreach ($soalEssay as $idx => $s): 
             $isArab = isTeksArabWord($s['pertanyaan']);
         ?>
+            <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                $isWacanaArab = isTeksArabWord($s['wacana_teks']) || isTeksArabWord($s['wacana_judul'] ?? '');
+            ?>
+                <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                    <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                        <div class="wacana-title"><?= renderTeksWord($s['wacana_judul'], $isWacanaArab) ?></div>
+                    <?php endif; ?>
+                    <div class="wacana-content"><?= renderTeksWord($s['wacana_teks'], $isWacanaArab) ?></div>
+                </div>
+            <?php endif; ?>
             <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                 <tr>
                     <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>

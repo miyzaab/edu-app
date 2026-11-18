@@ -88,6 +88,17 @@ if (!defined('SOAL_INIT_RUN')) {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         ");
 
+        // 4. Auto-migration: Tambahkan kolom wacana_judul & wacana_teks pada soal_butir
+        try {
+            $chkCol = $pdo->query("SHOW COLUMNS FROM `soal_butir` LIKE 'wacana_teks'")->fetch();
+            if (!$chkCol) {
+                $pdo->exec("ALTER TABLE `soal_butir` ADD COLUMN `wacana_judul` VARCHAR(255) NULL DEFAULT NULL AFTER `tipe_soal`");
+                $pdo->exec("ALTER TABLE `soal_butir` ADD COLUMN `wacana_teks` LONGTEXT NULL DEFAULT NULL AFTER `wacana_judul`");
+            }
+        } catch (Exception $e) {
+            // Abaikan jika sudah ada
+        }
+
         // Pastikan folder upload tersedia
         $uploadDir = __DIR__ . '/../../uploads/soal';
         if (!is_dir($uploadDir)) {

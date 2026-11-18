@@ -92,6 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($soalId <= 0) continue;
 
         $pertanyaan = trim($s['pertanyaan'] ?? '');
+        $wacanaJudul = !empty($s['wacana_judul']) ? trim($s['wacana_judul']) : null;
+        $wacanaTeks = !empty($s['wacana_teks']) ? trim($s['wacana_teks']) : null;
         $poin = (float) ($s['poin'] ?? 1.0);
         $kunci = trim($s['kunci_jawaban'] ?? '');
         $pilA = isset($s['pilihan_a']) ? trim($s['pilihan_a']) : null;
@@ -126,6 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtUpdSoal = $pdo->prepare("
                 UPDATE soal_butir SET 
                     nomor_urut = :no,
+                    wacana_judul = :wjudul,
+                    wacana_teks = :wteks,
                     pertanyaan = :tanya,
                     gambar = :gambar,
                     pilihan_a = :pa,
@@ -139,6 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmtUpdSoal->execute([
                 ':no' => $nomorUrut,
+                ':wjudul' => $wacanaJudul,
+                ':wteks' => $wacanaTeks,
                 ':tanya' => $pertanyaan,
                 ':gambar' => $gambarParam,
                 ':pa' => $pilA,
@@ -154,6 +160,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtUpdSoal = $pdo->prepare("
                 UPDATE soal_butir SET 
                     nomor_urut = :no,
+                    wacana_judul = :wjudul,
+                    wacana_teks = :wteks,
                     pertanyaan = :tanya,
                     pilihan_a = :pa,
                     pilihan_b = :pb,
@@ -166,6 +174,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmtUpdSoal->execute([
                 ':no' => $nomorUrut,
+                ':wjudul' => $wacanaJudul,
+                ':wteks' => $wacanaTeks,
                 ':tanya' => $pertanyaan,
                 ':pa' => $pilA,
                 ':pb' => $pilB,
@@ -256,48 +266,71 @@ require_once __DIR__ . '/subnav.php';
     <?php unset($_SESSION['flash']); ?>
 <?php endif; ?>
 
-<!-- TOP ACTION & MONITOR BAR -->
-<div class="card border-0 shadow-sm rounded-4 mb-4 bg-white sticky-top" style="top: 15px; z-index: 1020; border: 1px solid #e2e8f0 !important;">
-    <div class="card-body p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div class="d-flex align-items-center gap-3">
-            <a href="index.php" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                <i class="bi bi-arrow-left me-1"></i> Kembali
+<!-- TOP ACTION & MONITOR BAR (STREAMLINED & MOBILE FRIENDLY) -->
+<div class="card border-0 shadow-sm rounded-4 mb-3 bg-white sticky-top top-action-bar" style="top: 10px; z-index: 1020; border: 1px solid #e2e8f0 !important;">
+    <div class="card-body p-2.5 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <a href="index.php" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5" title="Kembali ke Daftar Soal">
+                <i class="bi bi-arrow-left"></i>
             </a>
             <div>
-                <h6 class="fw-bold mb-0 text-dark"><?= htmlspecialchars($naskah['nama_mapel']) ?> (Kelas <?= htmlspecialchars($naskah['tingkat_kelas']) ?>)</h6>
-                <div class="text-muted small" style="font-size: 0.8rem;">
-                    <?= htmlspecialchars($naskah['judul_ujian']) ?> • <?= htmlspecialchars($naskah['semester']) ?> <?= htmlspecialchars($naskah['tahun_ajaran']) ?>
+                <h6 class="fw-bold mb-0 text-dark fs-6 d-flex align-items-center flex-wrap gap-1">
+                    <span><?= htmlspecialchars($naskah['nama_mapel']) ?></span>
+                    <span class="badge bg-secondary-subtle text-dark border ms-1" style="font-size: 0.72rem;">Kelas <?= htmlspecialchars($naskah['tingkat_kelas']) ?></span>
+                </h6>
+                <div class="text-muted small d-none d-sm-block" style="font-size: 0.74rem;">
+                    <?= htmlspecialchars($naskah['judul_ujian']) ?>
                 </div>
             </div>
         </div>
 
-        <div class="d-flex align-items-center flex-wrap gap-2">
-            <!-- LIVE COUNTER TOTAL POIN -->
-            <div class="px-3 py-1.5 rounded-pill d-flex align-items-center gap-2 shadow-xs" 
-                style="background: #eef2ff; border: 1px solid #c7d2fe;">
+        <div class="d-flex align-items-center gap-1.5 ms-auto">
+            <!-- COUNTER POIN RINGKAS -->
+            <div class="px-2.5 py-1 rounded-pill d-flex align-items-center gap-1 bg-primary bg-opacity-10 border border-primary border-opacity-25" style="font-size: 0.8rem;">
                 <i class="bi bi-award-fill text-primary"></i>
-                <span class="small fw-bold text-muted">Total Poin:</span>
-                <span class="fw-extrabold text-primary font-monospace fs-6" id="liveTotalPoinDisplay"><?= (float)$naskah['total_poin'] ?></span>
-                <span class="small text-muted">/ 100</span>
+                <span class="text-muted small d-none d-md-inline">Poin:</span>
+                <span class="fw-bold text-primary font-monospace" id="liveTotalPoinDisplay"><?= (float)$naskah['total_poin'] ?></span><span class="text-muted small">/100</span>
             </div>
 
-            <button type="button" onclick="openPasteModal('pg')" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-bold shadow-xs">
-                <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Paste Soal Cepat
+            <!-- PASTE CEPAT -->
+            <button type="button" onclick="openPasteModal('pg')" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1 fw-semibold shadow-xs" title="Paste Soal Cepat dari Word / Teks">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i><span class="d-none d-md-inline">Paste </span>Cepat
             </button>
-            <a href="koreksi.php?id=<?= $naskahId ?>" class="btn btn-sm btn-warning text-dark rounded-pill px-3 fw-bold">
-                <i class="bi bi-lightning-charge-fill text-danger me-1"></i> Koreksi Cepat
-            </a>
-            <a href="print.php?id=<?= $naskahId ?>" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
-                <i class="bi bi-printer-fill me-1"></i> Cetak / PDF
-            </a>
-            <a href="export_word.php?id=<?= $naskahId ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
-                <i class="bi bi-file-earmark-word-fill me-1"></i> Unduh Word (.doc)
-            </a>
-            <a href="print_kunci.php?id=<?= $naskahId ?>" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold">
-                <i class="bi bi-key-fill me-1"></i> Kunci Jawaban
-            </a>
-            <button type="button" onclick="simpanNaskahForm()" class="btn btn-sm btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnSimpanTop">
-                <i class="bi bi-floppy-fill me-1"></i> Simpan Perubahan
+
+            <!-- MENU DOKUMEN & HASIL (DROPDOWN RAMPING) -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Dokumen & Hasil">
+                    <i class="bi bi-three-dots-vertical"></i> <span class="d-none d-sm-inline">Menu</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3">
+                    <li><h6 class="dropdown-header">Dokumen &amp; Hasil</h6></li>
+                    <li>
+                        <a class="dropdown-item py-1.5" href="print.php?id=<?= $naskahId ?>" target="_blank">
+                            <i class="bi bi-printer-fill text-danger me-2"></i> Pratinjau &amp; Cetak PDF
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-1.5" href="export_word.php?id=<?= $naskahId ?>">
+                            <i class="bi bi-file-earmark-word-fill text-primary me-2"></i> Unduh Word (.doc)
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-1.5" href="print_kunci.php?id=<?= $naskahId ?>" target="_blank">
+                            <i class="bi bi-key-fill text-success me-2"></i> Kunci Jawaban
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item py-1.5 text-warning-emphasis" href="koreksi.php?id=<?= $naskahId ?>">
+                            <i class="bi bi-lightning-charge-fill text-warning me-2"></i> Meja Koreksi Cepat
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- TOMBOL SIMPAN UTAMA -->
+            <button type="button" onclick="simpanNaskahForm()" class="btn btn-sm btn-primary rounded-pill px-3.5 py-1 fw-bold shadow-sm" id="btnSimpanTop">
+                <i class="bi bi-floppy-fill me-1"></i> Simpan
             </button>
         </div>
     </div>
@@ -306,16 +339,18 @@ require_once __DIR__ . '/subnav.php';
 <form id="formSoalEditor" action="edit.php?id=<?= $naskahId ?>" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="add_tipe" id="addTipeInput" value="">
 
-    <!-- INFORMASI UMUM & IDENTITAS NASKAH -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white overflow-hidden">
-        <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center"
+    <!-- INFORMASI UMUM & IDENTITAS NASKAH (COLLAPSIBLE / RINGKAS) -->
+    <div class="card border-0 shadow-sm rounded-4 mb-3 bg-white overflow-hidden">
+        <div class="card-header bg-white border-bottom py-2.5 px-3.5 d-flex justify-content-between align-items-center"
             data-bs-toggle="collapse" data-bs-target="#collapseIdentitas" style="cursor: pointer;">
-            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-sliders text-primary"></i> Identitas &amp; Pengaturan Dokumen Soal
-            </h6>
-            <i class="bi bi-chevron-down text-muted"></i>
+            <div class="small text-muted d-flex align-items-center gap-2">
+                <i class="bi bi-sliders text-primary"></i> 
+                <span class="fw-bold text-dark">Pengaturan Naskah</span>
+                <span class="d-none d-sm-inline font-monospace" style="font-size: 0.78rem;">(Waktu: <?= (int)$naskah['alokasi_waktu'] ?> menit • <?= htmlspecialchars($naskah['semester']) ?> <?= htmlspecialchars($naskah['tahun_ajaran']) ?>)</span>
+            </div>
+            <span class="small text-primary fw-semibold"><i class="bi bi-pencil me-1"></i> Ubah</span>
         </div>
-        <div class="collapse show" id="collapseIdentitas">
+        <div class="collapse" id="collapseIdentitas">
             <div class="card-body p-4">
                 <div class="row g-3">
                     <div class="col-md-3">
@@ -858,6 +893,37 @@ function updateKeyVisual(radio) {
             letterLabel.classList.add('text-success', 'border-success');
         }
     }
+}
+
+// =========================================================================
+// 5B. KONTROL WACANA / TEKS CERITA BERSAMA (KONSEP A) & GAMBAR
+// =========================================================================
+function tampilWacana(id) {
+    const box = document.getElementById('wacana_box_' + id);
+    const btnOpen = document.getElementById('wacana_btn_open_' + id);
+    if (box) box.classList.remove('d-none');
+    if (btnOpen) btnOpen.classList.add('d-none');
+    const inp = document.getElementById('wacana_judul_' + id);
+    if (inp) inp.focus();
+}
+
+function hapusWacana(id) {
+    if (confirm('Hapus teks cerita / wacana untuk soal ini?')) {
+        const inpJudul = document.getElementById('wacana_judul_' + id);
+        const inpTeks = document.getElementById('wacana_teks_' + id);
+        const box = document.getElementById('wacana_box_' + id);
+        const btnOpen = document.getElementById('wacana_btn_open_' + id);
+        
+        if (inpJudul) inpJudul.value = '';
+        if (inpTeks) inpTeks.value = '';
+        if (box) box.classList.add('d-none');
+        if (btnOpen) btnOpen.classList.remove('d-none');
+    }
+}
+
+function toggleImgBox(id) {
+    const box = document.getElementById('img_box_' + id);
+    if (box) box.classList.toggle('d-none');
 }
 
 // =========================================================================

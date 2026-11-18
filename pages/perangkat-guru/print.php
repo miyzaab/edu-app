@@ -232,6 +232,16 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 padding-top: 4px;
                 background: transparent;
             }
+
+            .wacana-box {
+                background-color: #fcfcfc !important;
+                border: 1px solid #777 !important;
+                border-left: 3.5pt solid #111 !important;
+            }
+            .wacana-box.wacana-arab {
+                border-left: 1px solid #777 !important;
+                border-right: 3.5pt solid #111 !important;
+            }
         }
 
         /* KOP SURAT */
@@ -507,6 +517,66 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-left: 0;
         }
 
+        /* BLOK WACANA / TEKS CERITA BERSAMA (KONSEP A) */
+        .wacana-box {
+            margin: 12px 0 10px 0;
+            padding: 10px 14px;
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 3.5px solid #0d9488;
+            border-radius: 4px;
+            font-size: 11.5pt;
+            line-height: 1.6;
+            page-break-inside: avoid;
+        }
+
+        .wacana-box.wacana-arab {
+            direction: rtl !important;
+            text-align: right !important;
+            text-align-last: right !important;
+            border-left: 1px solid #cbd5e1;
+            border-right: 3.5px solid #0d9488;
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.85 !important;
+        }
+
+        .wacana-title {
+            font-size: 11pt;
+            margin-bottom: 6px;
+            color: #1e293b;
+            font-style: italic;
+        }
+
+        .wacana-arab .wacana-title {
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 14pt !important;
+            font-style: normal;
+            color: #0f172a;
+        }
+
+        .wacana-content {
+            text-align: justify;
+            line-height: 1.65;
+        }
+
+        .wacana-arab .wacana-content {
+            direction: rtl !important;
+            text-align: right !important;
+            line-height: 1.85 !important;
+        }
+
+        body.force-arabic-ltr .wacana-box.wacana-arab {
+            direction: ltr !important;
+            text-align: left !important;
+            border-right: 1px solid #cbd5e1;
+            border-left: 3.5px solid #0d9488;
+        }
+        body.force-arabic-ltr .wacana-arab .wacana-content {
+            direction: ltr !important;
+            text-align: justify !important;
+        }
+
         /* FOOTER ON SCREEN PREVIEW */
         .screen-footer {
             margin-top: 30px;
@@ -672,6 +742,16 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 $isArab = isTeksArab($s['pertanyaan']) || isTeksArab($s['pilihan_a'] ?? '');
             ?>
                 <div class="soal-item">
+                    <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                        $isWacanaArab = isTeksArab($s['wacana_teks']) || isTeksArab($s['wacana_judul'] ?? '');
+                    ?>
+                        <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                            <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                                <div class="wacana-title"><strong><?= renderTeksSoal($s['wacana_judul'], $isWacanaArab) ?></strong></div>
+                            <?php endif; ?>
+                            <div class="wacana-content"><?= renderTeksSoal($s['wacana_teks'], $isWacanaArab) ?></div>
+                        </div>
+                    <?php endif; ?>
                     <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
@@ -722,6 +802,16 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 $isArab = isTeksArab($s['pertanyaan']);
             ?>
                 <div class="soal-item">
+                    <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                        $isWacanaArab = isTeksArab($s['wacana_teks']) || isTeksArab($s['wacana_judul'] ?? '');
+                    ?>
+                        <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                            <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                                <div class="wacana-title"><strong><?= renderTeksSoal($s['wacana_judul'], $isWacanaArab) ?></strong></div>
+                            <?php endif; ?>
+                            <div class="wacana-content"><?= renderTeksSoal($s['wacana_teks'], $isWacanaArab) ?></div>
+                        </div>
+                    <?php endif; ?>
                     <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
@@ -753,6 +843,16 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 $isArab = isTeksArab($s['pertanyaan']);
             ?>
                 <div class="soal-item">
+                    <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                        $isWacanaArab = isTeksArab($s['wacana_teks']) || isTeksArab($s['wacana_judul'] ?? '');
+                    ?>
+                        <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                            <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                                <div class="wacana-title"><strong><?= renderTeksSoal($s['wacana_judul'], $isWacanaArab) ?></strong></div>
+                            <?php endif; ?>
+                            <div class="wacana-content"><?= renderTeksSoal($s['wacana_teks'], $isWacanaArab) ?></div>
+                        </div>
+                    <?php endif; ?>
                     <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
