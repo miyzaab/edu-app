@@ -27,6 +27,10 @@ if (!$naskah) {
     die('Naskah soal tidak ditemukan.');
 }
 
+// Opsi Ukuran Font Kustom (dari Pengatur Font di Cetak/PDF)
+$fontLatin = isset($_GET['font_latin']) ? max(8, min(24, (float)$_GET['font_latin'])) : 12;
+$fontArab = isset($_GET['font_arab']) ? max(10, min(28, (float)$_GET['font_arab'])) : 15;
+
 // Dynamic Footer Text (Contoh: "Aqidah VIII")
 $cleanKelas = trim(preg_replace('/^Kelas\s+/i', '', $naskah['tingkat_kelas'] ?? ''));
 $footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
@@ -159,7 +163,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 
         body {
             font-family: 'Cambria', Georgia, serif;
-            font-size: 12pt;
+            font-size: <?= $fontLatin ?>pt;
             line-height: 1.5;
             color: #000000;
         }
@@ -168,13 +172,13 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         div,
         td {
             font-family: 'Cambria', Georgia, serif;
-            font-size: 12pt;
+            font-size: <?= $fontLatin ?>pt;
             line-height: 1.5;
         }
 
         .teks-arab {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: <?= $fontArab ?>pt !important;
             line-height: 1.85 !important;
             direction: rtl;
         }
@@ -286,7 +290,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         .soal-table td {
             vertical-align: top;
             padding: 3pt 0;
-            font-size: 12pt;
+            font-size: <?= $fontLatin ?>pt;
             line-height: 1.65;
         }
 
@@ -298,7 +302,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         .opsi-table td {
             width: 50%;
             padding: 5pt 6pt;
-            font-size: 12pt;
+            font-size: <?= $fontLatin ?>pt;
             line-height: 1.65;
         }
 
@@ -306,6 +310,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             font-weight: bold;
             display: inline-block;
             width: 24px;
+            font-size: <?= $fontLatin ?>pt;
         }
 
         .soal-table.soal-arab {
@@ -316,7 +321,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             text-align: right;
             padding-left: 8pt;
             padding-right: 0;
-            font-size: 13pt;
+            font-size: <?= max(8, $fontArab - 2) ?>pt;
             line-height: 1.85;
         }
 
@@ -324,7 +329,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             direction: rtl;
             text-align: right;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: <?= $fontArab ?>pt !important;
             line-height: 1.85 !important;
         }
 
@@ -339,7 +344,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             direction: rtl;
             text-align: right;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: <?= $fontArab ?>pt !important;
             line-height: 1.85 !important;
         }
 
@@ -350,7 +355,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             margin-right: 0;
             width: 24px;
             font-family: 'Cambria', serif !important;
-            font-size: 12pt !important;
+            font-size: <?= $fontLatin ?>pt !important;
         }
 
         /* WACANA / TEKS CERITA BERSAMA (WORD COMPATIBLE) */
@@ -360,6 +365,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             background-color: #f8fafc;
             border: 1pt solid #cbd5e1;
             border-left: 3.5pt solid #0d9488;
+            font-size: <?= max(8, $fontLatin - 0.5) ?>pt;
             page-break-inside: avoid;
         }
 
@@ -369,12 +375,12 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             border-left: 1pt solid #cbd5e1;
             border-right: 3.5pt solid #0d9488;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: <?= $fontArab ?>pt !important;
             line-height: 1.85 !important;
         }
 
         .wacana-title {
-            font-size: 10.5pt;
+            font-size: <?= max(8, $fontLatin - 1) ?>pt;
             margin-bottom: 4pt;
             color: #1e293b;
             font-style: italic;
@@ -383,7 +389,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 
         .wacana-arab .wacana-title {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 14pt !important;
+            font-size: <?= max(9, $fontArab - 1) ?>pt !important;
             font-style: normal;
         }
 
@@ -403,6 +409,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             font-weight: bold;
             font-family: 'Cambria', serif;
             letter-spacing: 2pt;
+            font-size: <?= $fontLatin ?>pt;
         }
 
         /* MENJODOHKAN / SOAL SILANG (WORD) */
@@ -415,7 +422,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         .matching-word-table td {
             vertical-align: middle;
             padding: 3pt 4pt;
-            font-size: 11pt;
+            font-size: <?= max(8, $fontLatin - 0.5) ?>pt;
             line-height: 1.5;
         }
 
@@ -427,13 +434,13 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             direction: rtl;
             text-align: right;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: <?= $fontArab ?>pt !important;
             line-height: 1.85 !important;
         }
 
         .matching-word-table.soal-arab .matching-bullet {
             font-family: Arial, sans-serif !important;
-            font-size: 15pt !important;
+            font-size: <?= max(10, $fontArab) ?>pt !important;
             text-align: center !important;
             direction: ltr;
         }
@@ -441,7 +448,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         .matching-word-table.soal-arab .matching-item-no,
         .matching-word-table.soal-arab .matching-item-letter {
             font-family: 'Cambria', serif !important;
-            font-size: 12pt !important;
+            font-size: <?= $fontLatin ?>pt !important;
             font-weight: bold !important;
             direction: ltr;
             display: inline-block;

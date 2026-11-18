@@ -143,9 +143,14 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             print-color-adjust: exact !important;
         }
 
+        :root {
+            --font-latin-size: 12pt;
+            --font-arab-size: 15pt;
+        }
+
         body {
             font-family: 'Cambria', Georgia, serif;
-            font-size: 12pt;
+            font-size: var(--font-latin-size, 12pt);
             line-height: 1.5;
             color: #000;
             background-color: #f1f5f9;
@@ -153,10 +158,10 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             padding: 0;
         }
 
-        /* FONT ARAB: Scheherazade New 15pt, spasi & line-height lega agar harakat tidak bertabrakan */
+        /* FONT ARAB: Scheherazade New */
         .teks-arab {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: var(--font-arab-size, 15pt) !important;
             line-height: 1.85 !important;
             direction: rtl;
             unicode-bidi: isolate;
@@ -397,13 +402,13 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             width: 28px;
             font-weight: bold;
             text-align: left;
-            font-size: 12pt;
+            font-size: var(--font-latin-size, 12pt);
             line-height: 1.6;
             padding-right: 6px;
         }
 
         .soal-text {
-            font-size: 12pt;
+            font-size: var(--font-latin-size, 12pt);
             line-height: 1.65;
             text-align: justify;
         }
@@ -431,7 +436,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             vertical-align: top;
             padding: 6px 10px;
             width: 50%;
-            font-size: 12pt;
+            font-size: var(--font-latin-size, 12pt);
             line-height: 1.65;
         }
 
@@ -440,6 +445,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             display: inline-block;
             width: 26px;
             margin-right: 4px;
+            font-size: var(--font-latin-size, 12pt);
         }
 
         /* TATA LETAK BUTIR SOAL ARAB (KANAN KE KIRI / RTL) */
@@ -451,7 +457,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             text-align: right !important;
             padding-left: 8px !important;
             padding-right: 0 !important;
-            font-size: 13pt !important;
+            font-size: calc(var(--font-arab-size, 15pt) - 2pt) !important;
             line-height: 1.85 !important;
         }
 
@@ -460,7 +466,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             text-align: right !important;
             text-align-last: right !important;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: var(--font-arab-size, 15pt) !important;
             line-height: 1.85 !important;
         }
 
@@ -475,7 +481,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             direction: rtl !important;
             text-align: right !important;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: var(--font-arab-size, 15pt) !important;
             line-height: 1.85 !important;
         }
 
@@ -486,7 +492,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-right: 0;
             width: 26px;
             font-family: 'Cambria', Georgia, serif !important;
-            font-size: 12pt !important;
+            font-size: var(--font-latin-size, 12pt) !important;
         }
 
         /* OVERRIDE JIKA USER MEMILIH MODE LTR */
@@ -525,7 +531,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             border: 1px solid #cbd5e1;
             border-left: 3.5px solid #0d9488;
             border-radius: 4px;
-            font-size: 11.5pt;
+            font-size: calc(var(--font-latin-size, 12pt) - 0.5pt);
             line-height: 1.6;
             page-break-inside: avoid;
         }
@@ -537,12 +543,12 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             border-left: 1px solid #cbd5e1;
             border-right: 3.5px solid #0d9488;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: var(--font-arab-size, 15pt) !important;
             line-height: 1.85 !important;
         }
 
         .wacana-title {
-            font-size: 11pt;
+            font-size: calc(var(--font-latin-size, 12pt) - 1pt);
             margin-bottom: 6px;
             color: #1e293b;
             font-style: italic;
@@ -550,7 +556,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
         .wacana-arab .wacana-title {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 14pt !important;
+            font-size: calc(var(--font-arab-size, 15pt) - 1pt) !important;
             font-style: normal;
             color: #0f172a;
         }
@@ -584,6 +590,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             letter-spacing: 2px;
             display: inline-block;
             min-width: 42px;
+            font-size: var(--font-latin-size, 12pt);
         }
 
         /* TABEL MENJODOHKAN (SOAL SILANG) */
@@ -596,7 +603,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         .matching-print-table td {
             vertical-align: middle;
             padding: 5px 6px;
-            font-size: 11.5pt;
+            font-size: calc(var(--font-latin-size, 12pt) - 0.5pt);
             line-height: 1.5;
         }
         .matching-bullet {
@@ -628,12 +635,12 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             direction: rtl !important;
             text-align: right !important;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
-            font-size: 15pt !important;
+            font-size: var(--font-arab-size, 15pt) !important;
             line-height: 1.85 !important;
         }
         .matching-print-table.soal-arab .matching-bullet {
             font-family: Arial, sans-serif !important;
-            font-size: 16pt !important;
+            font-size: calc(var(--font-arab-size, 15pt) + 1pt) !important;
             line-height: 1 !important;
             text-align: center !important;
             color: #222 !important;
@@ -642,7 +649,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         .matching-print-table.soal-arab .matching-item-no,
         .matching-print-table.soal-arab .matching-item-letter {
             font-family: 'Cambria', Georgia, serif !important;
-            font-size: 12pt !important;
+            font-size: var(--font-latin-size, 12pt) !important;
             font-weight: bold !important;
             direction: ltr !important;
             display: inline-block;
@@ -690,25 +697,58 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
     <!-- PRINT CONTROL BAR (SCREEN ONLY) -->
     <div class="print-control-bar no-print">
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center flex-wrap gap-2">
             <a href="edit.php?id=<?= $naskahId ?>" class="btn btn-outline-light btn-sm rounded-pill px-3 fw-semibold">
                 <i class="bi bi-arrow-left me-1"></i> Kembali ke Editor
             </a>
-            <span class="badge bg-primary px-3 py-1.5 rounded-pill font-monospace">
+            <span class="badge bg-primary px-3 py-1.5 rounded-pill font-monospace d-none d-sm-inline">
                 <?= htmlspecialchars($naskah['nama_mapel']) ?> • Kelas <?= htmlspecialchars($naskah['tingkat_kelas']) ?>
             </span>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button" onclick="toggleArabicDirection()" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold" id="btnToggleDir" title="Ganti Arah Teks Arab (Kanan ke Kiri / Kiri ke Kanan)">
-                <i class="bi bi-arrow-left-right me-1"></i> Arah Arab: Kanan ke Kiri (RTL)
+
+        <!-- PENGATUR UKURAN FONT (LATIN & ARAB) -->
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <!-- PENGATUR FONT LATIN -->
+            <div class="d-flex align-items-center bg-dark bg-opacity-75 border border-secondary rounded-pill px-2.5 py-1 gap-1.5 shadow-sm" title="Sesuaikan Ukuran Font Latin / Umum">
+                <span class="text-white-50 small fw-semibold" style="font-size: 0.76rem;">Font Latin:</span>
+                <button type="button" class="btn btn-sm btn-outline-light border-0 p-0 px-1 text-light" onclick="adjustFontSize('latin', -0.5)" title="Perkecil Font Latin (-0.5pt)">
+                    <i class="bi bi-dash-circle fs-6"></i>
+                </button>
+                <span id="labelFontLatin" class="fw-bold text-warning font-monospace px-1" style="font-size: 0.85rem; min-width: 44px; text-align: center;">12pt</span>
+                <button type="button" class="btn btn-sm btn-outline-light border-0 p-0 px-1 text-light" onclick="adjustFontSize('latin', 0.5)" title="Perbesar Font Latin (+0.5pt)">
+                    <i class="bi bi-plus-circle fs-6"></i>
+                </button>
+            </div>
+
+            <!-- PENGATUR FONT ARAB -->
+            <div class="d-flex align-items-center bg-dark bg-opacity-75 border border-secondary rounded-pill px-2.5 py-1 gap-1.5 shadow-sm" title="Sesuaikan Ukuran Font Arab">
+                <span class="text-white-50 small fw-semibold" style="font-size: 0.76rem;">Font Arab:</span>
+                <button type="button" class="btn btn-sm btn-outline-light border-0 p-0 px-1 text-light" onclick="adjustFontSize('arab', -1)" title="Perkecil Font Arab (-1pt)">
+                    <i class="bi bi-dash-circle fs-6"></i>
+                </button>
+                <span id="labelFontArab" class="fw-bold text-warning font-monospace px-1" style="font-size: 0.85rem; min-width: 44px; text-align: center;">15pt</span>
+                <button type="button" class="btn btn-sm btn-outline-light border-0 p-0 px-1 text-light" onclick="adjustFontSize('arab', 1)" title="Perbesar Font Arab (+1pt)">
+                    <i class="bi bi-plus-circle fs-6"></i>
+                </button>
+            </div>
+
+            <!-- RESET FONT -->
+            <button type="button" onclick="resetFontSizes()" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 text-light" title="Reset Ukuran Font ke Default (12pt & 15pt)">
+                <i class="bi bi-arrow-counterclockwise"></i> <span class="d-none d-md-inline" style="font-size: 0.76rem;">Reset</span>
             </button>
-            <a href="kop.php" class="btn btn-outline-light btn-sm rounded-pill px-3 fw-semibold">
-                <i class="bi bi-image me-1"></i> Upload KOP (PNG)
+        </div>
+
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <button type="button" onclick="toggleArabicDirection()" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold" id="btnToggleDir" title="Ganti Arah Teks Arab (Kanan ke Kiri / Kiri ke Kanan)">
+                <i class="bi bi-arrow-left-right me-1"></i> Arah: RTL
+            </button>
+            <a href="kop.php" class="btn btn-outline-light btn-sm rounded-pill px-2.5 fw-semibold d-none d-md-inline" title="Kelola KOP Lembar Ujian">
+                <i class="bi bi-image me-1"></i> KOP
             </a>
-            <a href="export_word.php?id=<?= $naskahId ?>" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold">
-                <i class="bi bi-file-earmark-word-fill me-1"></i> Unduh File Word (.doc)
+            <a href="export_word.php?id=<?= $naskahId ?>" id="btnDownloadWord" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold" title="Unduh Lembar Soal ke Format Microsoft Word">
+                <i class="bi bi-file-earmark-word-fill me-1"></i> Word (.doc)
             </a>
-            <button onclick="window.print()" class="btn btn-danger btn-sm rounded-pill px-4 py-1.5 fw-bold shadow-sm"
+            <button onclick="window.print()" class="btn btn-danger btn-sm rounded-pill px-3.5 py-1.5 fw-bold shadow-sm"
                 style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border:none;">
                 <i class="bi bi-printer-fill me-1"></i> Cetak / Simpan PDF
             </button>
@@ -1052,25 +1092,67 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
     </div>
 
     <script>
+    let currentLatinSize = parseFloat(localStorage.getItem('soal_font_latin') || '12');
+    let currentArabSize = parseFloat(localStorage.getItem('soal_font_arab') || '15');
+
+    function applyFontSizes() {
+        document.documentElement.style.setProperty('--font-latin-size', currentLatinSize + 'pt');
+        document.documentElement.style.setProperty('--font-arab-size', currentArabSize + 'pt');
+        
+        const labelLatin = document.getElementById('labelFontLatin');
+        if (labelLatin) labelLatin.textContent = currentLatinSize + 'pt';
+        
+        const labelArab = document.getElementById('labelFontArab');
+        if (labelArab) labelArab.textContent = currentArabSize + 'pt';
+
+        // Update link Unduh Word agar format Word mengikuti ukuran font yang dipilih
+        const linkWord = document.getElementById('btnDownloadWord');
+        if (linkWord) {
+            let href = linkWord.getAttribute('href');
+            href = href.replace(/[?&]font_latin=[^&]*/, '').replace(/[?&]font_arab=[^&]*/, '');
+            const sep = href.includes('?') ? '&' : '?';
+            linkWord.setAttribute('href', href + sep + 'font_latin=' + currentLatinSize + '&font_arab=' + currentArabSize);
+        }
+    }
+
+    function adjustFontSize(type, delta) {
+        if (type === 'latin') {
+            currentLatinSize = Math.max(8, Math.min(20, Math.round((currentLatinSize + delta) * 10) / 10));
+            localStorage.setItem('soal_font_latin', currentLatinSize);
+        } else if (type === 'arab') {
+            currentArabSize = Math.max(10, Math.min(26, Math.round((currentArabSize + delta) * 10) / 10));
+            localStorage.setItem('soal_font_arab', currentArabSize);
+        }
+        applyFontSizes();
+    }
+
+    function resetFontSizes() {
+        currentLatinSize = 12;
+        currentArabSize = 15;
+        localStorage.removeItem('soal_font_latin');
+        localStorage.removeItem('soal_font_arab');
+        applyFontSizes();
+    }
+
     function toggleArabicDirection() {
         const isLtr = document.body.classList.toggle('force-arabic-ltr');
         const btn = document.getElementById('btnToggleDir');
         if (btn) {
             if (isLtr) {
-                btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Arah Arab: Kiri ke Kanan (LTR)';
+                btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Arah: LTR';
                 btn.classList.remove('btn-outline-warning');
                 btn.classList.add('btn-warning', 'text-dark');
             } else {
-                btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Arah Arab: Kanan ke Kiri (RTL)';
+                btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Arah: RTL';
                 btn.classList.remove('btn-warning', 'text-dark');
                 btn.classList.add('btn-outline-warning');
             }
         }
     }
+
+    // Inisialisasi saat halaman dibuka
+    document.addEventListener('DOMContentLoaded', applyFontSizes);
+    applyFontSizes();
     </script>
 </body>
-</html>
-
-</body>
-
 </html>
