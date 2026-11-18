@@ -11,6 +11,16 @@ $activeModule = 'akademik';
 require_once __DIR__ . '/../../config/auth.php';
 requirePermission('perangkat_guru');
 
+// Hanya admin yang diizinkan mengakses halaman pengaturan KOP
+if (strtolower($_SESSION['role'] ?? '') !== 'admin') {
+    $_SESSION['flash'] = [
+        'type' => 'danger',
+        'message' => 'Hanya administrator yang memiliki akses untuk mengubah KOP soal ujian.'
+    ];
+    header('Location: index.php');
+    exit;
+}
+
 $pdo = getConnection();
 require_once __DIR__ . '/init_soal.php';
 

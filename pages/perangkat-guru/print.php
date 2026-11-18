@@ -742,9 +742,11 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <button type="button" onclick="toggleArabicDirection()" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold" id="btnToggleDir" title="Ganti Arah Teks Arab (Kanan ke Kiri / Kiri ke Kanan)">
                 <i class="bi bi-arrow-left-right me-1"></i> Arah: RTL
             </button>
+            <?php if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'admin'): ?>
             <a href="kop.php" class="btn btn-outline-light btn-sm rounded-pill px-2.5 fw-semibold d-none d-md-inline" title="Kelola KOP Lembar Ujian">
                 <i class="bi bi-image me-1"></i> KOP
             </a>
+            <?php endif; ?>
             <a href="export_word.php?id=<?= $naskahId ?>" id="btnDownloadWord" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold" title="Unduh Lembar Soal ke Format Microsoft Word">
                 <i class="bi bi-file-earmark-word-fill me-1"></i> Word (.doc)
             </a>

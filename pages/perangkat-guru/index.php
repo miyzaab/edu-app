@@ -16,9 +16,9 @@ require_once __DIR__ . '/init_soal.php';
 $userId = (int) $_SESSION['user_id'];
 $userRole = strtolower($_SESSION['role'] ?? 'guru');
 
-// Handle Upload KOP Soal PNG
+// Handle Upload KOP Soal PNG (Khusus Admin)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_kop_soal') {
-    if (isset($_FILES['kop_file']) && $_FILES['kop_file']['error'] === UPLOAD_ERR_OK) {
+    if ($userRole === 'admin' && isset($_FILES['kop_file']) && $_FILES['kop_file']['error'] === UPLOAD_ERR_OK) {
         $ext = strtolower(pathinfo($_FILES['kop_file']['name'], PATHINFO_EXTENSION));
         if (in_array($ext, ['png', 'jpg', 'jpeg', 'webp'])) {
             $destFile = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
@@ -152,68 +152,18 @@ require_once __DIR__ . '/subnav.php';
             </p>
         </div>
         <div class="d-flex align-items-center gap-2">
+            <?php if ($userRole === 'admin'): ?>
             <button type="button" class="btn btn-outline-light px-3 py-3 fw-bold rounded-pill shadow-xs d-inline-flex align-items-center gap-2"
                 data-bs-toggle="modal" data-bs-target="#modalKopSoal" style="font-size: 0.95rem; border-color: rgba(255,255,255,0.4);">
                 <i class="bi bi-image fs-5"></i>
                 <span>Upload KOP Soal (PNG)</span>
             </button>
+            <?php endif; ?>
             <button type="button" class="btn btn-light px-4 py-3 fw-bold rounded-pill shadow-lg d-inline-flex align-items-center gap-2"
                 data-bs-toggle="modal" data-bs-target="#modalCreateNaskah" style="color: #312e81; font-size: 0.95rem;">
                 <i class="bi bi-plus-circle-fill text-primary fs-5"></i>
                 <span>Buat Naskah Soal Baru</span>
             </button>
-        </div>
-    </div>
-</div>
-
-<!-- STAT CARDS -->
-<div class="row g-3 mb-4">
-    <div class="col-lg-3 col-6">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white d-flex flex-row align-items-center gap-3">
-            <div class="rounded-4 p-3 d-flex align-items-center justify-content-center text-white"
-                style="background: linear-gradient(135deg, #4f46e5, #6366f1); width: 52px; height: 52px;">
-                <i class="bi bi-collection-fill fs-4"></i>
-            </div>
-            <div>
-                <div class="text-muted small fw-bold">Total Naskah Soal</div>
-                <div class="h4 fw-bold mb-0 text-dark"><?= $statTotalNaskah ?> <small class="text-muted fs-6">paket</small></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-6">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white d-flex flex-row align-items-center gap-3">
-            <div class="rounded-4 p-3 d-flex align-items-center justify-content-center text-white"
-                style="background: linear-gradient(135deg, #0284c7, #06b6d4); width: 52px; height: 52px;">
-                <i class="bi bi-ui-checks fs-4"></i>
-            </div>
-            <div>
-                <div class="text-muted small fw-bold">Pilihan Ganda (PG)</div>
-                <div class="h4 fw-bold mb-0 text-dark"><?= $statTotalPg ?> <small class="text-muted fs-6">butir</small></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-6">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white d-flex flex-row align-items-center gap-3">
-            <div class="rounded-4 p-3 d-flex align-items-center justify-content-center text-white"
-                style="background: linear-gradient(135deg, #0d9488, #14b8a6); width: 52px; height: 52px;">
-                <i class="bi bi-input-cursor-text fs-4"></i>
-            </div>
-            <div>
-                <div class="text-muted small fw-bold">Isian Singkat</div>
-                <div class="h4 fw-bold mb-0 text-dark"><?= $statTotalIsian ?> <small class="text-muted fs-6">butir</small></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-6">
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white d-flex flex-row align-items-center gap-3">
-            <div class="rounded-4 p-3 d-flex align-items-center justify-content-center text-white"
-                style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 52px; height: 52px;">
-                <i class="bi bi-card-text fs-4"></i>
-            </div>
-            <div>
-                <div class="text-muted small fw-bold">Uraian / Essay</div>
-                <div class="h4 fw-bold mb-0 text-dark"><?= $statTotalEssay ?> <small class="text-muted fs-6">butir</small></div>
-            </div>
         </div>
     </div>
 </div>
@@ -476,6 +426,7 @@ require_once __DIR__ . '/subnav.php';
     </div>
 </div>
 
+<?php if ($userRole === 'admin'): ?>
 <!-- MODAL UPLOAD KOP SOAL PNG -->
 <div class="modal fade" id="modalKopSoal" tabindex="-1" aria-labelledby="modalKopSoalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -522,6 +473,7 @@ require_once __DIR__ . '/subnav.php';
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <script>
 function syncMapelName(select) {
