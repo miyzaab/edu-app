@@ -33,6 +33,19 @@ if (!$naskah) {
     die('Naskah soal tidak ditemukan.');
 }
 
+$userId = (int) $_SESSION['user_id'];
+$userRole = strtolower($_SESSION['role'] ?? 'guru');
+
+// Proteksi Hak Akses Koreksi: Hanya pemilik naskah atau admin yang bisa mengoreksi
+if ($userRole !== 'admin' && $naskah['guru_id'] != $userId) {
+    $_SESSION['flash'] = [
+        'type' => 'danger',
+        'message' => 'Akses ditolak. Anda hanya dapat mengoreksi naskah soal yang Anda buat sendiri.'
+    ];
+    header('Location: index.php');
+    exit;
+}
+
 // Target Kolom Penilaian Nilai Siswa
 $rawTipe = strtolower(trim($naskah['tipe_ujian'] ?? 'aas'));
 $targetCol = 'aas';

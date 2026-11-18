@@ -364,6 +364,7 @@ require_once __DIR__ . '/subnav.php';
                     <?php foreach ($listNaskah as $idx => $n):
                         $totalSoal = (int)$n['total_pg'] + (int)$n['total_isian'] + (int)$n['total_essay'];
                         $isOwner = ($n['guru_id'] == $userId);
+                        $canManage = ($isOwner || $userRole === 'admin');
                     ?>
                         <tr>
                             <td class="text-center fw-bold text-muted"><?= $idx + 1 ?></td>
@@ -373,21 +374,35 @@ require_once __DIR__ . '/subnav.php';
                                         <i class="bi bi-journal-bookmark-fill fs-5"></i>
                                     </div>
                                     <div>
-                                        <a href="edit.php?id=<?= $n['id'] ?>" class="mapel-title-link d-block mb-1">
-                                            <?= htmlspecialchars($n['nama_mapel']) ?>
-                                        </a>
+                                        <?php if ($canManage): ?>
+                                            <a href="edit.php?id=<?= $n['id'] ?>" class="mapel-title-link d-block mb-1">
+                                                <?= htmlspecialchars($n['nama_mapel']) ?>
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="print.php?id=<?= $n['id'] ?>" target="_blank" class="mapel-title-link d-block mb-1" title="Klik untuk Pratinjau Lembar Soal">
+                                                <?= htmlspecialchars($n['nama_mapel']) ?>
+                                            </a>
+                                        <?php endif; ?>
+
                                         <div class="d-flex flex-wrap align-items-center gap-1.5">
                                             <span class="badge badge-subtle-neutral rounded-pill px-2 py-0.5">
                                                 <?= htmlspecialchars($n['judul_ujian']) ?>
                                             </span>
                                             <span class="text-muted small" style="font-size: 0.76rem;">• <?= htmlspecialchars($n['semester']) ?> <?= htmlspecialchars($n['tahun_ajaran']) ?></span>
                                         </div>
-                                        <?php if ($userRole === 'admin' && !empty($n['nama_guru'])): ?>
-                                            <div class="text-muted small mt-1 d-flex align-items-center gap-1" style="font-size: 0.74rem;">
-                                                <i class="bi bi-person-fill text-muted"></i>
-                                                <span>Guru: <strong class="text-dark"><?= htmlspecialchars($n['nama_guru']) ?></strong></span>
-                                            </div>
-                                        <?php endif; ?>
+
+                                        <!-- INDIKATOR GURU PEMBUAT -->
+                                        <div class="mt-1 d-flex align-items-center gap-1" style="font-size: 0.74rem;">
+                                            <?php if ($isOwner): ?>
+                                                <span class="badge rounded-pill fw-medium" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.7rem;">
+                                                    <i class="bi bi-person-check-fill me-1"></i>Naskah Anda
+                                                </span>
+                                            <?php elseif (!empty($n['nama_guru'])): ?>
+                                                <span class="badge rounded-pill bg-light text-secondary border fw-medium" style="font-size: 0.7rem;">
+                                                    <i class="bi bi-person-fill me-1"></i>Guru: <?= htmlspecialchars($n['nama_guru']) ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
@@ -431,56 +446,96 @@ require_once __DIR__ . '/subnav.php';
                             </td>
                             <td class="text-end px-4">
                                 <div class="d-inline-flex align-items-center gap-2">
-                                    <a href="edit.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" title="Susun &amp; Edit Butir Soal">
-                                        <i class="bi bi-pencil-square"></i>
-                                        <span>Susun Soal</span>
-                                    </a>
-                                    <a href="koreksi.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-koreksi rounded-pill px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" title="Meja Koreksi Cepat &amp; Rekap Nilai Siswa">
-                                        <i class="bi bi-lightning-charge-fill text-warning"></i>
-                                        <span class="d-none d-xl-inline">Koreksi</span>
-                                    </a>
-                                    <div class="dropdown d-inline-block">
-                                        <button class="btn btn-sm btn-more-circle shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Opsi Dokumen &amp; Tindakan">
-                                            <i class="bi bi-three-dots-vertical"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border" style="min-width: 220px; font-size: 0.84rem;">
-                                            <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Cetak &amp; Dokumen</h6></li>
-                                            <li>
-                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print.php?id=<?= $n['id'] ?>" target="_blank">
-                                                    <i class="bi bi-printer-fill text-danger fs-6"></i>
-                                                    <span>Cetak Lembar Ujian (PDF)</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="export_word.php?id=<?= $n['id'] ?>">
-                                                    <i class="bi bi-file-earmark-word-fill text-primary fs-6"></i>
-                                                    <span>Unduh File Word (.doc)</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
-                                                    <i class="bi bi-key-fill text-success fs-6"></i>
-                                                    <span>Kunci Jawaban &amp; Rubrik</span>
-                                                </a>
-                                            </li>
-                                            <li><hr class="dropdown-divider my-1"></li>
-                                            <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Pengelolaan</h6></li>
-                                            <li>
-                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="duplicate.php?id=<?= $n['id'] ?>" onclick="return confirm('Duplikasi naskah soal ini untuk membuat paket baru?')">
-                                                    <i class="bi bi-copy text-secondary fs-6"></i>
-                                                    <span>Duplikat Paket Soal</span>
-                                                </a>
-                                            </li>
-                                            <?php if ($isOwner || $userRole === 'admin'): ?>
+                                    <?php if ($canManage): ?>
+                                        <!-- HANYA GURU PEMBUAT / ADMIN: BISA EDIT & KOREKSI -->
+                                        <a href="edit.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" title="Susun &amp; Edit Butir Soal">
+                                            <i class="bi bi-pencil-square"></i>
+                                            <span>Susun Soal</span>
+                                        </a>
+                                        <a href="koreksi.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-koreksi rounded-pill px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" title="Meja Koreksi Cepat &amp; Rekap Nilai Siswa">
+                                            <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                            <span class="d-none d-xl-inline">Koreksi</span>
+                                        </a>
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-more-circle shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Opsi Dokumen &amp; Tindakan">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border" style="min-width: 220px; font-size: 0.84rem;">
+                                                <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Cetak &amp; Dokumen</h6></li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print.php?id=<?= $n['id'] ?>" target="_blank">
+                                                        <i class="bi bi-printer-fill text-danger fs-6"></i>
+                                                        <span>Cetak Lembar Ujian (PDF)</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="export_word.php?id=<?= $n['id'] ?>">
+                                                        <i class="bi bi-file-earmark-word-fill text-primary fs-6"></i>
+                                                        <span>Unduh File Word (.doc)</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
+                                                        <i class="bi bi-key-fill text-success fs-6"></i>
+                                                        <span>Kunci Jawaban &amp; Rubrik</span>
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Pengelolaan</h6></li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="duplicate.php?id=<?= $n['id'] ?>" onclick="return confirm('Duplikasi naskah soal ini untuk membuat paket baru?')">
+                                                        <i class="bi bi-copy text-secondary fs-6"></i>
+                                                        <span>Duplikat Paket Soal</span>
+                                                    </a>
+                                                </li>
                                                 <li>
                                                     <a class="dropdown-item py-1.5 d-flex align-items-center gap-2 text-danger" href="delete.php?id=<?= $n['id'] ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus naskah soal ini beserta butir-butir soal di dalamnya?')">
                                                         <i class="bi bi-trash fs-6"></i>
                                                         <span>Hapus Naskah Soal</span>
                                                     </a>
                                                 </li>
-                                            <?php endif; ?>
-                                        </ul>
-                                    </div>
+                                            </ul>
+                                        </div>
+                                    <?php else: ?>
+                                        <!-- GURU LAIN: HANYA BISA LIHAT / CETAK & DUPLIKASI (TIDAK BISA EDIT, KOREKSI, MAUPUN HAPUS) -->
+                                        <a href="print.php?id=<?= $n['id'] ?>" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" title="Pratinjau &amp; Cetak Soal (Hanya Lihat)">
+                                            <i class="bi bi-printer-fill text-danger"></i>
+                                            <span>Cetak / Lihat</span>
+                                        </a>
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-more-circle shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Opsi Dokumen">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border" style="min-width: 210px; font-size: 0.84rem;">
+                                                <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Opsi Dokumen (Hanya Lihat)</h6></li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print.php?id=<?= $n['id'] ?>" target="_blank">
+                                                        <i class="bi bi-printer-fill text-danger fs-6"></i>
+                                                        <span>Cetak Lembar Ujian (PDF)</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="export_word.php?id=<?= $n['id'] ?>">
+                                                        <i class="bi bi-file-earmark-word-fill text-primary fs-6"></i>
+                                                        <span>Unduh File Word (.doc)</span>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
+                                                        <i class="bi bi-key-fill text-success fs-6"></i>
+                                                        <span>Kunci Jawaban &amp; Rubrik</span>
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="duplicate.php?id=<?= $n['id'] ?>" onclick="return confirm('Salin paket soal ini menjadi naskah milik Anda sendiri?')">
+                                                        <i class="bi bi-copy text-primary fs-6"></i>
+                                                        <span>Salin ke Naskah Saya</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
