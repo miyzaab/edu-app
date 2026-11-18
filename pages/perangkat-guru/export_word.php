@@ -50,10 +50,20 @@ foreach ($allSoal as $s) {
     }
 }
 
+// Helper untuk Deteksi Teks Arab
+function isTeksArabWord($text) {
+    if ($text === null || $text === '') return false;
+    return (bool) preg_match('/[\p{Arabic}]/u', $text);
+}
+
 // Helper untuk Render Teks Soal & Deteksi Font Arab di Word
-function renderTeksWord($text) {
+function renderTeksWord($text, $isParentRtl = false) {
     if ($text === null || $text === '') return '';
     $safe = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    
+    if ($isParentRtl) {
+        return nl2br($safe);
+    }
     
     // Regex deteksi blok teks Arab
     $pattern = '/([\p{Arabic}][\p{Arabic}\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}\s\p{P}\d]*[\p{Arabic}]|[\p{Arabic}])/u';
@@ -277,6 +287,46 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             width: 24px;
         }
 
+        .soal-table.soal-arab {
+            direction: rtl;
+        }
+        .soal-table.soal-arab .soal-no {
+            text-align: right;
+            padding-left: 8pt;
+            padding-right: 0;
+            font-size: 13pt;
+            line-height: 1.85;
+        }
+        .soal-text.soal-arab {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.85 !important;
+        }
+        .opsi-table.opsi-arab {
+            direction: rtl;
+            margin-top: 10pt;
+            margin-right: 2pt;
+            margin-left: 0;
+        }
+        .opsi-table.opsi-arab td {
+            direction: rtl;
+            text-align: right;
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.85 !important;
+        }
+        .opsi-table.opsi-arab .opsi-letter {
+            direction: ltr;
+            display: inline-block;
+            margin-left: 6pt;
+            margin-right: 0;
+            width: 24px;
+            font-family: 'Cambria', serif !important;
+            font-size: 12pt !important;
+        }
+
         /* NATIVE WORD FOOTER STYLES */
         p.MsoFooter, li.MsoFooter, div.MsoFooter {
             margin: 0;
@@ -374,12 +424,14 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         <div class="section-title">A. PILIHAN GANDA</div>
         <div class="section-desc">Pilihlah salah satu jawaban yang paling tepat dengan memberi tanda silang (X) pada huruf a, b, c, atau d!</div>
 
-        <?php foreach ($soalPg as $idx => $s): ?>
-            <table class="soal-table">
+        <?php foreach ($soalPg as $idx => $s): 
+            $isArab = isTeksArabWord($s['pertanyaan']) || isTeksArabWord($s['pilihan_a'] ?? '');
+        ?>
+            <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                 <tr>
-                    <td style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
-                    <td>
-                        <div><?= renderTeksWord($s['pertanyaan']) ?></div>
+                    <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
+                    <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                        <div><?= renderTeksWord($s['pertanyaan'], $isArab) ?></div>
                         <?php 
                         if (!empty($s['gambar'])):
                             $sImgPath = __DIR__ . '/../../uploads/soal/' . $s['gambar'];
@@ -394,21 +446,21 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
                         <?php endif; endif; ?>
 
                         <!-- OPSI JAWABAN (2 KOLOM BERDAMPINGAN) -->
-                        <table class="opsi-table">
+                        <table class="opsi-table <?= $isArab ? 'opsi-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                             <tr>
                                 <td>
-                                    <b>a.</b> <?= renderTeksWord($s['pilihan_a'] ?? '') ?>
+                                    <span class="opsi-letter"><b>a.</b></span> <?= renderTeksWord($s['pilihan_a'] ?? '', $isArab) ?>
                                 </td>
                                 <td>
-                                    <b>c.</b> <?= renderTeksWord($s['pilihan_c'] ?? '') ?>
+                                    <span class="opsi-letter"><b>c.</b></span> <?= renderTeksWord($s['pilihan_c'] ?? '', $isArab) ?>
                                 </td>
                             </tr>
                             <tr>
                                 <td>
-                                    <b>b.</b> <?= renderTeksWord($s['pilihan_b'] ?? '') ?>
+                                    <span class="opsi-letter"><b>b.</b></span> <?= renderTeksWord($s['pilihan_b'] ?? '', $isArab) ?>
                                 </td>
                                 <td>
-                                    <b>d.</b> <?= renderTeksWord($s['pilihan_d'] ?? '') ?>
+                                    <span class="opsi-letter"><b>d.</b></span> <?= renderTeksWord($s['pilihan_d'] ?? '', $isArab) ?>
                                 </td>
                             </tr>
                         </table>
@@ -425,12 +477,14 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         <div class="section-title" style="margin-top: 16px;">B. ISIAN SINGKAT</div>
         <div class="section-desc">Isilah titik-titik di bawah ini dengan jawaban yang benar dan singkat!</div>
 
-        <?php foreach ($soalIsian as $idx => $s): ?>
-            <table class="soal-table">
+        <?php foreach ($soalIsian as $idx => $s): 
+            $isArab = isTeksArabWord($s['pertanyaan']);
+        ?>
+            <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                 <tr>
-                    <td style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
-                    <td>
-                        <div><?= renderTeksWord($s['pertanyaan']) ?></div>
+                    <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
+                    <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                        <div><?= renderTeksWord($s['pertanyaan'], $isArab) ?></div>
                         <?php 
                         if (!empty($s['gambar'])):
                             $sImgPath = __DIR__ . '/../../uploads/soal/' . $s['gambar'];
@@ -456,12 +510,14 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         <div class="section-title" style="margin-top: 16px;">C. URAIAN / ESSAY</div>
         <div class="section-desc">Jawablah pertanyaan-pertanyaan di bawah ini secara jelas, lengkap, dan sistematis!</div>
 
-        <?php foreach ($soalEssay as $idx => $s): ?>
-            <table class="soal-table">
+        <?php foreach ($soalEssay as $idx => $s): 
+            $isArab = isTeksArabWord($s['pertanyaan']);
+        ?>
+            <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                 <tr>
-                    <td style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
-                    <td>
-                        <div><?= renderTeksWord($s['pertanyaan']) ?></div>
+                    <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
+                    <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                        <div><?= renderTeksWord($s['pertanyaan'], $isArab) ?></div>
                         <?php 
                         if (!empty($s['gambar'])):
                             $sImgPath = __DIR__ . '/../../uploads/soal/' . $s['gambar'];

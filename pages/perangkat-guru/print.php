@@ -50,12 +50,25 @@ foreach ($allSoal as $s) {
     }
 }
 
+// Helper untuk Deteksi Teks Arab
+function isTeksArab($text)
+{
+    if ($text === null || $text === '')
+        return false;
+    return (bool) preg_match('/[\p{Arabic}]/u', $text);
+}
+
 // Helper untuk Render Teks Soal & Deteksi Font Arab
-function renderTeksSoal($text)
+function renderTeksSoal($text, $isParentRtl = false)
 {
     if ($text === null || $text === '')
         return '';
     $safe = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+
+    // Jika parent sudah RTL, teks Arab mengalir alami dari kanan ke kiri
+    if ($isParentRtl) {
+        return nl2br($safe);
+    }
 
     // Regex deteksi blok teks Arab (huruf, harakat, tanda baca Arab)
     $pattern = '/([\p{Arabic}][\p{Arabic}\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}\x{FB50}-\x{FDFF}\x{FE70}-\x{FEFF}\s\p{P}\d]*[\p{Arabic}]|[\p{Arabic}])/u';
@@ -419,6 +432,81 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-right: 4px;
         }
 
+        /* TATA LETAK BUTIR SOAL ARAB (KANAN KE KIRI / RTL) */
+        .soal-table.soal-arab {
+            direction: rtl !important;
+        }
+
+        .soal-table.soal-arab .soal-no {
+            text-align: right !important;
+            padding-left: 8px !important;
+            padding-right: 0 !important;
+            font-size: 13pt !important;
+            line-height: 1.85 !important;
+        }
+
+        .soal-text.soal-arab {
+            direction: rtl !important;
+            text-align: right !important;
+            text-align-last: right !important;
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.85 !important;
+        }
+
+        .opsi-table.opsi-arab {
+            direction: rtl !important;
+            margin-top: 12px;
+            margin-right: 2px;
+            margin-left: 0;
+        }
+
+        .opsi-table.opsi-arab td {
+            direction: rtl !important;
+            text-align: right !important;
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.85 !important;
+        }
+
+        .opsi-table.opsi-arab .opsi-letter {
+            direction: ltr !important;
+            display: inline-block;
+            margin-left: 8px;
+            margin-right: 0;
+            width: 26px;
+            font-family: 'Cambria', Georgia, serif !important;
+            font-size: 12pt !important;
+        }
+
+        /* OVERRIDE JIKA USER MEMILIH MODE LTR */
+        body.force-arabic-ltr .soal-table.soal-arab {
+            direction: ltr !important;
+        }
+        body.force-arabic-ltr .soal-table.soal-arab .soal-no {
+            text-align: left !important;
+            padding-right: 6px !important;
+            padding-left: 0 !important;
+        }
+        body.force-arabic-ltr .soal-text.soal-arab {
+            direction: ltr !important;
+            text-align: justify !important;
+            text-align-last: left !important;
+        }
+        body.force-arabic-ltr .opsi-table.opsi-arab {
+            direction: ltr !important;
+            margin-left: 2px;
+            margin-right: 0;
+        }
+        body.force-arabic-ltr .opsi-table.opsi-arab td {
+            direction: ltr !important;
+            text-align: left !important;
+        }
+        body.force-arabic-ltr .opsi-table.opsi-arab .opsi-letter {
+            margin-right: 4px;
+            margin-left: 0;
+        }
+
         /* FOOTER ON SCREEN PREVIEW */
         .screen-footer {
             margin-top: 30px;
@@ -451,7 +539,10 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             </span>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="kop.php" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold">
+            <button type="button" onclick="toggleArabicDirection()" class="btn btn-outline-warning btn-sm rounded-pill px-3 fw-semibold" id="btnToggleDir" title="Ganti Arah Teks Arab (Kanan ke Kiri / Kiri ke Kanan)">
+                <i class="bi bi-arrow-left-right me-1"></i> Arah Arab: Kanan ke Kiri (RTL)
+            </button>
+            <a href="kop.php" class="btn btn-outline-light btn-sm rounded-pill px-3 fw-semibold">
                 <i class="bi bi-image me-1"></i> Upload KOP (PNG)
             </a>
             <a href="export_word.php?id=<?= $naskahId ?>" class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold">
@@ -577,13 +668,15 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <div class="section-desc">Pilihlah salah satu jawaban yang paling tepat dengan memberi tanda silang (X) pada
                 huruf a, b, c, atau d!</div>
 
-            <?php foreach ($soalPg as $idx => $s): ?>
+            <?php foreach ($soalPg as $idx => $s): 
+                $isArab = isTeksArab($s['pertanyaan']) || isTeksArab($s['pilihan_a'] ?? '');
+            ?>
                 <div class="soal-item">
-                    <table class="soal-table">
+                    <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
-                            <td class="soal-text">
-                                <?= renderTeksSoal($s['pertanyaan']) ?>
+                            <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                                <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
@@ -593,21 +686,21 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                                 <?php endif; ?>
 
                                 <!-- OPSI A, B, C, D (2 KOLOM BERDAMPINGAN) -->
-                                <table class="opsi-table">
+                                <table class="opsi-table <?= $isArab ? 'opsi-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                                     <tr>
                                         <td>
-                                            <span class="opsi-letter">a.</span> <?= renderTeksSoal($s['pilihan_a'] ?? '') ?>
+                                            <span class="opsi-letter">a.</span> <?= renderTeksSoal($s['pilihan_a'] ?? '', $isArab) ?>
                                         </td>
                                         <td>
-                                            <span class="opsi-letter">c.</span> <?= renderTeksSoal($s['pilihan_c'] ?? '') ?>
+                                            <span class="opsi-letter">c.</span> <?= renderTeksSoal($s['pilihan_c'] ?? '', $isArab) ?>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td>
-                                            <span class="opsi-letter">b.</span> <?= renderTeksSoal($s['pilihan_b'] ?? '') ?>
+                                            <span class="opsi-letter">b.</span> <?= renderTeksSoal($s['pilihan_b'] ?? '', $isArab) ?>
                                         </td>
                                         <td>
-                                            <span class="opsi-letter">d.</span> <?= renderTeksSoal($s['pilihan_d'] ?? '') ?>
+                                            <span class="opsi-letter">d.</span> <?= renderTeksSoal($s['pilihan_d'] ?? '', $isArab) ?>
                                         </td>
                                     </tr>
                                 </table>
@@ -625,13 +718,15 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <div class="section-header" style="margin-top: 18px;">B. ISIAN SINGKAT</div>
             <div class="section-desc">Isilah titik-titik di bawah ini dengan jawaban yang benar dan singkat!</div>
 
-            <?php foreach ($soalIsian as $idx => $s): ?>
+            <?php foreach ($soalIsian as $idx => $s): 
+                $isArab = isTeksArab($s['pertanyaan']);
+            ?>
                 <div class="soal-item">
-                    <table class="soal-table">
+                    <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
-                            <td class="soal-text">
-                                <?= renderTeksSoal($s['pertanyaan']) ?>
+                            <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                                <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
@@ -654,13 +749,15 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <div class="section-desc">Jawablah pertanyaan-pertanyaan di bawah ini secara jelas, lengkap, dan sistematis!
             </div>
 
-            <?php foreach ($soalEssay as $idx => $s): ?>
+            <?php foreach ($soalEssay as $idx => $s): 
+                $isArab = isTeksArab($s['pertanyaan']);
+            ?>
                 <div class="soal-item">
-                    <table class="soal-table">
+                    <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
-                            <td class="soal-text">
-                                <?= renderTeksSoal($s['pertanyaan']) ?>
+                            <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                                <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
@@ -687,6 +784,26 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <span>Naskah Ujian SMP ISMI</span>
         </div>
     </div>
+
+    <script>
+    function toggleArabicDirection() {
+        const isLtr = document.body.classList.toggle('force-arabic-ltr');
+        const btn = document.getElementById('btnToggleDir');
+        if (btn) {
+            if (isLtr) {
+                btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Arah Arab: Kiri ke Kanan (LTR)';
+                btn.classList.remove('btn-outline-warning');
+                btn.classList.add('btn-warning', 'text-dark');
+            } else {
+                btn.innerHTML = '<i class="bi bi-arrow-left-right me-1"></i> Arah Arab: Kanan ke Kiri (RTL)';
+                btn.classList.remove('btn-warning', 'text-dark');
+                btn.classList.add('btn-outline-warning');
+            }
+        }
+    }
+    </script>
+</body>
+</html>
 
 </body>
 
