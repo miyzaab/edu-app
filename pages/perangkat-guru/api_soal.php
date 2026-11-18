@@ -52,8 +52,13 @@ if ($action === 'add') {
         $tipe = 'pg';
     }
 
+    $subTipe = trim($_POST['sub_tipe'] ?? 'isian_biasa');
+    if (!in_array($subTipe, ['isian_biasa', 'benar_salah', 'menjodohkan'])) {
+        $subTipe = 'isian_biasa';
+    }
+
     $count = max(1, min(50, (int) ($_POST['count'] ?? 1)));
-    $defaultPoin = ($tipe === 'pg') ? 2.0 : (($tipe === 'isian') ? 3.0 : 5.0);
+    $defaultPoin = ($tipe === 'pg') ? 2.0 : (($tipe === 'isian') ? 2.0 : 5.0);
 
     // Ambil nomor urut terakhir
     $stmtMax = $pdo->prepare("SELECT COALESCE(MAX(nomor_urut), 0) FROM soal_butir WHERE naskah_id = :nid");
@@ -66,8 +71,8 @@ if ($action === 'add') {
     $currentTipeCount = (int) $stmtCountTipe->fetchColumn();
 
     $stmtIns = $pdo->prepare("
-        INSERT INTO soal_butir (naskah_id, nomor_urut, tipe_soal, pertanyaan, pilihan_a, pilihan_b, pilihan_c, pilihan_d, kunci_jawaban, poin)
-        VALUES (:nid, :no, :tipe, :tanya, :pa, :pb, :pc, :pd, :kunci, :poin)
+        INSERT INTO soal_butir (naskah_id, nomor_urut, tipe_soal, sub_tipe, pertanyaan, pilihan_a, pilihan_b, pilihan_c, pilihan_d, kunci_jawaban, poin)
+        VALUES (:nid, :no, :tipe, :subtipe, :tanya, :pa, :pb, :pc, :pd, :kunci, :poin)
     ");
 
     $insertedItems = [];
@@ -76,17 +81,25 @@ if ($action === 'add') {
         $currentTipeCount++;
 
         $defaultTanya = ($tipe === 'pg') ? 'Tuliskan teks pertanyaan di sini...' : 
-                        (($tipe === 'isian') ? 'Tuliskan kalimat rumpang di sini...' : 'Tuliskan instruksi atau pertanyaan uraian di sini...');
+                        (($tipe === 'isian') ? 
+                            (($subTipe === 'menjodohkan') ? 'Kata / Premis Soal' : 
+                            (($subTipe === 'benar_salah') ? 'Tuliskan pernyataan yang dinilai Benar atau Salah di sini...' : 'Tuliskan kalimat rumpang di sini...'))
+                        : 'Tuliskan instruksi atau pertanyaan uraian di sini...');
+
         $pa = ($tipe === 'pg') ? 'Pilihan A' : null;
         $pb = ($tipe === 'pg') ? 'Pilihan B' : null;
         $pc = ($tipe === 'pg') ? 'Pilihan C' : null;
         $pd = ($tipe === 'pg') ? 'Pilihan D' : null;
-        $kunci = ($tipe === 'pg') ? 'A' : '';
+
+        $kunci = ($tipe === 'pg') ? 'A' : 
+                 (($tipe === 'isian' && $subTipe === 'menjodohkan') ? 'Pasangan Kunci Benar' : 
+                 (($tipe === 'isian' && $subTipe === 'benar_salah') ? 'B' : ''));
 
         $stmtIns->execute([
             ':nid' => $naskahId,
             ':no' => $lastNo,
             ':tipe' => $tipe,
+            ':subtipe' => ($tipe === 'isian' ? $subTipe : ($tipe === 'pg' ? 'pg' : 'essay')),
             ':tanya' => $defaultTanya,
             ':pa' => $pa,
             ':pb' => $pb,
@@ -102,7 +115,7 @@ if ($action === 'add') {
             'naskah_id' => $naskahId,
             'nomor_urut' => $lastNo,
             'tipe_soal' => $tipe,
-            'sub_tipe' => 'isian_biasa',
+            'sub_tipe' => ($tipe === 'isian' ? $subTipe : ($tipe === 'pg' ? 'pg' : 'essay')),
             'wacana_judul' => null,
             'wacana_teks' => null,
             'pertanyaan' => $defaultTanya,

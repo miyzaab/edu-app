@@ -108,22 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($subTipe === 'benar_salah') {
             $kunci = trim($s['kunci_bs'] ?? 'B');
         } elseif ($subTipe === 'menjodohkan') {
-            $pairs = [];
-            $leftArr = $s['matching_left'] ?? [];
-            $rightArr = $s['matching_right'] ?? [];
-            $kunciSummaries = [];
-            if (is_array($leftArr) && is_array($rightArr)) {
-                for ($k = 0; $k < count($leftArr); $k++) {
-                    $lVal = trim($leftArr[$k] ?? '');
-                    $rVal = trim($rightArr[$k] ?? '');
-                    if ($lVal !== '' || $rVal !== '') {
-                        $pairs[] = ['left' => $lVal, 'right' => $rVal];
-                        $kunciSummaries[] = ($k + 1) . '-' . chr(65 + $k) . " ($lVal -> $rVal)";
-                    }
-                }
-            }
-            $opsiMatching = !empty($pairs) ? json_encode($pairs, JSON_UNESCAPED_UNICODE) : null;
-            $kunci = implode(' | ', $kunciSummaries);
+            $kunci = trim($s['kunci_matching'] ?? '');
         } elseif (isset($s['kunci_jawaban_isian'])) {
             $kunci = trim($s['kunci_jawaban_isian']);
         }
@@ -532,18 +517,22 @@ require_once __DIR__ . '/subnav.php';
                     <i class="bi bi-clipboard2-plus me-1 text-teal" style="color: #0d9488;"></i> Paste Soal Isian
                 </button>
                 <div class="btn-group">
-                    <button type="button" onclick="tambahSoalAjax('isian', 1)" class="btn btn-sm rounded-pill px-3 fw-bold text-white shadow-xs" style="background: #0d9488;" id="btn_add_isian">
+                    <button type="button" onclick="tambahSoalAjax('isian', 1, 'isian_biasa')" class="btn btn-sm rounded-pill px-3 fw-bold text-white shadow-xs" style="background: #0d9488;" id="btn_add_isian">
                         <i class="bi bi-plus-circle me-1"></i> + Tambah Soal Isian
                     </button>
                     <button type="button" class="btn btn-sm dropdown-toggle dropdown-toggle-split rounded-pill rounded-start-0 text-white" style="background: #0d9488;" data-bs-toggle="dropdown">
-                        <span class="visually-hidden">Pilihan Batch</span>
+                        <span class="visually-hidden">Pilihan Model</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3">
-                        <li><h6 class="dropdown-header">Tambah Banyak Sekaligus</h6></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 5)"><i class="bi bi-plus-square text-teal me-2" style="color: #0d9488;"></i> + 5 Soal Isian</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 10)"><i class="bi bi-plus-square-fill text-teal me-2" style="color: #0d9488;"></i> + 10 Soal Isian</a></li>
+                        <li><h6 class="dropdown-header">Pilih Model Soal</h6></li>
+                        <li><a class="dropdown-item py-1.5 fw-semibold" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 1, 'isian_biasa')">+ Isian Singkat</a></li>
+                        <li><a class="dropdown-item py-1.5 fw-semibold" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 1, 'benar_salah')">+ Benar / Salah (صحيح / خطأ)</a></li>
+                        <li><a class="dropdown-item py-1.5 fw-semibold" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 1, 'menjodohkan')">+ Menjodohkan (Pasangan)</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="promptBatchAdd('isian')"><i class="bi bi-input-cursor text-muted me-2"></i> Jumlah Kustom...</a></li>
+                        <li><h6 class="dropdown-header">Tambah Banyak Sekaligus</h6></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 3, 'menjodohkan')">+ 3 Butir Menjodohkan</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 5, 'menjodohkan')">+ 5 Butir Menjodohkan</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 5, 'isian_biasa')">+ 5 Butir Isian Singkat</a></li>
                     </ul>
                 </div>
             </div>
@@ -565,16 +554,22 @@ require_once __DIR__ . '/subnav.php';
                     <i class="bi bi-clipboard2-plus me-1"></i> Paste Soal Isian dari Teks
                 </button>
                 <div class="btn-group">
-                    <button type="button" onclick="tambahSoalAjax('isian', 1)" class="btn rounded-pill px-4 fw-bold text-white shadow-sm" style="background: #0d9488;">
+                    <button type="button" onclick="tambahSoalAjax('isian', 1, 'isian_biasa')" class="btn rounded-pill px-4 fw-bold text-white shadow-sm" style="background: #0d9488;">
                         <i class="bi bi-plus-circle me-1"></i> + Tambah Butir Soal Isian
                     </button>
                     <button type="button" class="btn dropdown-toggle dropdown-toggle-split rounded-pill rounded-start-0 text-white" style="background: #0d9488;" data-bs-toggle="dropdown">
-                        <span class="visually-hidden">Dropdown</span>
+                        <span class="visually-hidden">Pilihan Model</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3">
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 5)">+ 5 Butir Sekaligus</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 10)">+ 10 Butir Sekaligus</a></li>
-                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="promptBatchAdd('isian')">Jumlah Kustom...</a></li>
+                        <li><h6 class="dropdown-header">Pilih Model Soal</h6></li>
+                        <li><a class="dropdown-item py-1.5 fw-semibold" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 1, 'isian_biasa')">+ Isian Singkat</a></li>
+                        <li><a class="dropdown-item py-1.5 fw-semibold" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 1, 'benar_salah')">+ Benar / Salah (صحيح / خطأ)</a></li>
+                        <li><a class="dropdown-item py-1.5 fw-semibold" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 1, 'menjodohkan')">+ Menjodohkan (Pasangan)</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">Tambah Banyak Sekaligus</h6></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 3, 'menjodohkan')">+ 3 Butir Menjodohkan</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 5, 'menjodohkan')">+ 5 Butir Menjodohkan</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="tambahSoalAjax('isian', 5, 'isian_biasa')">+ 5 Butir Isian Singkat</a></li>
                     </ul>
                 </div>
             </div>
@@ -762,7 +757,7 @@ require_once __DIR__ . '/subnav.php';
 // =========================================================================
 // 1. TAMBAH BUTIR SOAL SECARA INSTAN VIA AJAX (ZERO PAGE RELOAD)
 // =========================================================================
-function tambahSoalAjax(tipe, count = 1) {
+function tambahSoalAjax(tipe, count = 1, subTipe = 'isian_biasa') {
     const btn = document.getElementById('btn_add_' + tipe);
     let origHtml = '';
     if (btn) {
@@ -775,6 +770,7 @@ function tambahSoalAjax(tipe, count = 1) {
     formData.append('action', 'add');
     formData.append('naskah_id', '<?= $naskahId ?>');
     formData.append('tipe', tipe);
+    formData.append('sub_tipe', subTipe);
     formData.append('count', count);
 
     fetch('api_soal.php', {
@@ -1007,80 +1003,28 @@ function gantiSubTipeIsian(id, subTipe) {
     const targetBox = document.getElementById('box_' + subTipe + '_' + id);
     if (targetBox) targetBox.classList.remove('d-none');
 
-    // Sesuaikan placeholder pertanyaan
     const card = document.getElementById('soal_item_' + id);
     if (card) {
+        const lbl = card.querySelector('#label_tanya_' + id);
         const textarea = card.querySelector('textarea.question-textarea');
+        if (lbl) {
+            if (subTipe === 'menjodohkan') {
+                lbl.textContent = 'Kata / Premis Soal (Kolom Kiri):';
+            } else if (subTipe === 'benar_salah') {
+                lbl.textContent = 'Kalimat / Pernyataan:';
+            } else {
+                lbl.textContent = 'Teks Pertanyaan / Kalimat Rumpang:';
+            }
+        }
         if (textarea && !textarea.value.trim()) {
-            if (subTipe === 'benar_salah') {
-                textarea.placeholder = 'Tuliskan kalimat / pernyataan yang akan dinilai Benar atau Salah di sini...';
-            } else if (subTipe === 'menjodohkan') {
-                textarea.placeholder = 'Tuliskan instruksi menjodohkan (Contoh: صِلْ بَيْنَ الكَلِمَةِ وَالتَّعْرِيْفِ المُنَاسِبِ)...';
+            if (subTipe === 'menjodohkan') {
+                textarea.placeholder = 'Tuliskan kata atau kalimat premis soal di sini...';
+            } else if (subTipe === 'benar_salah') {
+                textarea.placeholder = 'Tuliskan pernyataan yang akan dinilai Benar atau Salah di sini...';
             } else {
                 textarea.placeholder = 'Tuliskan pertanyaan / kalimat rumpang di sini...';
             }
         }
-    }
-}
-
-function tambahBarisMatching(soalId) {
-    const container = document.getElementById('matching_container_' + soalId);
-    if (!container) return;
-
-    const currentRows = container.querySelectorAll('.matching-row').length;
-    const nextNum = currentRows + 1;
-    const nextLetter = String.fromCharCode(65 + currentRows);
-
-    const rowDiv = document.createElement('div');
-    rowDiv.className = 'row g-2 align-items-center mb-2 matching-row';
-    rowDiv.innerHTML = `
-        <div class="col-5">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-no" style="font-size: 0.78rem;">${nextNum}.</span>
-                <input type="text" name="soal[${soalId}][matching_left][]" 
-                    class="form-control form-control-sm" 
-                    placeholder="Kata / Premis ${nextNum}" style="font-size: 0.88rem;">
-            </div>
-        </div>
-        <div class="col-1 text-center text-muted px-0">
-            <i class="bi bi-arrow-left-right" style="font-size: 0.85rem;"></i>
-        </div>
-        <div class="col-5">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-letter" style="font-size: 0.78rem;">${nextLetter}.</span>
-                <input type="text" name="soal[${soalId}][matching_right][]" 
-                    class="form-control form-control-sm" 
-                    placeholder="Definisi / Jawaban ${nextLetter}" style="font-size: 0.88rem;">
-            </div>
-        </div>
-        <div class="col-1 text-end">
-            <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="hapusBarisMatching(this)" title="Hapus Pasangan Ini">
-                <i class="bi bi-trash"></i>
-            </button>
-        </div>
-    `;
-    container.appendChild(rowDiv);
-    rowDiv.querySelectorAll('input[type="text"]').forEach(checkAndApplyArabic);
-
-    const firstInput = rowDiv.querySelector('input');
-    if (firstInput) firstInput.focus();
-}
-
-function hapusBarisMatching(btn) {
-    const row = btn.closest('.matching-row');
-    const container = btn.closest('.matching-container');
-    if (row && container) {
-        if (container.querySelectorAll('.matching-row').length <= 1) {
-            alert('Minimal harus ada 1 baris pasangan menjodohkan.');
-            return;
-        }
-        row.remove();
-        container.querySelectorAll('.matching-row').forEach((r, idx) => {
-            const noEl = r.querySelector('.matching-no');
-            const letterEl = r.querySelector('.matching-letter');
-            if (noEl) noEl.textContent = (idx + 1) + '.';
-            if (letterEl) letterEl.textContent = String.fromCharCode(65 + idx) + '.';
-        });
     }
 }
 

@@ -94,12 +94,12 @@ if (!function_exists('renderSoalCard')) {
                         <input type="hidden" name="soal[<?= $sId ?>][nomor_urut]" class="input-nomor-urut" value="<?= $displayNo ?>">
                         <!-- SELECTOR MODEL SOAL ISIAN -->
                         <select name="soal[<?= $sId ?>][sub_tipe]" id="sub_tipe_select_<?= $sId ?>" 
-                            class="form-select form-select-sm py-0 px-2 fw-bold rounded-pill bg-teal-subtle text-teal-emphasis border border-teal-subtle" 
+                            class="form-select form-select-sm py-0 px-2 fw-semibold rounded-pill bg-teal-subtle text-teal-emphasis border border-teal-subtle" 
                             style="width: auto; font-size: 0.76rem; height: 26px; cursor: pointer;" 
                             onchange="gantiSubTipeIsian(<?= $sId ?>, this.value)">
-                            <option value="isian_biasa" <?= $subTipe === 'isian_biasa' ? 'selected' : '' ?>>✏️ Isian Rumpang</option>
-                            <option value="benar_salah" <?= $subTipe === 'benar_salah' ? 'selected' : '' ?>>⚖️ Benar / Salah (ص / خ)</option>
-                            <option value="menjodohkan" <?= $subTipe === 'menjodohkan' ? 'selected' : '' ?>>🔀 Menjodohkan (صل بين)</option>
+                            <option value="isian_biasa" <?= $subTipe === 'isian_biasa' ? 'selected' : '' ?>>Isian Singkat</option>
+                            <option value="benar_salah" <?= $subTipe === 'benar_salah' ? 'selected' : '' ?>>Benar / Salah (ص / خ)</option>
+                            <option value="menjodohkan" <?= $subTipe === 'menjodohkan' ? 'selected' : '' ?>>Menjodohkan (Pasangan)</option>
                         </select>
                     <?php else: ?>
                         <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1 soal-nomor-badge">Essay No. <?= $displayNo ?></span>
@@ -133,10 +133,15 @@ if (!function_exists('renderSoalCard')) {
 
             <!-- TEKS PERTANYAAN -->
             <div class="mb-2.5">
+                <?php if ($tipe === 'isian'): ?>
+                    <label class="form-label fw-bold text-muted mb-1 isian-label-pertanyaan" id="label_tanya_<?= $sId ?>" style="font-size: 0.78rem;">
+                        <?= ($subTipe === 'menjodohkan') ? 'Kata / Premis Soal (Kolom Kiri):' : (($subTipe === 'benar_salah') ? 'Kalimat / Pernyataan:' : 'Teks Pertanyaan / Kalimat Rumpang:') ?>
+                    </label>
+                <?php endif; ?>
                 <textarea name="soal[<?= $sId ?>][pertanyaan]" class="form-control question-textarea <?= $isArabPertanyaan ? 'arabic-input' : '' ?>" 
                     <?= $isArabPertanyaan ? 'dir="rtl"' : '' ?>
                     rows="<?= $tipe === 'isian' ? 2 : 3 ?>" required 
-                    placeholder="<?= $tipe === 'isian' ? 'Tuliskan pertanyaan / kalimat rumpang di sini...' : ($tipe === 'essay' ? 'Tuliskan teks pertanyaan uraian / kasus di sini...' : 'Tuliskan pertanyaan soal di sini...') ?>" 
+                    placeholder="<?= ($tipe === 'isian' && $subTipe === 'menjodohkan') ? 'Tuliskan kata atau kalimat premis soal...' : (($tipe === 'isian' && $subTipe === 'benar_salah') ? 'Tuliskan pernyataan yang akan dinilai Benar atau Salah...' : 'Tuliskan pertanyaan / kalimat rumpang di sini...') ?>" 
                     style="font-size: 0.95rem; line-height: 1.55;"><?= htmlspecialchars($s['pertanyaan']) ?></textarea>
             </div>
 
@@ -207,22 +212,6 @@ if (!function_exists('renderSoalCard')) {
             <?php elseif ($tipe === 'isian'): 
                 $isArabKunci = isTeksArabCard($s['kunci_jawaban'] ?? '');
                 
-                // Parse matching pairs if any
-                $matchingPairs = [];
-                if (!empty($s['opsi_matching'])) {
-                    $decoded = json_decode($s['opsi_matching'], true);
-                    if (is_array($decoded)) {
-                        $matchingPairs = $decoded;
-                    }
-                }
-                if (empty($matchingPairs)) {
-                    $matchingPairs = [
-                        ['left' => '', 'right' => ''],
-                        ['left' => '', 'right' => ''],
-                        ['left' => '', 'right' => '']
-                    ];
-                }
-                
                 // Parse Benar / Salah key
                 $currBs = strtoupper(trim($s['kunci_jawaban'] ?? 'B'));
                 if ($currBs === 'ص') $currBs = 'B';
@@ -257,57 +246,18 @@ if (!function_exists('renderSoalCard')) {
                     </div>
                 </div>
 
-                <!-- 3. SUB-TIPE: MENJODOHKAN / SOAL SILANG (صل بين) -->
+                <!-- 3. SUB-TIPE: MENJODOHKAN / PASANGAN (صِلْ بَيْنَ) -->
                 <div id="box_menjodohkan_<?= $sId ?>" class="<?= $subTipe === 'menjodohkan' ? '' : 'd-none' ?>">
-                    <div class="d-flex justify-content-between align-items-center mb-1.5">
-                        <label class="form-label fw-bold text-muted mb-0" style="font-size: 0.78rem;">
-                            <i class="bi bi-arrow-left-right text-primary me-1"></i> Pasangan Menjodohkan (Premis ↔ Jawaban Benar):
-                        </label>
-                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-0.5 fw-semibold" 
-                            onclick="tambahBarisMatching(<?= $sId ?>)" style="font-size: 0.74rem;">
-                            <i class="bi bi-plus-circle me-1"></i> + Tambah Baris Pasangan
-                        </button>
-                    </div>
-
-                    <div class="matching-container" id="matching_container_<?= $sId ?>">
-                        <?php foreach ($matchingPairs as $mIdx => $pair): 
-                            $isArabLeft = isTeksArabCard($pair['left'] ?? '');
-                            $isArabRight = isTeksArabCard($pair['right'] ?? '');
-                        ?>
-                            <div class="row g-2 align-items-center mb-2 matching-row">
-                                <div class="col-5">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-no" style="font-size: 0.78rem;"><?= $mIdx + 1 ?>.</span>
-                                        <input type="text" name="soal[<?= $sId ?>][matching_left][]" 
-                                            class="form-control form-control-sm <?= $isArabLeft ? 'arabic-input' : '' ?>" 
-                                            <?= $isArabLeft ? 'dir="rtl"' : '' ?>
-                                            value="<?= htmlspecialchars($pair['left'] ?? '') ?>" placeholder="Kata / Premis <?= $mIdx + 1 ?>"
-                                            style="font-size: 0.88rem;">
-                                    </div>
-                                </div>
-                                <div class="col-1 text-center text-muted px-0">
-                                    <i class="bi bi-arrow-left-right" style="font-size: 0.85rem;"></i>
-                                </div>
-                                <div class="col-5">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-letter" style="font-size: 0.78rem;"><?= chr(65 + $mIdx) ?>.</span>
-                                        <input type="text" name="soal[<?= $sId ?>][matching_right][]" 
-                                            class="form-control form-control-sm <?= $isArabRight ? 'arabic-input' : '' ?>" 
-                                            <?= $isArabRight ? 'dir="rtl"' : '' ?>
-                                            value="<?= htmlspecialchars($pair['right'] ?? '') ?>" placeholder="Definisi / Jawaban <?= chr(65 + $mIdx) ?>"
-                                            style="font-size: 0.88rem;">
-                                    </div>
-                                </div>
-                                <div class="col-1 text-end">
-                                    <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="hapusBarisMatching(this)" title="Hapus Pasangan Ini">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
+                    <label class="form-label fw-bold text-muted mb-1" style="font-size: 0.78rem;">
+                        Pasangan Kunci Jawaban Benar (Kolom Kanan):
+                    </label>
+                    <input type="text" name="soal[<?= $sId ?>][kunci_matching]" 
+                        class="form-control form-control-sm bg-white <?= $isArabKunci ? 'arabic-input' : '' ?>" 
+                        <?= $isArabKunci ? 'dir="rtl"' : '' ?>
+                        value="<?= htmlspecialchars($subTipe === 'menjodohkan' ? ($s['kunci_jawaban'] ?? '') : '') ?>" 
+                        placeholder="Tuliskan pasangan jawaban yang benar di sini...">
                     <div class="small text-muted mt-1.5" style="font-size: 0.74rem;">
-                        <i class="bi bi-shuffle me-1"></i> Pada lembar cetak ujian (PDF &amp; Word), kolom kanan otomatis diacak posisinya dan diberi titik peluru (•) agar siswa dapat menarik garis silang.
+                        <i class="bi bi-info-circle me-1"></i> Satu kartu ini adalah <strong>1 butir soal</strong>. Butir-butir Menjodohkan yang berurutan otomatis disatukan menjadi tabel soal silang saat dicetak (dan kolom kanan diacak otomatis).
                     </div>
                 </div>
 

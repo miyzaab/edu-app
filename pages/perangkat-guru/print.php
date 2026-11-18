@@ -841,85 +841,113 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             <div class="section-header" style="margin-top: 18px;">B. ISIAN SINGKAT</div>
             <div class="section-desc">Isilah titik-titik di bawah ini dengan jawaban yang benar dan singkat!</div>
 
-            <?php foreach ($soalIsian as $idx => $s): 
-                $isArab = isTeksArab($s['pertanyaan']);
+            <?php 
+            $totalIsian = count($soalIsian);
+            $currIdx = 0;
+            while ($currIdx < $totalIsian):
+                $s = $soalIsian[$currIdx];
                 $subTipe = $s['sub_tipe'] ?? 'isian_biasa';
+
+                if ($subTipe === 'menjodohkan'):
+                    // Kumpulkan SEMUA butir menjodohkan yang berurutan
+                    $matchingGroup = [];
+                    while ($currIdx < $totalIsian && ($soalIsian[$currIdx]['sub_tipe'] ?? '') === 'menjodohkan') {
+                        $matchingGroup[] = [
+                            'no' => $currIdx + 1,
+                            'item' => $soalIsian[$currIdx]
+                        ];
+                        $currIdx++;
+                    }
+
+                    $firstItem = $matchingGroup[0]['item'];
+                    $isArabGroup = isTeksArab($firstItem['pertanyaan']) || isTeksArab($firstItem['kunci_jawaban'] ?? '');
+
+                    // Acak posisi kolom kanan dengan seed konsisten
+                    $countGroup = count($matchingGroup);
+                    $shuffledIdxs = range(0, max(0, $countGroup - 1));
+                    srand((int)$firstItem['id'] * 79 + 17);
+                    shuffle($shuffledIdxs);
             ?>
-                <div class="soal-item">
-                    <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
-                        $isWacanaArab = isTeksArab($s['wacana_teks']) || isTeksArab($s['wacana_judul'] ?? '');
-                    ?>
-                        <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
-                            <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
-                                <div class="wacana-title"><strong><?= renderTeksSoal($s['wacana_judul'], $isWacanaArab) ?></strong></div>
-                            <?php endif; ?>
-                            <div class="wacana-content"><?= renderTeksSoal($s['wacana_teks'], $isWacanaArab) ?></div>
-                        </div>
-                    <?php endif; ?>
-                    <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
-                        <tr>
-                            <td class="soal-no"><?= $idx + 1 ?>.</td>
-                            <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
-                                <?php if ($subTipe === 'benar_salah'): ?>
-                                    <span class="bs-bracket">( &nbsp; &nbsp; &nbsp; &nbsp; )</span> &nbsp; <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
-                                <?php else: ?>
-                                    <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
+                    <div class="soal-item">
+                        <?php if (!empty(trim($firstItem['wacana_teks'] ?? ''))): 
+                            $isWacanaArab = isTeksArab($firstItem['wacana_teks']) || isTeksArab($firstItem['wacana_judul'] ?? '');
+                        ?>
+                            <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                                <?php if (!empty(trim($firstItem['wacana_judul'] ?? ''))): ?>
+                                    <div class="wacana-title"><strong><?= renderTeksSoal($firstItem['wacana_judul'], $isWacanaArab) ?></strong></div>
                                 <?php endif; ?>
+                                <div class="wacana-content"><?= renderTeksSoal($firstItem['wacana_teks'], $isWacanaArab) ?></div>
+                            </div>
+                        <?php endif; ?>
 
-                                <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
-                                    <div class="soal-img-box">
-                                        <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>"
-                                            alt="Soal <?= $idx + 1 ?>">
-                                    </div>
-                                <?php endif; ?>
-
-                                <?php if ($subTipe === 'menjodohkan'): 
-                                    $mPairs = json_decode($s['opsi_matching'] ?? '[]', true);
-                                    if (!empty($mPairs) && is_array($mPairs)):
-                                        $leftItems = [];
-                                        $rightItems = [];
-                                        foreach ($mPairs as $p) {
-                                            if (!empty(trim($p['left'] ?? '')) || !empty(trim($p['right'] ?? ''))) {
-                                                $leftItems[] = $p['left'];
-                                                $rightItems[] = $p['right'];
-                                            }
-                                        }
-                                        $countItems = count($rightItems);
-                                        $shuffledIndices = range(0, max(0, $countItems - 1));
-                                        srand((int)$s['id'] * 79 + 17);
-                                        shuffle($shuffledIndices);
+                        <div class="matching-table-box">
+                            <table class="matching-print-table <?= $isArabGroup ? 'soal-arab' : '' ?>" <?= $isArabGroup ? 'dir="rtl"' : '' ?>>
+                                <?php foreach ($matchingGroup as $mGIdx => $mG): 
+                                    $mNo = $mG['no'];
+                                    $mLeft = $mG['item']['pertanyaan'];
+                                    $rTargetIdx = $shuffledIdxs[$mGIdx] ?? $mGIdx;
+                                    $mRight = $matchingGroup[$rTargetIdx]['item']['kunci_jawaban'] ?? '';
+                                    $mLetter = chr(65 + $mGIdx);
                                 ?>
-                                    <div class="matching-table-box">
-                                        <table class="matching-print-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
-                                            <?php for ($m = 0; $m < count($leftItems); $m++): 
-                                                $rIdx = $shuffledIndices[$m] ?? $m;
-                                                $leftText = $leftItems[$m] ?? '';
-                                                $rightText = $rightItems[$rIdx] ?? '';
-                                                $rightLetter = chr(65 + $m);
-                                            ?>
-                                                <tr>
-                                                    <!-- PREMIS KIRI -->
-                                                    <td style="width: 44%;">
-                                                        <strong><?= $m + 1 ?>.</strong> <?= renderTeksSoal($leftText, $isArab) ?>
-                                                    </td>
-                                                    <!-- PELURU KIRI -->
-                                                    <td class="matching-bullet" style="width: 6%;">•</td>
-                                                    <!-- PELURU KANAN -->
-                                                    <td class="matching-bullet" style="width: 6%;">•</td>
-                                                    <!-- DEFINISI KANAN -->
-                                                    <td style="width: 44%;">
-                                                        <strong><?= $rightLetter ?>.</strong> <?= renderTeksSoal($rightText, $isArab) ?>
-                                                    </td>
-                                                </tr>
-                                            <?php endfor; ?>
-                                        </table>
-                                    </div>
-                                <?php endif; endif; ?>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            <?php endforeach; ?>
+                                    <tr>
+                                        <!-- KOLOM KIRI (KATA / PREMIS SESUAI NOMOR URUT) -->
+                                        <td style="width: 44%;">
+                                            <strong><?= $mNo ?>.</strong> <?= renderTeksSoal($mLeft, $isArabGroup) ?>
+                                        </td>
+                                        <!-- TITIK PELURU KIRI -->
+                                        <td class="matching-bullet" style="width: 6%;">•</td>
+                                        <!-- TITIK PELURU KANAN -->
+                                        <td class="matching-bullet" style="width: 6%;">•</td>
+                                        <!-- KOLOM KANAN (JAWABAN DIACAK POSISINYA) -->
+                                        <td style="width: 44%;">
+                                            <strong><?= $mLetter ?>.</strong> <?= renderTeksSoal($mRight, $isArabGroup) ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </table>
+                        </div>
+                    </div>
+
+                <?php else: 
+                    // Soal Isian Rumpang atau Benar/Salah (Single Item)
+                    $isArab = isTeksArab($s['pertanyaan']);
+                    $noSoal = $currIdx + 1;
+                    $currIdx++;
+                ?>
+                    <div class="soal-item">
+                        <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                            $isWacanaArab = isTeksArab($s['wacana_teks']) || isTeksArab($s['wacana_judul'] ?? '');
+                        ?>
+                            <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                                <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                                    <div class="wacana-title"><strong><?= renderTeksSoal($s['wacana_judul'], $isWacanaArab) ?></strong></div>
+                                <?php endif; ?>
+                                <div class="wacana-content"><?= renderTeksSoal($s['wacana_teks'], $isWacanaArab) ?></div>
+                            </div>
+                        <?php endif; ?>
+
+                        <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
+                            <tr>
+                                <td class="soal-no"><?= $noSoal ?>.</td>
+                                <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                                    <?php if ($subTipe === 'benar_salah'): ?>
+                                        <span class="bs-bracket">( &nbsp; &nbsp; &nbsp; &nbsp; )</span> &nbsp; <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
+                                    <?php else: ?>
+                                        <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
+                                        <div class="soal-img-box">
+                                            <img src="<?= BASE_URL ?>/uploads/soal/<?= htmlspecialchars($s['gambar']) ?>"
+                                                alt="Soal <?= $noSoal ?>">
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            <?php endwhile; ?>
         <?php endif; ?>
 
         <!-- ================================================================ -->

@@ -552,85 +552,111 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         <div class="section-title" style="margin-top: 16px;">B. ISIAN SINGKAT</div>
         <div class="section-desc">Isilah titik-titik di bawah ini dengan jawaban yang benar dan singkat!</div>
 
-        <?php foreach ($soalIsian as $idx => $s): 
-            $isArab = isTeksArabWord($s['pertanyaan']);
+        <?php 
+        $totalIsian = count($soalIsian);
+        $currIdx = 0;
+        while ($currIdx < $totalIsian):
+            $s = $soalIsian[$currIdx];
             $subTipe = $s['sub_tipe'] ?? 'isian_biasa';
+
+            if ($subTipe === 'menjodohkan'):
+                // Kumpulkan SEMUA butir menjodohkan yang berurutan
+                $matchingGroup = [];
+                while ($currIdx < $totalIsian && ($soalIsian[$currIdx]['sub_tipe'] ?? '') === 'menjodohkan') {
+                    $matchingGroup[] = [
+                        'no' => $currIdx + 1,
+                        'item' => $soalIsian[$currIdx]
+                    ];
+                    $currIdx++;
+                }
+
+                $firstItem = $matchingGroup[0]['item'];
+                $isArabGroup = isTeksArabWord($firstItem['pertanyaan']) || isTeksArabWord($firstItem['kunci_jawaban'] ?? '');
+
+                // Acak posisi kolom kanan dengan seed konsisten
+                $countGroup = count($matchingGroup);
+                $shuffledIdxs = range(0, max(0, $countGroup - 1));
+                srand((int)$firstItem['id'] * 79 + 17);
+                shuffle($shuffledIdxs);
         ?>
-            <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
-                $isWacanaArab = isTeksArabWord($s['wacana_teks']) || isTeksArabWord($s['wacana_judul'] ?? '');
-            ?>
-                <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
-                    <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
-                        <div class="wacana-title"><?= renderTeksWord($s['wacana_judul'], $isWacanaArab) ?></div>
-                    <?php endif; ?>
-                    <div class="wacana-content"><?= renderTeksWord($s['wacana_teks'], $isWacanaArab) ?></div>
-                </div>
-            <?php endif; ?>
-            <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
-                <tr>
-                    <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $idx + 1 ?>.</td>
-                    <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
-                        <?php if ($subTipe === 'benar_salah'): ?>
-                            <div><span class="bs-bracket">( &nbsp; &nbsp; &nbsp; &nbsp; )</span> &nbsp; <?= renderTeksWord($s['pertanyaan'], $isArab) ?></div>
-                        <?php else: ?>
-                            <div><?= renderTeksWord($s['pertanyaan'], $isArab) ?></div>
+                <?php if (!empty(trim($firstItem['wacana_teks'] ?? ''))): 
+                    $isWacanaArab = isTeksArabWord($firstItem['wacana_teks']) || isTeksArabWord($firstItem['wacana_judul'] ?? '');
+                ?>
+                    <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                        <?php if (!empty(trim($firstItem['wacana_judul'] ?? ''))): ?>
+                            <div class="wacana-title"><?= renderTeksWord($firstItem['wacana_judul'], $isWacanaArab) ?></div>
                         <?php endif; ?>
+                        <div class="wacana-content"><?= renderTeksWord($firstItem['wacana_teks'], $isWacanaArab) ?></div>
+                    </div>
+                <?php endif; ?>
 
-                        <?php 
-                        if (!empty($s['gambar'])):
-                            $sImgPath = __DIR__ . '/../../uploads/soal/' . $s['gambar'];
-                            if (file_exists($sImgPath)):
-                                $sImgData = file_get_contents($sImgPath);
-                                $sImgExt = pathinfo($sImgPath, PATHINFO_EXTENSION);
-                                $sImgBase64 = 'data:image/' . $sImgExt . ';base64,' . base64_encode($sImgData);
+                <div style="border: 0.75pt solid #888888; padding: 6pt 10pt; margin: 6pt 0; background-color: #fafafa;">
+                    <table class="matching-word-table <?= $isArabGroup ? 'soal-arab' : '' ?>" <?= $isArabGroup ? 'dir="rtl"' : '' ?> width="100%">
+                        <?php foreach ($matchingGroup as $mGIdx => $mG): 
+                            $mNo = $mG['no'];
+                            $mLeft = $mG['item']['pertanyaan'];
+                            $rTargetIdx = $shuffledIdxs[$mGIdx] ?? $mGIdx;
+                            $mRight = $matchingGroup[$rTargetIdx]['item']['kunci_jawaban'] ?? '';
+                            $mLetter = chr(65 + $mGIdx);
                         ?>
-                            <div style="margin: 6pt 0;">
-                                <img src="<?= $sImgBase64 ?>" style="max-height: 150px; max-width: 260px;" alt="Soal <?= $idx + 1 ?>">
-                            </div>
-                        <?php endif; endif; ?>
+                            <tr>
+                                <td style="width: 44%; vertical-align: middle;">
+                                    <b><?= $mNo ?>.</b> <?= renderTeksWord($mLeft, $isArabGroup) ?>
+                                </td>
+                                <td class="matching-bullet" style="width: 6%; text-align: center; vertical-align: middle;">•</td>
+                                <td class="matching-bullet" style="width: 6%; text-align: center; vertical-align: middle;">•</td>
+                                <td style="width: 44%; vertical-align: middle;">
+                                    <b><?= $mLetter ?>.</b> <?= renderTeksWord($mRight, $isArabGroup) ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </table>
+                </div>
 
-                        <?php if ($subTipe === 'menjodohkan'): 
-                            $mPairs = json_decode($s['opsi_matching'] ?? '[]', true);
-                            if (!empty($mPairs) && is_array($mPairs)):
-                                $leftItems = [];
-                                $rightItems = [];
-                                foreach ($mPairs as $p) {
-                                    if (!empty(trim($p['left'] ?? '')) || !empty(trim($p['right'] ?? ''))) {
-                                        $leftItems[] = $p['left'];
-                                        $rightItems[] = $p['right'];
-                                    }
-                                }
-                                $countItems = count($rightItems);
-                                $shuffledIndices = range(0, max(0, $countItems - 1));
-                                srand((int)$s['id'] * 79 + 17);
-                                shuffle($shuffledIndices);
-                        ?>
-                            <div style="border: 0.75pt solid #888888; padding: 6pt 10pt; margin: 6pt 0; background-color: #fafafa;">
-                                <table class="matching-word-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?> width="100%">
-                                    <?php for ($m = 0; $m < count($leftItems); $m++): 
-                                        $rIdx = $shuffledIndices[$m] ?? $m;
-                                        $leftText = $leftItems[$m] ?? '';
-                                        $rightText = $rightItems[$rIdx] ?? '';
-                                        $rightLetter = chr(65 + $m);
-                                    ?>
-                                        <tr>
-                                            <td style="width: 44%; vertical-align: middle;">
-                                                <b><?= $m + 1 ?>.</b> <?= renderTeksWord($leftText, $isArab) ?>
-                                            </td>
-                                            <td class="matching-bullet" style="width: 6%; text-align: center; vertical-align: middle;">•</td>
-                                            <td class="matching-bullet" style="width: 6%; text-align: center; vertical-align: middle;">•</td>
-                                            <td style="width: 44%; vertical-align: middle;">
-                                                <b><?= $rightLetter ?>.</b> <?= renderTeksWord($rightText, $isArab) ?>
-                                            </td>
-                                        </tr>
-                                    <?php endfor; ?>
-                                </table>
-                            </div>
-                        <?php endif; endif; ?>
-                    </td>
-                </tr>
-            </table>
-        <?php endforeach; ?>
+            <?php else: 
+                // Soal Isian Rumpang atau Benar/Salah (Single Item)
+                $isArab = isTeksArabWord($s['pertanyaan']);
+                $noSoal = $currIdx + 1;
+                $currIdx++;
+            ?>
+                <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
+                    $isWacanaArab = isTeksArabWord($s['wacana_teks']) || isTeksArabWord($s['wacana_judul'] ?? '');
+                ?>
+                    <div class="wacana-box <?= $isWacanaArab ? 'wacana-arab' : '' ?>" <?= $isWacanaArab ? 'dir="rtl"' : '' ?>>
+                        <?php if (!empty(trim($s['wacana_judul'] ?? ''))): ?>
+                            <div class="wacana-title"><?= renderTeksWord($s['wacana_judul'], $isWacanaArab) ?></div>
+                        <?php endif; ?>
+                        <div class="wacana-content"><?= renderTeksWord($s['wacana_teks'], $isWacanaArab) ?></div>
+                    </div>
+                <?php endif; ?>
+
+                <table class="soal-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
+                    <tr>
+                        <td class="soal-no" style="width: 26px; font-weight: bold;"><?= $noSoal ?>.</td>
+                        <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
+                            <?php if ($subTipe === 'benar_salah'): ?>
+                                <div><span class="bs-bracket">( &nbsp; &nbsp; &nbsp; &nbsp; )</span> &nbsp; <?= renderTeksWord($s['pertanyaan'], $isArab) ?></div>
+                            <?php else: ?>
+                                <div><?= renderTeksWord($s['pertanyaan'], $isArab) ?></div>
+                            <?php endif; ?>
+
+                            <?php 
+                            if (!empty($s['gambar'])):
+                                $sImgPath = __DIR__ . '/../../uploads/soal/' . $s['gambar'];
+                                if (file_exists($sImgPath)):
+                                    $sImgData = file_get_contents($sImgPath);
+                                    $sImgExt = pathinfo($sImgPath, PATHINFO_EXTENSION);
+                                    $sImgBase64 = 'data:image/' . $sImgExt . ';base64,' . base64_encode($sImgData);
+                            ?>
+                                <div style="margin: 6pt 0;">
+                                    <img src="<?= $sImgBase64 ?>" style="max-height: 150px; max-width: 260px;" alt="Soal <?= $noSoal ?>">
+                                </div>
+                            <?php endif; endif; ?>
+                        </td>
+                    </tr>
+                </table>
+            <?php endif; ?>
+        <?php endwhile; ?>
     <?php endif; ?>
 
     <!-- ================================================================ -->

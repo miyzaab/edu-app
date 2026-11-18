@@ -38,6 +38,12 @@ $soalPg = [];
 $soalIsian = [];
 $soalEssay = [];
 
+// Helper Deteksi Arab
+function isTeksArabKunci($text) {
+    if ($text === null || $text === '') return false;
+    return (bool) preg_match('/[\p{Arabic}]/u', $text);
+}
+
 $sumPgPoin = 0;
 $sumIsianPoin = 0;
 $sumEssayPoin = 0;
@@ -406,11 +412,30 @@ $footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($soalIsian as $idx => $s): ?>
+                    <?php foreach ($soalIsian as $idx => $s): 
+                        $subTipe = $s['sub_tipe'] ?? 'isian_biasa';
+                        $isArab = isTeksArabKunci($s['pertanyaan']);
+                        $kunciDisp = $s['kunci_jawaban'] ?: '-';
+                        if ($subTipe === 'benar_salah') {
+                            $kVal = strtoupper(trim($s['kunci_jawaban'] ?? 'B'));
+                            if ($isArab) {
+                                $kunciDisp = ($kVal === 'S' || $kVal === 'خ') ? 'خ (خطأ)' : 'ص (صحيح)';
+                            } else {
+                                $kunciDisp = ($kVal === 'S') ? 'S (Salah)' : 'B (Benar)';
+                            }
+                        }
+                    ?>
                         <tr>
                             <td style="text-align: center; font-weight: bold;"><?= $idx + 1 ?></td>
-                            <td><?= htmlspecialchars(mb_strimwidth($s['pertanyaan'], 0, 90, '...')) ?></td>
-                            <td style="font-weight: bold; color: #0f172a;"><?= htmlspecialchars($s['kunci_jawaban'] ?: '-') ?></td>
+                            <td <?= $isArab ? 'dir="rtl" style="text-align: right;"' : '' ?>>
+                                <?php if ($subTipe === 'menjodohkan'): ?>
+                                    <span style="font-size: 0.72rem; padding: 1px 4px; border: 1px solid #aaa; border-radius: 3px; color: #555;">Menjodohkan</span> 
+                                <?php elseif ($subTipe === 'benar_salah'): ?>
+                                    <span style="font-size: 0.72rem; padding: 1px 4px; border: 1px solid #aaa; border-radius: 3px; color: #555;">Benar/Salah</span> 
+                                <?php endif; ?>
+                                <?= htmlspecialchars(mb_strimwidth($s['pertanyaan'], 0, 90, '...')) ?>
+                            </td>
+                            <td style="font-weight: bold; color: #0f172a;" <?= isTeksArabKunci($kunciDisp) ? 'dir="rtl" style="text-align: right;"' : '' ?>><?= htmlspecialchars($kunciDisp) ?></td>
                             <td style="text-align: center; font-family: monospace; font-weight: bold;"><?= (float)$s['poin'] ?></td>
                         </tr>
                     <?php endforeach; ?>
