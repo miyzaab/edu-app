@@ -28,6 +28,7 @@ if (!function_exists('renderSoalCard')) {
         $isArabPertanyaan = isTeksArabCard($s['pertanyaan'] ?? '');
         $isArabWacanaJudul = isTeksArabCard($s['wacana_judul'] ?? '');
         $isArabWacanaTeks = isTeksArabCard($s['wacana_teks'] ?? '');
+        $subTipe = !empty($s['sub_tipe']) ? $s['sub_tipe'] : 'isian_biasa';
 
         ob_start();
         ?>
@@ -91,7 +92,15 @@ if (!function_exists('renderSoalCard')) {
                     <?php elseif ($tipe === 'isian'): ?>
                         <span class="badge rounded-pill px-2.5 py-1 text-white soal-nomor-badge" style="background: #0d9488;">Isian No. <?= $displayNo ?></span>
                         <input type="hidden" name="soal[<?= $sId ?>][nomor_urut]" class="input-nomor-urut" value="<?= $displayNo ?>">
-                        <span class="badge bg-teal-subtle text-teal-emphasis border" style="background: #ccfbf1; color: #0f766e;">Isian Singkat</span>
+                        <!-- SELECTOR MODEL SOAL ISIAN -->
+                        <select name="soal[<?= $sId ?>][sub_tipe]" id="sub_tipe_select_<?= $sId ?>" 
+                            class="form-select form-select-sm py-0 px-2 fw-bold rounded-pill bg-teal-subtle text-teal-emphasis border border-teal-subtle" 
+                            style="width: auto; font-size: 0.76rem; height: 26px; cursor: pointer;" 
+                            onchange="gantiSubTipeIsian(<?= $sId ?>, this.value)">
+                            <option value="isian_biasa" <?= $subTipe === 'isian_biasa' ? 'selected' : '' ?>>✏️ Isian Rumpang</option>
+                            <option value="benar_salah" <?= $subTipe === 'benar_salah' ? 'selected' : '' ?>>⚖️ Benar / Salah (ص / خ)</option>
+                            <option value="menjodohkan" <?= $subTipe === 'menjodohkan' ? 'selected' : '' ?>>🔀 Menjodohkan (صل بين)</option>
+                        </select>
                     <?php else: ?>
                         <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1 soal-nomor-badge">Essay No. <?= $displayNo ?></span>
                         <input type="hidden" name="soal[<?= $sId ?>][nomor_urut]" class="input-nomor-urut" value="<?= $displayNo ?>">
@@ -197,14 +206,109 @@ if (!function_exists('renderSoalCard')) {
 
             <?php elseif ($tipe === 'isian'): 
                 $isArabKunci = isTeksArabCard($s['kunci_jawaban'] ?? '');
+                
+                // Parse matching pairs if any
+                $matchingPairs = [];
+                if (!empty($s['opsi_matching'])) {
+                    $decoded = json_decode($s['opsi_matching'], true);
+                    if (is_array($decoded)) {
+                        $matchingPairs = $decoded;
+                    }
+                }
+                if (empty($matchingPairs)) {
+                    $matchingPairs = [
+                        ['left' => '', 'right' => ''],
+                        ['left' => '', 'right' => ''],
+                        ['left' => '', 'right' => '']
+                    ];
+                }
+                
+                // Parse Benar / Salah key
+                $currBs = strtoupper(trim($s['kunci_jawaban'] ?? 'B'));
+                if ($currBs === 'ص') $currBs = 'B';
+                if ($currBs === 'خ') $currBs = 'S';
+                if ($currBs !== 'S') $currBs = 'B';
             ?>
-                <!-- KUNCI ISIAN -->
-                <div>
-                    <label class="form-label fw-bold text-muted" style="font-size: 0.78rem;">Kunci Jawaban Singkat (Pedoman Guru):</label>
-                    <input type="text" name="soal[<?= $sId ?>][kunci_jawaban]" 
+                <!-- 1. SUB-TIPE: ISIAN RUMPANG -->
+                <div id="box_isian_biasa_<?= $sId ?>" class="<?= $subTipe === 'isian_biasa' ? '' : 'd-none' ?>">
+                    <label class="form-label fw-bold text-muted mb-1" style="font-size: 0.78rem;">Kunci Jawaban Singkat (Pedoman Guru):</label>
+                    <input type="text" name="soal[<?= $sId ?>][kunci_jawaban_isian]" 
                         class="form-control form-control-sm bg-white <?= $isArabKunci ? 'arabic-input' : '' ?>" 
                         <?= $isArabKunci ? 'dir="rtl"' : '' ?>
-                        value="<?= htmlspecialchars($s['kunci_jawaban'] ?? '') ?>" placeholder="Jawaban singkat yang benar...">
+                        value="<?= htmlspecialchars($subTipe === 'isian_biasa' ? ($s['kunci_jawaban'] ?? '') : '') ?>" 
+                        placeholder="Jawaban singkat yang benar...">
+                </div>
+
+                <!-- 2. SUB-TIPE: BENAR / SALAH (صحيح / خطأ) -->
+                <div id="box_benar_salah_<?= $sId ?>" class="<?= $subTipe === 'benar_salah' ? '' : 'd-none' ?>">
+                    <label class="form-label fw-bold text-muted mb-1.5" style="font-size: 0.78rem;">Kunci Jawaban Pernyataan Ini:</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 d-flex align-items-center gap-1.5 cursor-pointer shadow-xs">
+                            <input type="radio" name="soal[<?= $sId ?>][kunci_bs]" value="B" class="form-check-input mt-0" <?= $currBs === 'B' ? 'checked' : '' ?>>
+                            <span class="fw-bold bs-label-true" data-id="<?= $sId ?>"><?= $isArabPertanyaan ? 'صحيح (ص)' : 'Benar (B)' ?></span>
+                        </label>
+                        <label class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 d-flex align-items-center gap-1.5 cursor-pointer shadow-xs">
+                            <input type="radio" name="soal[<?= $sId ?>][kunci_bs]" value="S" class="form-check-input mt-0" <?= $currBs === 'S' ? 'checked' : '' ?>>
+                            <span class="fw-bold bs-label-false" data-id="<?= $sId ?>"><?= $isArabPertanyaan ? 'خطأ (خ)' : 'Salah (S)' ?></span>
+                        </label>
+                    </div>
+                    <div class="small text-muted mt-1.5" style="font-size: 0.74rem;">
+                        <i class="bi bi-info-circle me-1"></i> Pada lembar ujian, siswa akan mengisi tanda kurung <code>( ... )</code> di samping soal.
+                    </div>
+                </div>
+
+                <!-- 3. SUB-TIPE: MENJODOHKAN / SOAL SILANG (صل بين) -->
+                <div id="box_menjodohkan_<?= $sId ?>" class="<?= $subTipe === 'menjodohkan' ? '' : 'd-none' ?>">
+                    <div class="d-flex justify-content-between align-items-center mb-1.5">
+                        <label class="form-label fw-bold text-muted mb-0" style="font-size: 0.78rem;">
+                            <i class="bi bi-arrow-left-right text-primary me-1"></i> Pasangan Menjodohkan (Premis ↔ Jawaban Benar):
+                        </label>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2.5 py-0.5 fw-semibold" 
+                            onclick="tambahBarisMatching(<?= $sId ?>)" style="font-size: 0.74rem;">
+                            <i class="bi bi-plus-circle me-1"></i> + Tambah Baris Pasangan
+                        </button>
+                    </div>
+
+                    <div class="matching-container" id="matching_container_<?= $sId ?>">
+                        <?php foreach ($matchingPairs as $mIdx => $pair): 
+                            $isArabLeft = isTeksArabCard($pair['left'] ?? '');
+                            $isArabRight = isTeksArabCard($pair['right'] ?? '');
+                        ?>
+                            <div class="row g-2 align-items-center mb-2 matching-row">
+                                <div class="col-5">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-no" style="font-size: 0.78rem;"><?= $mIdx + 1 ?>.</span>
+                                        <input type="text" name="soal[<?= $sId ?>][matching_left][]" 
+                                            class="form-control form-control-sm <?= $isArabLeft ? 'arabic-input' : '' ?>" 
+                                            <?= $isArabLeft ? 'dir="rtl"' : '' ?>
+                                            value="<?= htmlspecialchars($pair['left'] ?? '') ?>" placeholder="Kata / Premis <?= $mIdx + 1 ?>"
+                                            style="font-size: 0.88rem;">
+                                    </div>
+                                </div>
+                                <div class="col-1 text-center text-muted px-0">
+                                    <i class="bi bi-arrow-left-right" style="font-size: 0.85rem;"></i>
+                                </div>
+                                <div class="col-5">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-letter" style="font-size: 0.78rem;"><?= chr(65 + $mIdx) ?>.</span>
+                                        <input type="text" name="soal[<?= $sId ?>][matching_right][]" 
+                                            class="form-control form-control-sm <?= $isArabRight ? 'arabic-input' : '' ?>" 
+                                            <?= $isArabRight ? 'dir="rtl"' : '' ?>
+                                            value="<?= htmlspecialchars($pair['right'] ?? '') ?>" placeholder="Definisi / Jawaban <?= chr(65 + $mIdx) ?>"
+                                            style="font-size: 0.88rem;">
+                                    </div>
+                                </div>
+                                <div class="col-1 text-end">
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="hapusBarisMatching(this)" title="Hapus Pasangan Ini">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="small text-muted mt-1.5" style="font-size: 0.74rem;">
+                        <i class="bi bi-shuffle me-1"></i> Pada lembar cetak ujian (PDF &amp; Word), kolom kanan otomatis diacak posisinya dan diberi titik peluru (•) agar siswa dapat menarik garis silang.
+                    </div>
                 </div>
 
             <?php else: 

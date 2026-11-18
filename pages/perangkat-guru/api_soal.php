@@ -102,6 +102,7 @@ if ($action === 'add') {
             'naskah_id' => $naskahId,
             'nomor_urut' => $lastNo,
             'tipe_soal' => $tipe,
+            'sub_tipe' => 'isian_biasa',
             'wacana_judul' => null,
             'wacana_teks' => null,
             'pertanyaan' => $defaultTanya,
@@ -111,6 +112,7 @@ if ($action === 'add') {
             'pilihan_c' => $pc,
             'pilihan_d' => $pd,
             'kunci_jawaban' => $kunci,
+            'opsi_matching' => null,
             'poin' => $defaultPoin
         ];
 
@@ -291,6 +293,7 @@ if ($action === 'parse_paste') {
                 'naskah_id' => $naskahId,
                 'nomor_urut' => $lastNo,
                 'tipe_soal' => 'pg',
+                'sub_tipe' => 'pg',
                 'wacana_judul' => null,
                 'wacana_teks' => null,
                 'pertanyaan' => $questionText,
@@ -300,6 +303,7 @@ if ($action === 'parse_paste') {
                 'pilihan_c' => $optC ?: 'Pilihan C',
                 'pilihan_d' => $optD ?: 'Pilihan D',
                 'kunci_jawaban' => $key,
+                'opsi_matching' => null,
                 'poin' => $defaultPoin
             ];
 
@@ -351,6 +355,7 @@ if ($action === 'parse_paste') {
                 'naskah_id' => $naskahId,
                 'nomor_urut' => $lastNo,
                 'tipe_soal' => $tipe,
+                'sub_tipe' => ($tipe === 'isian' ? 'isian_biasa' : 'essay'),
                 'wacana_judul' => null,
                 'wacana_teks' => null,
                 'pertanyaan' => $questionText,
@@ -360,6 +365,7 @@ if ($action === 'parse_paste') {
                 'pilihan_c' => null,
                 'pilihan_d' => null,
                 'kunci_jawaban' => $kunci,
+                'opsi_matching' => null,
                 'poin' => $defaultPoin
             ];
 

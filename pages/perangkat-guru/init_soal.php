@@ -95,6 +95,16 @@ if (!defined('SOAL_INIT_RUN')) {
                 $pdo->exec("ALTER TABLE `soal_butir` ADD COLUMN `wacana_judul` VARCHAR(255) NULL DEFAULT NULL AFTER `tipe_soal`");
                 $pdo->exec("ALTER TABLE `soal_butir` ADD COLUMN `wacana_teks` LONGTEXT NULL DEFAULT NULL AFTER `wacana_judul`");
             }
+
+            // 4B. Tambahkan kolom sub_tipe & opsi_matching untuk Isian (Benar/Salah & Menjodohkan)
+            $chkSubTipe = $pdo->query("SHOW COLUMNS FROM `soal_butir` LIKE 'sub_tipe'")->fetch();
+            if (!$chkSubTipe) {
+                $pdo->exec("ALTER TABLE `soal_butir` ADD COLUMN `sub_tipe` VARCHAR(30) NOT NULL DEFAULT 'isian_biasa' AFTER `tipe_soal`");
+            }
+            $chkMatching = $pdo->query("SHOW COLUMNS FROM `soal_butir` LIKE 'opsi_matching'")->fetch();
+            if (!$chkMatching) {
+                $pdo->exec("ALTER TABLE `soal_butir` ADD COLUMN `opsi_matching` LONGTEXT NULL DEFAULT NULL AFTER `kunci_jawaban`");
+            }
         } catch (Exception $e) {
             // Abaikan jika sudah ada
         }

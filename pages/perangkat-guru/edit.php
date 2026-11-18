@@ -102,6 +102,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pilD = isset($s['pilihan_d']) ? trim($s['pilihan_d']) : null;
         $nomorUrut = (int) ($s['nomor_urut'] ?? 1);
 
+        $subTipe = !empty($s['sub_tipe']) ? trim($s['sub_tipe']) : 'isian_biasa';
+        $opsiMatching = null;
+
+        if ($subTipe === 'benar_salah') {
+            $kunci = trim($s['kunci_bs'] ?? 'B');
+        } elseif ($subTipe === 'menjodohkan') {
+            $pairs = [];
+            $leftArr = $s['matching_left'] ?? [];
+            $rightArr = $s['matching_right'] ?? [];
+            $kunciSummaries = [];
+            if (is_array($leftArr) && is_array($rightArr)) {
+                for ($k = 0; $k < count($leftArr); $k++) {
+                    $lVal = trim($leftArr[$k] ?? '');
+                    $rVal = trim($rightArr[$k] ?? '');
+                    if ($lVal !== '' || $rVal !== '') {
+                        $pairs[] = ['left' => $lVal, 'right' => $rVal];
+                        $kunciSummaries[] = ($k + 1) . '-' . chr(65 + $k) . " ($lVal -> $rVal)";
+                    }
+                }
+            }
+            $opsiMatching = !empty($pairs) ? json_encode($pairs, JSON_UNESCAPED_UNICODE) : null;
+            $kunci = implode(' | ', $kunciSummaries);
+        } elseif (isset($s['kunci_jawaban_isian'])) {
+            $kunci = trim($s['kunci_jawaban_isian']);
+        }
+
         // Cek hapus gambar jika dicentang
         $gambarParam = null;
         $updateGambar = false;
@@ -128,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtUpdSoal = $pdo->prepare("
                 UPDATE soal_butir SET 
                     nomor_urut = :no,
+                    sub_tipe = :subtipe,
                     wacana_judul = :wjudul,
                     wacana_teks = :wteks,
                     pertanyaan = :tanya,
@@ -137,12 +164,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     pilihan_c = :pc,
                     pilihan_d = :pd,
                     kunci_jawaban = :kunci,
+                    opsi_matching = :matching,
                     poin = :poin,
                     updated_at = NOW()
                 WHERE id = :sid AND naskah_id = :nid
             ");
             $stmtUpdSoal->execute([
                 ':no' => $nomorUrut,
+                ':subtipe' => $subTipe,
                 ':wjudul' => $wacanaJudul,
                 ':wteks' => $wacanaTeks,
                 ':tanya' => $pertanyaan,
@@ -152,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':pc' => $pilC,
                 ':pd' => $pilD,
                 ':kunci' => $kunci,
+                ':matching' => $opsiMatching,
                 ':poin' => $poin,
                 ':sid' => $soalId,
                 ':nid' => $naskahId
@@ -160,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtUpdSoal = $pdo->prepare("
                 UPDATE soal_butir SET 
                     nomor_urut = :no,
+                    sub_tipe = :subtipe,
                     wacana_judul = :wjudul,
                     wacana_teks = :wteks,
                     pertanyaan = :tanya,
@@ -168,12 +199,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     pilihan_c = :pc,
                     pilihan_d = :pd,
                     kunci_jawaban = :kunci,
+                    opsi_matching = :matching,
                     poin = :poin,
                     updated_at = NOW()
                 WHERE id = :sid AND naskah_id = :nid
             ");
             $stmtUpdSoal->execute([
                 ':no' => $nomorUrut,
+                ':subtipe' => $subTipe,
                 ':wjudul' => $wacanaJudul,
                 ':wteks' => $wacanaTeks,
                 ':tanya' => $pertanyaan,
@@ -182,6 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':pc' => $pilC,
                 ':pd' => $pilD,
                 ':kunci' => $kunci,
+                ':matching' => $opsiMatching,
                 ':poin' => $poin,
                 ':sid' => $soalId,
                 ':nid' => $naskahId
@@ -959,6 +993,98 @@ function toggleImgBox(id) {
 }
 
 // =========================================================================
+// 5C. KONTROL SUB-TIPE ISIAN (ISIAN RUMPANG, BENAR/SALAH, MENJODOHKAN)
+// =========================================================================
+function gantiSubTipeIsian(id, subTipe) {
+    const boxBiasa = document.getElementById('box_isian_biasa_' + id);
+    const boxBs = document.getElementById('box_benar_salah_' + id);
+    const boxMatch = document.getElementById('box_menjodohkan_' + id);
+
+    if (boxBiasa) boxBiasa.classList.add('d-none');
+    if (boxBs) boxBs.classList.add('d-none');
+    if (boxMatch) boxMatch.classList.add('d-none');
+
+    const targetBox = document.getElementById('box_' + subTipe + '_' + id);
+    if (targetBox) targetBox.classList.remove('d-none');
+
+    // Sesuaikan placeholder pertanyaan
+    const card = document.getElementById('soal_item_' + id);
+    if (card) {
+        const textarea = card.querySelector('textarea.question-textarea');
+        if (textarea && !textarea.value.trim()) {
+            if (subTipe === 'benar_salah') {
+                textarea.placeholder = 'Tuliskan kalimat / pernyataan yang akan dinilai Benar atau Salah di sini...';
+            } else if (subTipe === 'menjodohkan') {
+                textarea.placeholder = 'Tuliskan instruksi menjodohkan (Contoh: صِلْ بَيْنَ الكَلِمَةِ وَالتَّعْرِيْفِ المُنَاسِبِ)...';
+            } else {
+                textarea.placeholder = 'Tuliskan pertanyaan / kalimat rumpang di sini...';
+            }
+        }
+    }
+}
+
+function tambahBarisMatching(soalId) {
+    const container = document.getElementById('matching_container_' + soalId);
+    if (!container) return;
+
+    const currentRows = container.querySelectorAll('.matching-row').length;
+    const nextNum = currentRows + 1;
+    const nextLetter = String.fromCharCode(65 + currentRows);
+
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'row g-2 align-items-center mb-2 matching-row';
+    rowDiv.innerHTML = `
+        <div class="col-5">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-no" style="font-size: 0.78rem;">${nextNum}.</span>
+                <input type="text" name="soal[${soalId}][matching_left][]" 
+                    class="form-control form-control-sm" 
+                    placeholder="Kata / Premis ${nextNum}" style="font-size: 0.88rem;">
+            </div>
+        </div>
+        <div class="col-1 text-center text-muted px-0">
+            <i class="bi bi-arrow-left-right" style="font-size: 0.85rem;"></i>
+        </div>
+        <div class="col-5">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light text-muted fw-bold font-monospace matching-letter" style="font-size: 0.78rem;">${nextLetter}.</span>
+                <input type="text" name="soal[${soalId}][matching_right][]" 
+                    class="form-control form-control-sm" 
+                    placeholder="Definisi / Jawaban ${nextLetter}" style="font-size: 0.88rem;">
+            </div>
+        </div>
+        <div class="col-1 text-end">
+            <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="hapusBarisMatching(this)" title="Hapus Pasangan Ini">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(rowDiv);
+    rowDiv.querySelectorAll('input[type="text"]').forEach(checkAndApplyArabic);
+
+    const firstInput = rowDiv.querySelector('input');
+    if (firstInput) firstInput.focus();
+}
+
+function hapusBarisMatching(btn) {
+    const row = btn.closest('.matching-row');
+    const container = btn.closest('.matching-container');
+    if (row && container) {
+        if (container.querySelectorAll('.matching-row').length <= 1) {
+            alert('Minimal harus ada 1 baris pasangan menjodohkan.');
+            return;
+        }
+        row.remove();
+        container.querySelectorAll('.matching-row').forEach((r, idx) => {
+            const noEl = r.querySelector('.matching-no');
+            const letterEl = r.querySelector('.matching-letter');
+            if (noEl) noEl.textContent = (idx + 1) + '.';
+            if (letterEl) letterEl.textContent = String.fromCharCode(65 + idx) + '.';
+        });
+    }
+}
+
+// =========================================================================
 // 6. MODAL PASTE SOAL DARI WORD / CATATAN
 // =========================================================================
 function openPasteModal(tipe = 'pg') {
@@ -1128,6 +1254,24 @@ function checkAndApplyArabic(el) {
     } else {
         el.removeAttribute('dir');
         el.classList.remove('arabic-input');
+    }
+
+    // Jika ini adalah textarea pertanyaan, sesuaikan label Benar / Salah (صحيح / خطأ)
+    if (el.classList.contains('question-textarea')) {
+        const card = el.closest('.soal-card');
+        if (card) {
+            const lblTrue = card.querySelector('.bs-label-true');
+            const lblFalse = card.querySelector('.bs-label-false');
+            if (lblTrue && lblFalse) {
+                if (isArabic) {
+                    lblTrue.textContent = 'صحيح (ص)';
+                    lblFalse.textContent = 'خطأ (خ)';
+                } else {
+                    lblTrue.textContent = 'Benar (B)';
+                    lblFalse.textContent = 'Salah (S)';
+                }
+            }
+        }
     }
 }
 

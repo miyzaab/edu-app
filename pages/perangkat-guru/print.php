@@ -577,6 +577,49 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             text-align: justify !important;
         }
 
+        /* BENAR / SALAH BRACKET */
+        .bs-bracket {
+            font-weight: bold;
+            font-family: 'Cambria', Georgia, serif;
+            letter-spacing: 2px;
+            display: inline-block;
+            min-width: 42px;
+        }
+
+        /* TABEL MENJODOHKAN (SOAL SILANG) */
+        .matching-print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+            margin-bottom: 6px;
+        }
+        .matching-print-table td {
+            vertical-align: middle;
+            padding: 4px 6px;
+            font-size: 11.5pt;
+            line-height: 1.5;
+        }
+        .matching-bullet {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            width: 30px;
+        }
+        .matching-table-box {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-top: 8px;
+        }
+        @media print {
+            .matching-table-box {
+                background: none !important;
+                border: 0.75pt solid #555 !important;
+            }
+        }
+
         /* FOOTER ON SCREEN PREVIEW */
         .screen-footer {
             margin-top: 30px;
@@ -800,6 +843,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
 
             <?php foreach ($soalIsian as $idx => $s): 
                 $isArab = isTeksArab($s['pertanyaan']);
+                $subTipe = $s['sub_tipe'] ?? 'isian_biasa';
             ?>
                 <div class="soal-item">
                     <?php if (!empty(trim($s['wacana_teks'] ?? ''))): 
@@ -816,7 +860,11 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                         <tr>
                             <td class="soal-no"><?= $idx + 1 ?>.</td>
                             <td class="soal-text <?= $isArab ? 'soal-arab' : '' ?>">
-                                <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
+                                <?php if ($subTipe === 'benar_salah'): ?>
+                                    <span class="bs-bracket">( &nbsp; &nbsp; &nbsp; &nbsp; )</span> &nbsp; <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
+                                <?php else: ?>
+                                    <?= renderTeksSoal($s['pertanyaan'], $isArab) ?>
+                                <?php endif; ?>
 
                                 <?php if (!empty($s['gambar']) && file_exists($uploadDirSoal . '/' . $s['gambar'])): ?>
                                     <div class="soal-img-box">
@@ -824,6 +872,49 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                                             alt="Soal <?= $idx + 1 ?>">
                                     </div>
                                 <?php endif; ?>
+
+                                <?php if ($subTipe === 'menjodohkan'): 
+                                    $mPairs = json_decode($s['opsi_matching'] ?? '[]', true);
+                                    if (!empty($mPairs) && is_array($mPairs)):
+                                        $leftItems = [];
+                                        $rightItems = [];
+                                        foreach ($mPairs as $p) {
+                                            if (!empty(trim($p['left'] ?? '')) || !empty(trim($p['right'] ?? ''))) {
+                                                $leftItems[] = $p['left'];
+                                                $rightItems[] = $p['right'];
+                                            }
+                                        }
+                                        $countItems = count($rightItems);
+                                        $shuffledIndices = range(0, max(0, $countItems - 1));
+                                        srand((int)$s['id'] * 79 + 17);
+                                        shuffle($shuffledIndices);
+                                ?>
+                                    <div class="matching-table-box">
+                                        <table class="matching-print-table <?= $isArab ? 'soal-arab' : '' ?>" <?= $isArab ? 'dir="rtl"' : '' ?>>
+                                            <?php for ($m = 0; $m < count($leftItems); $m++): 
+                                                $rIdx = $shuffledIndices[$m] ?? $m;
+                                                $leftText = $leftItems[$m] ?? '';
+                                                $rightText = $rightItems[$rIdx] ?? '';
+                                                $rightLetter = chr(65 + $m);
+                                            ?>
+                                                <tr>
+                                                    <!-- PREMIS KIRI -->
+                                                    <td style="width: 44%;">
+                                                        <strong><?= $m + 1 ?>.</strong> <?= renderTeksSoal($leftText, $isArab) ?>
+                                                    </td>
+                                                    <!-- PELURU KIRI -->
+                                                    <td class="matching-bullet" style="width: 6%;">•</td>
+                                                    <!-- PELURU KANAN -->
+                                                    <td class="matching-bullet" style="width: 6%;">•</td>
+                                                    <!-- DEFINISI KANAN -->
+                                                    <td style="width: 44%;">
+                                                        <strong><?= $rightLetter ?>.</strong> <?= renderTeksSoal($rightText, $isArab) ?>
+                                                    </td>
+                                                </tr>
+                                            <?php endfor; ?>
+                                        </table>
+                                    </div>
+                                <?php endif; endif; ?>
                             </td>
                         </tr>
                     </table>
