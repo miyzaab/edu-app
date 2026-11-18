@@ -215,14 +215,122 @@ require_once __DIR__ . '/subnav.php';
     </div>
 </div>
 
+<style>
+.table-modern {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.table-modern thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 13px 16px;
+}
+.table-modern tbody tr {
+    transition: all 0.15s ease-in-out;
+}
+.table-modern tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+.table-modern tbody td {
+    padding: 15px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+.mapel-avatar-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+.table-modern tbody tr:hover .mapel-avatar-box {
+    transform: scale(1.05);
+}
+.mapel-title-link {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+.mapel-title-link:hover {
+    color: #4f46e5;
+}
+.badge-subtle-neutral {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    font-size: 0.72rem;
+}
+.badge-poin-pill {
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 3px 9px;
+}
+.btn-action-primary {
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+    transition: all 0.15s ease;
+}
+.btn-action-primary:hover {
+    background: #4338ca;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+.btn-action-koreksi {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    transition: all 0.15s ease;
+}
+.btn-action-koreksi:hover {
+    background: #fef3c7;
+    color: #78350f;
+    border-color: #fcd34d;
+}
+.btn-more-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    transition: all 0.15s ease;
+}
+.btn-more-circle:hover {
+    background: #f8fafc;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}
+</style>
+
 <!-- LIST NASKAH SOAL -->
-<div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
-    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-            <i class="bi bi-file-earmark-text-fill text-primary"></i> Daftar Naskah Soal Ujian
-        </h5>
-        <span class="badge bg-light text-muted border px-3 py-1.5 rounded-pill font-monospace">
-            <?= count($listNaskah) ?> Naskah Ditemukan
+<div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden" style="border: 1px solid #e2e8f0 !important;">
+    <div class="card-header bg-white border-bottom py-3.5 px-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-text-fill text-primary"></i> Daftar Naskah Soal Ujian
+            </h5>
+            <div class="text-muted small mt-0.5">Kelola butir soal, cetak lembar ujian presisi, dan lakukan koreksi cepat</div>
+        </div>
+        <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill font-monospace fw-medium" style="font-size: 0.78rem;">
+            <?= count($listNaskah) ?> Paket Soal
         </span>
     </div>
 
@@ -241,15 +349,15 @@ require_once __DIR__ . '/subnav.php';
         </div>
     <?php else: ?>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+            <table class="table table-modern table-hover align-middle mb-0">
+                <thead>
                     <tr>
-                        <th class="text-center" style="width: 5%;">No</th>
-                        <th style="width: 28%;">Informasi Mata Pelajaran &amp; Ujian</th>
-                        <th style="width: 15%;">Tingkat &amp; Waktu</th>
-                        <th style="width: 22%;">Komposisi Soal &amp; Poin</th>
-                        <th style="width: 10%;">Status</th>
-                        <th class="text-end px-4" style="width: 20%;">Aksi Pengelolaan</th>
+                        <th class="text-center" style="width: 4%;">No</th>
+                        <th style="width: 32%;">Mata Pelajaran &amp; Ujian</th>
+                        <th style="width: 14%;">Kelas &amp; Waktu</th>
+                        <th style="width: 22%;">Komposisi Butir &amp; Poin</th>
+                        <th style="width: 11%;">Status</th>
+                        <th class="text-end px-4" style="width: 17%;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -260,79 +368,119 @@ require_once __DIR__ . '/subnav.php';
                         <tr>
                             <td class="text-center fw-bold text-muted"><?= $idx + 1 ?></td>
                             <td>
-                                <div class="fw-bold text-dark fs-6 mb-1"><?= htmlspecialchars($n['nama_mapel']) ?></div>
-                                <div class="text-muted small d-flex align-items-center gap-2">
-                                    <span class="badge bg-indigo-subtle text-indigo px-2 py-0.5 rounded-pill" style="background: #e0e7ff; color: #4338ca;">
-                                        <?= htmlspecialchars($n['judul_ujian']) ?>
-                                    </span>
-                                    <span>•</span>
-                                    <span><?= htmlspecialchars($n['semester']) ?> <?= htmlspecialchars($n['tahun_ajaran']) ?></span>
-                                </div>
-                                <?php if ($userRole === 'admin' && !empty($n['nama_guru'])): ?>
-                                    <div class="text-muted small mt-1" style="font-size: 0.78rem;">
-                                        <i class="bi bi-person me-1"></i> Guru: <?= htmlspecialchars($n['nama_guru']) ?>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="mapel-avatar-box">
+                                        <i class="bi bi-journal-bookmark-fill fs-5"></i>
                                     </div>
-                                <?php endif; ?>
+                                    <div>
+                                        <a href="edit.php?id=<?= $n['id'] ?>" class="mapel-title-link d-block mb-1">
+                                            <?= htmlspecialchars($n['nama_mapel']) ?>
+                                        </a>
+                                        <div class="d-flex flex-wrap align-items-center gap-1.5">
+                                            <span class="badge badge-subtle-neutral rounded-pill px-2 py-0.5">
+                                                <?= htmlspecialchars($n['judul_ujian']) ?>
+                                            </span>
+                                            <span class="text-muted small" style="font-size: 0.76rem;">• <?= htmlspecialchars($n['semester']) ?> <?= htmlspecialchars($n['tahun_ajaran']) ?></span>
+                                        </div>
+                                        <?php if ($userRole === 'admin' && !empty($n['nama_guru'])): ?>
+                                            <div class="text-muted small mt-1 d-flex align-items-center gap-1" style="font-size: 0.74rem;">
+                                                <i class="bi bi-person-fill text-muted"></i>
+                                                <span>Guru: <strong class="text-dark"><?= htmlspecialchars($n['nama_guru']) ?></strong></span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                             </td>
                             <td>
-                                <div class="fw-bold text-dark">Kelas <?= htmlspecialchars($n['tingkat_kelas']) ?></div>
-                                <div class="text-muted small"><i class="bi bi-clock me-1"></i><?= (int)$n['alokasi_waktu'] ?> Menit</div>
+                                <div class="d-inline-flex align-items-center gap-1.5 fw-bold text-dark px-2.5 py-1 rounded-pill" style="font-size: 0.82rem; background: #f1f5f9; border: 1px solid #e2e8f0;">
+                                    <i class="bi bi-mortarboard-fill text-primary" style="font-size: 0.8rem;"></i>
+                                    <span>Kelas <?= htmlspecialchars($n['tingkat_kelas']) ?></span>
+                                </div>
+                                <div class="text-muted small mt-1.5 d-flex align-items-center gap-1" style="font-size: 0.78rem;">
+                                    <i class="bi bi-clock-history text-muted"></i>
+                                    <span><?= (int)$n['alokasi_waktu'] ?> Menit</span>
+                                </div>
                             </td>
                             <td>
-                                <div class="d-flex flex-wrap gap-1 mb-1">
-                                    <span class="badge bg-info-subtle text-info-emphasis border px-2 py-0.5 rounded-pill" style="font-size: 0.78rem;">
-                                        PG: <strong><?= (int)$n['total_pg'] ?></strong>
-                                    </span>
-                                    <span class="badge bg-teal-subtle text-teal-emphasis border px-2 py-0.5 rounded-pill" style="font-size: 0.78rem; background: #ccfbf1; color: #0f766e;">
-                                        Isian: <strong><?= (int)$n['total_isian'] ?></strong>
-                                    </span>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis border px-2 py-0.5 rounded-pill" style="font-size: 0.78rem; background: #fef3c7; color: #b45309;">
-                                        Essay: <strong><?= (int)$n['total_essay'] ?></strong>
+                                <div class="d-flex align-items-center gap-2 mb-1.5">
+                                    <span class="fw-bold text-dark fs-6"><?= $totalSoal ?> <small class="text-muted fw-normal" style="font-size: 0.76rem;">Butir</small></span>
+                                    <span class="badge <?= (float)$n['total_poin'] >= 100 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle' ?> badge-poin-pill rounded-pill">
+                                        <i class="bi bi-award-fill me-1"></i><?= (float)$n['total_poin'] ?> Poin
                                     </span>
                                 </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="badge <?= (float)$n['total_poin'] >= 100 ? 'bg-success' : 'bg-primary' ?> px-2.5 py-1 rounded-pill">
-                                        <i class="bi bi-award-fill me-1"></i>Total: <?= (float)$n['total_poin'] ?> Poin
-                                    </span>
-                                    <span class="text-muted small font-monospace">(<?= $totalSoal ?> Butir)</span>
+                                <div class="d-flex flex-wrap align-items-center gap-1 text-muted" style="font-size: 0.74rem;">
+                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">PG: <strong><?= (int)$n['total_pg'] ?></strong></span>
+                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">Isian: <strong><?= (int)$n['total_isian'] ?></strong></span>
+                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">Essay: <strong><?= (int)$n['total_essay'] ?></strong></span>
                                 </div>
                             </td>
                             <td>
                                 <?php if ($n['status'] === 'siap_cetak'): ?>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill d-inline-flex align-items-center gap-1">
-                                        <i class="bi bi-check-circle-fill"></i> Siap Cetak
+                                    <span class="badge rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold" 
+                                          style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.76rem;">
+                                        <span class="rounded-circle" style="width: 6px; height: 6px; background: #10b981;"></span>
+                                        Siap Cetak
                                     </span>
                                 <?php else: ?>
-                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2.5 py-1.5 rounded-pill d-inline-flex align-items-center gap-1">
-                                        <i class="bi bi-pencil-fill"></i> Draft
+                                    <span class="badge rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold" 
+                                          style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-size: 0.76rem;">
+                                        <span class="rounded-circle" style="width: 6px; height: 6px; background: #94a3b8;"></span>
+                                        Draft
                                     </span>
                                 <?php endif; ?>
                             </td>
                             <td class="text-end px-4">
-                                <div class="btn-group shadow-xs">
-                                    <a href="koreksi.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-warning text-dark fw-bold px-2.5" title="Meja Koreksi Cepat &amp; Rekap Nilai">
-                                        <i class="bi bi-lightning-charge-fill text-danger me-1"></i> Koreksi
+                                <div class="d-inline-flex align-items-center gap-2">
+                                    <a href="edit.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" title="Susun &amp; Edit Butir Soal">
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span>Susun Soal</span>
                                     </a>
-                                    <a href="edit.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-primary px-2.5" title="Susun &amp; Edit Soal">
-                                        <i class="bi bi-pencil-square me-1"></i> Susun
+                                    <a href="koreksi.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-koreksi rounded-pill px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" title="Meja Koreksi Cepat &amp; Rekap Nilai Siswa">
+                                        <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                        <span class="d-none d-xl-inline">Koreksi</span>
                                     </a>
-                                    <a href="print.php?id=<?= $n['id'] ?>" target="_blank" class="btn btn-sm btn-outline-danger px-2" title="Cetak Naskah (PDF)">
-                                        <i class="bi bi-printer-fill"></i>
-                                    </a>
-                                    <a href="export_word.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-outline-primary px-2" title="Unduh File Word (.doc)">
-                                        <i class="bi bi-file-earmark-word-fill"></i>
-                                    </a>
-                                    <a href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank" class="btn btn-sm btn-outline-success px-2" title="Cetak Kunci Jawaban &amp; Rubrik">
-                                        <i class="bi bi-key-fill"></i>
-                                    </a>
-                                    <a href="duplicate.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-outline-secondary px-2" title="Duplikasi Naskah Soal" onclick="return confirm('Duplikasi naskah soal ini untuk membuat paket baru?')">
-                                        <i class="bi bi-copy"></i>
-                                    </a>
-                                    <?php if ($isOwner || $userRole === 'admin'): ?>
-                                        <a href="delete.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-outline-danger px-2" title="Hapus Naskah" onclick="return confirm('Apakah Anda yakin ingin menghapus naskah soal ini beserta butir-butir soal di dalamnya?')">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    <?php endif; ?>
+                                    <div class="dropdown d-inline-block">
+                                        <button class="btn btn-sm btn-more-circle shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Opsi Dokumen &amp; Tindakan">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border" style="min-width: 220px; font-size: 0.84rem;">
+                                            <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Cetak &amp; Dokumen</h6></li>
+                                            <li>
+                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print.php?id=<?= $n['id'] ?>" target="_blank">
+                                                    <i class="bi bi-printer-fill text-danger fs-6"></i>
+                                                    <span>Cetak Lembar Ujian (PDF)</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="export_word.php?id=<?= $n['id'] ?>">
+                                                    <i class="bi bi-file-earmark-word-fill text-primary fs-6"></i>
+                                                    <span>Unduh File Word (.doc)</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
+                                                    <i class="bi bi-key-fill text-success fs-6"></i>
+                                                    <span>Kunci Jawaban &amp; Rubrik</span>
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider my-1"></li>
+                                            <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Pengelolaan</h6></li>
+                                            <li>
+                                                <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="duplicate.php?id=<?= $n['id'] ?>" onclick="return confirm('Duplikasi naskah soal ini untuk membuat paket baru?')">
+                                                    <i class="bi bi-copy text-secondary fs-6"></i>
+                                                    <span>Duplikat Paket Soal</span>
+                                                </a>
+                                            </li>
+                                            <?php if ($isOwner || $userRole === 'admin'): ?>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2 text-danger" href="delete.php?id=<?= $n['id'] ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus naskah soal ini beserta butir-butir soal di dalamnya?')">
+                                                        <i class="bi bi-trash fs-6"></i>
+                                                        <span>Hapus Naskah Soal</span>
+                                                    </a>
+                                                </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
