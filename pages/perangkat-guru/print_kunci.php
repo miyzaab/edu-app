@@ -142,6 +142,12 @@ $footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
             display: inline;
         }
 
+        [dir="rtl"] {
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 13.5pt !important;
+            line-height: 1.6 !important;
+        }
+
         .no-print {
             display: block;
         }

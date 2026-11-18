@@ -595,7 +595,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
         .matching-print-table td {
             vertical-align: middle;
-            padding: 4px 6px;
+            padding: 5px 6px;
             font-size: 11.5pt;
             line-height: 1.5;
         }
@@ -618,6 +618,53 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 background: none !important;
                 border: 0.75pt solid #555 !important;
             }
+        }
+
+        /* GAYA ARAB PADA TABEL MENJODOHKAN (SERAGAM DENGAN WACANA & SOAL LAIN) */
+        .matching-print-table.soal-arab {
+            direction: rtl !important;
+        }
+        .matching-print-table.soal-arab td {
+            direction: rtl !important;
+            text-align: right !important;
+            font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+            font-size: 15pt !important;
+            line-height: 1.85 !important;
+        }
+        .matching-print-table.soal-arab .matching-bullet {
+            font-family: Arial, sans-serif !important;
+            font-size: 16pt !important;
+            line-height: 1 !important;
+            text-align: center !important;
+            color: #222 !important;
+            direction: ltr !important;
+        }
+        .matching-print-table.soal-arab .matching-item-no,
+        .matching-print-table.soal-arab .matching-item-letter {
+            font-family: 'Cambria', Georgia, serif !important;
+            font-size: 12pt !important;
+            font-weight: bold !important;
+            direction: ltr !important;
+            display: inline-block;
+        }
+        .matching-print-table.soal-arab .matching-item-no {
+            margin-left: 6px;
+        }
+        .matching-print-table.soal-arab .matching-item-letter {
+            margin-left: 6px;
+        }
+
+        body.force-arabic-ltr .matching-print-table.soal-arab {
+            direction: ltr !important;
+        }
+        body.force-arabic-ltr .matching-print-table.soal-arab td {
+            direction: ltr !important;
+            text-align: left !important;
+        }
+        body.force-arabic-ltr .matching-print-table.soal-arab .matching-item-no,
+        body.force-arabic-ltr .matching-print-table.soal-arab .matching-item-letter {
+            margin-right: 6px;
+            margin-left: 0;
         }
 
         /* FOOTER ON SCREEN PREVIEW */
@@ -892,7 +939,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                                     <tr>
                                         <!-- KOLOM KIRI (KATA / PREMIS SESUAI NOMOR URUT) -->
                                         <td style="width: 44%;">
-                                            <strong><?= $mNo ?>.</strong> <?= renderTeksSoal($mLeft, $isArabGroup) ?>
+                                            <strong class="matching-item-no"><?= $mNo ?>.</strong> <?= renderTeksSoal($mLeft, $isArabGroup) ?>
                                         </td>
                                         <!-- TITIK PELURU KIRI -->
                                         <td class="matching-bullet" style="width: 6%;">•</td>
@@ -900,7 +947,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                                         <td class="matching-bullet" style="width: 6%;">•</td>
                                         <!-- KOLOM KANAN (JAWABAN DIACAK POSISINYA) -->
                                         <td style="width: 44%;">
-                                            <strong><?= $mLetter ?>.</strong> <?= renderTeksSoal($mRight, $isArabGroup) ?>
+                                            <strong class="matching-item-letter"><?= $mLetter ?>.</strong> <?= renderTeksSoal($mRight, $isArabGroup) ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
