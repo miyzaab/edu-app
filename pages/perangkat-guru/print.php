@@ -146,12 +146,18 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         :root {
             --font-latin-size: 12pt;
             --font-arab-size: 15pt;
+            --soal-item-margin: 12px;
+            --soal-line-height: 1.35;
+            --soal-opsi-margin: 5px;
+            --soal-opsi-padding: 2.5px 8px;
+            --soal-matching-padding: 2.5px 6px;
+            --soal-arab-line-height: 1.55;
         }
 
         body {
             font-family: 'Cambria', Georgia, serif;
             font-size: var(--font-latin-size, 12pt);
-            line-height: 1.5;
+            line-height: var(--soal-line-height, 1.35);
             color: #000;
             background-color: #f1f5f9;
             margin: 0;
@@ -384,7 +390,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
 
         .soal-item {
-            margin-bottom: 22px;
+            margin-bottom: var(--soal-item-margin, 12px);
             page-break-inside: avoid;
         }
 
@@ -403,13 +409,13 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             font-weight: bold;
             text-align: left;
             font-size: var(--font-latin-size, 12pt);
-            line-height: 1.6;
+            line-height: var(--soal-line-height, 1.35);
             padding-right: 6px;
         }
 
         .soal-text {
             font-size: var(--font-latin-size, 12pt);
-            line-height: 1.65;
+            line-height: var(--soal-line-height, 1.35);
             text-align: justify;
         }
 
@@ -427,17 +433,17 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         /* PILIHAN A - D */
         .opsi-table {
             width: 100%;
-            margin-top: 12px;
+            margin-top: var(--soal-opsi-margin, 5px);
             margin-left: 2px;
             border-collapse: collapse;
         }
 
         .opsi-table td {
             vertical-align: top;
-            padding: 6px 10px;
+            padding: var(--soal-opsi-padding, 2.5px 8px);
             width: 50%;
             font-size: var(--font-latin-size, 12pt);
-            line-height: 1.65;
+            line-height: var(--soal-line-height, 1.35);
         }
 
         .opsi-letter {
@@ -458,7 +464,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             padding-left: 8px !important;
             padding-right: 0 !important;
             font-size: calc(var(--font-arab-size, 15pt) - 2pt) !important;
-            line-height: 1.85 !important;
+            line-height: var(--soal-arab-line-height, 1.55) !important;
         }
 
         .soal-text.soal-arab {
@@ -467,12 +473,12 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             text-align-last: right !important;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: var(--font-arab-size, 15pt) !important;
-            line-height: 1.85 !important;
+            line-height: var(--soal-arab-line-height, 1.55) !important;
         }
 
         .opsi-table.opsi-arab {
             direction: rtl !important;
-            margin-top: 12px;
+            margin-top: var(--soal-opsi-margin, 5px);
             margin-right: 2px;
             margin-left: 0;
         }
@@ -482,7 +488,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             text-align: right !important;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: var(--font-arab-size, 15pt) !important;
-            line-height: 1.85 !important;
+            line-height: var(--soal-arab-line-height, 1.55) !important;
         }
 
         .opsi-table.opsi-arab .opsi-letter {
@@ -602,9 +608,9 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
         .matching-print-table td {
             vertical-align: middle;
-            padding: 5px 6px;
+            padding: var(--soal-matching-padding, 2.5px 6px);
             font-size: calc(var(--font-latin-size, 12pt) - 0.5pt);
-            line-height: 1.5;
+            line-height: var(--soal-line-height, 1.35);
         }
         .matching-bullet {
             font-size: 14pt;
@@ -732,8 +738,20 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 </button>
             </div>
 
-            <!-- RESET FONT -->
-            <button type="button" onclick="resetFontSizes()" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 text-light" title="Reset Ukuran Font ke Default (12pt & 15pt)">
+            <!-- PENGATUR KERAPATAN / SPASI SOAL -->
+            <div class="d-flex align-items-center bg-dark bg-opacity-75 border border-secondary rounded-pill px-2.5 py-1 gap-1.5 shadow-sm" title="Sesuaikan Kerapatan / Spasi Antar Soal & Opsi">
+                <span class="text-white-50 small fw-semibold" style="font-size: 0.76rem;"><i class="bi bi-arrows-expand me-1"></i>Spasi:</span>
+                <button type="button" class="btn btn-sm btn-outline-light border-0 p-0 px-1 text-light" onclick="adjustSpacing(-1)" title="Rapatkan Spasi Soal">
+                    <i class="bi bi-dash-circle fs-6"></i>
+                </button>
+                <span id="labelSpacing" class="fw-bold text-warning font-monospace px-1" style="font-size: 0.82rem; min-width: 58px; text-align: center;">Rapat</span>
+                <button type="button" class="btn btn-sm btn-outline-light border-0 p-0 px-1 text-light" onclick="adjustSpacing(1)" title="Renggangkan Spasi Soal">
+                    <i class="bi bi-plus-circle fs-6"></i>
+                </button>
+            </div>
+
+            <!-- RESET PENGATURAN -->
+            <button type="button" onclick="resetFontSizes()" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 text-light" title="Reset Ukuran Font & Spasi ke Default">
                 <i class="bi bi-arrow-counterclockwise"></i> <span class="d-none d-md-inline" style="font-size: 0.76rem;">Reset</span>
             </button>
         </div>
@@ -1094,8 +1112,29 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
     </div>
 
     <script>
+    const SPACING_PRESETS = [
+        { key: 'sgt_rapat', label: 'Sgt Rapat', itemMargin: '8px',  lineHeight: '1.2',  opsiMargin: '3px',  opsiPad: '1.5px 6px', matchingPad: '1.5px 5px', arabLineHeight: '1.45' },
+        { key: 'rapat',     label: 'Rapat',     itemMargin: '12px', lineHeight: '1.35', opsiMargin: '5px',  opsiPad: '2.5px 8px', matchingPad: '2.5px 6px', arabLineHeight: '1.55' },
+        { key: 'sedang',    label: 'Sedang',    itemMargin: '18px', lineHeight: '1.5',  opsiMargin: '8px',  opsiPad: '4px 10px',  matchingPad: '4px 8px',   arabLineHeight: '1.7'  },
+        { key: 'renggang',  label: 'Renggang',  itemMargin: '24px', lineHeight: '1.65', opsiMargin: '12px', opsiPad: '6px 12px',  matchingPad: '6px 10px',  arabLineHeight: '1.85' }
+    ];
+
     let currentLatinSize = parseFloat(localStorage.getItem('soal_font_latin') || '12');
     let currentArabSize = parseFloat(localStorage.getItem('soal_font_arab') || '15');
+    let currentSpacingIdx = parseInt(localStorage.getItem('soal_spacing_idx') !== null ? localStorage.getItem('soal_spacing_idx') : '1', 10);
+    if (isNaN(currentSpacingIdx) || currentSpacingIdx < 0 || currentSpacingIdx >= SPACING_PRESETS.length) {
+        currentSpacingIdx = 1; // Default: 'Rapat'
+    }
+
+    function updateWordDownloadUrl() {
+        const linkWord = document.getElementById('btnDownloadWord');
+        if (!linkWord) return;
+        let href = linkWord.getAttribute('href');
+        href = href.replace(/[?&]font_latin=[^&]*/, '').replace(/[?&]font_arab=[^&]*/, '').replace(/[?&]spacing=[^&]*/, '');
+        const sep = href.includes('?') ? '&' : '?';
+        const spKey = SPACING_PRESETS[currentSpacingIdx].key;
+        linkWord.setAttribute('href', href + sep + 'font_latin=' + currentLatinSize + '&font_arab=' + currentArabSize + '&spacing=' + spKey);
+    }
 
     function applyFontSizes() {
         document.documentElement.style.setProperty('--font-latin-size', currentLatinSize + 'pt');
@@ -1107,14 +1146,22 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         const labelArab = document.getElementById('labelFontArab');
         if (labelArab) labelArab.textContent = currentArabSize + 'pt';
 
-        // Update link Unduh Word agar format Word mengikuti ukuran font yang dipilih
-        const linkWord = document.getElementById('btnDownloadWord');
-        if (linkWord) {
-            let href = linkWord.getAttribute('href');
-            href = href.replace(/[?&]font_latin=[^&]*/, '').replace(/[?&]font_arab=[^&]*/, '');
-            const sep = href.includes('?') ? '&' : '?';
-            linkWord.setAttribute('href', href + sep + 'font_latin=' + currentLatinSize + '&font_arab=' + currentArabSize);
-        }
+        updateWordDownloadUrl();
+    }
+
+    function applySpacing() {
+        const p = SPACING_PRESETS[currentSpacingIdx];
+        document.documentElement.style.setProperty('--soal-item-margin', p.itemMargin);
+        document.documentElement.style.setProperty('--soal-line-height', p.lineHeight);
+        document.documentElement.style.setProperty('--soal-opsi-margin', p.opsiMargin);
+        document.documentElement.style.setProperty('--soal-opsi-padding', p.opsiPad);
+        document.documentElement.style.setProperty('--soal-matching-padding', p.matchingPad);
+        document.documentElement.style.setProperty('--soal-arab-line-height', p.arabLineHeight);
+
+        const lbl = document.getElementById('labelSpacing');
+        if (lbl) lbl.textContent = p.label;
+
+        updateWordDownloadUrl();
     }
 
     function adjustFontSize(type, delta) {
@@ -1128,12 +1175,21 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         applyFontSizes();
     }
 
+    function adjustSpacing(delta) {
+        currentSpacingIdx = Math.max(0, Math.min(SPACING_PRESETS.length - 1, currentSpacingIdx + delta));
+        localStorage.setItem('soal_spacing_idx', currentSpacingIdx);
+        applySpacing();
+    }
+
     function resetFontSizes() {
         currentLatinSize = 12;
         currentArabSize = 15;
+        currentSpacingIdx = 1; // Rapat
         localStorage.removeItem('soal_font_latin');
         localStorage.removeItem('soal_font_arab');
+        localStorage.removeItem('soal_spacing_idx');
         applyFontSizes();
+        applySpacing();
     }
 
     function toggleArabicDirection() {
@@ -1153,8 +1209,12 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
     }
 
     // Inisialisasi saat halaman dibuka
-    document.addEventListener('DOMContentLoaded', applyFontSizes);
+    document.addEventListener('DOMContentLoaded', function() {
+        applyFontSizes();
+        applySpacing();
+    });
     applyFontSizes();
+    applySpacing();
     </script>
 </body>
 </html>

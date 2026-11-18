@@ -31,6 +31,46 @@ if (!$naskah) {
 $fontLatin = isset($_GET['font_latin']) ? max(8, min(24, (float)$_GET['font_latin'])) : 12;
 $fontArab = isset($_GET['font_arab']) ? max(10, min(28, (float)$_GET['font_arab'])) : 15;
 
+// Opsi Kerapatan / Spasi Kustom (dari Pengatur Spasi di Cetak/PDF)
+// Presets: sgt_rapat, rapat (default), sedang, renggang
+$spacingMode = strtolower(trim($_GET['spacing'] ?? 'rapat'));
+switch ($spacingMode) {
+    case 'sgt_rapat':
+        $wordItemMargin = '6pt';
+        $wordLineHeight = '1.2';
+        $wordOpsiMargin = '3pt';
+        $wordOpsiPadding = '1.5pt 4pt';
+        $wordArabLineHeight = '1.45';
+        $wordMatchingPadding = '1.5pt 3pt';
+        break;
+    case 'sedang':
+        $wordItemMargin = '15pt';
+        $wordLineHeight = '1.5';
+        $wordOpsiMargin = '7pt';
+        $wordOpsiPadding = '3.5pt 5pt';
+        $wordArabLineHeight = '1.7';
+        $wordMatchingPadding = '3.5pt 5pt';
+        break;
+    case 'renggang':
+        $wordItemMargin = '20pt';
+        $wordLineHeight = '1.65';
+        $wordOpsiMargin = '10pt';
+        $wordOpsiPadding = '5pt 6pt';
+        $wordArabLineHeight = '1.85';
+        $wordMatchingPadding = '5pt 6pt';
+        break;
+    case 'rapat':
+    default:
+        $spacingMode = 'rapat';
+        $wordItemMargin = '9pt';
+        $wordLineHeight = '1.35';
+        $wordOpsiMargin = '4pt';
+        $wordOpsiPadding = '2pt 4pt';
+        $wordArabLineHeight = '1.55';
+        $wordMatchingPadding = '2pt 4pt';
+        break;
+}
+
 // Dynamic Footer Text (Contoh: "Aqidah VIII")
 $cleanKelas = trim(preg_replace('/^Kelas\s+/i', '', $naskah['tingkat_kelas'] ?? ''));
 $footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
@@ -164,7 +204,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         body {
             font-family: 'Cambria', Georgia, serif;
             font-size: <?= $fontLatin ?>pt;
-            line-height: 1.5;
+            line-height: <?= $wordLineHeight ?>;
             color: #000000;
         }
 
@@ -173,13 +213,13 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         td {
             font-family: 'Cambria', Georgia, serif;
             font-size: <?= $fontLatin ?>pt;
-            line-height: 1.5;
+            line-height: <?= $wordLineHeight ?>;
         }
 
         .teks-arab {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: <?= $fontArab ?>pt !important;
-            line-height: 1.85 !important;
+            line-height: <?= $wordArabLineHeight ?> !important;
             direction: rtl;
         }
 
@@ -284,26 +324,26 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 
         .soal-table {
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: <?= $wordItemMargin ?>;
         }
 
         .soal-table td {
             vertical-align: top;
-            padding: 3pt 0;
+            padding: 1.5pt 0;
             font-size: <?= $fontLatin ?>pt;
-            line-height: 1.65;
+            line-height: <?= $wordLineHeight ?>;
         }
 
         .opsi-table {
             width: 100%;
-            margin-top: 10pt;
+            margin-top: <?= $wordOpsiMargin ?>;
         }
 
         .opsi-table td {
             width: 50%;
-            padding: 5pt 6pt;
+            padding: <?= $wordOpsiPadding ?>;
             font-size: <?= $fontLatin ?>pt;
-            line-height: 1.65;
+            line-height: <?= $wordLineHeight ?>;
         }
 
         .opsi-letter {
@@ -322,7 +362,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             padding-left: 8pt;
             padding-right: 0;
             font-size: <?= max(8, $fontArab - 2) ?>pt;
-            line-height: 1.85;
+            line-height: <?= $wordArabLineHeight ?>;
         }
 
         .soal-text.soal-arab {
@@ -330,12 +370,12 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             text-align: right;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: <?= $fontArab ?>pt !important;
-            line-height: 1.85 !important;
+            line-height: <?= $wordArabLineHeight ?> !important;
         }
 
         .opsi-table.opsi-arab {
             direction: rtl;
-            margin-top: 10pt;
+            margin-top: <?= $wordOpsiMargin ?>;
             margin-right: 2pt;
             margin-left: 0;
         }
@@ -345,7 +385,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             text-align: right;
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: <?= $fontArab ?>pt !important;
-            line-height: 1.85 !important;
+            line-height: <?= $wordArabLineHeight ?> !important;
         }
 
         .opsi-table.opsi-arab .opsi-letter {
@@ -421,9 +461,9 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 
         .matching-word-table td {
             vertical-align: middle;
-            padding: 3pt 4pt;
+            padding: <?= $wordMatchingPadding ?>;
             font-size: <?= max(8, $fontLatin - 0.5) ?>pt;
-            line-height: 1.5;
+            line-height: <?= $wordLineHeight ?>;
         }
 
         .matching-word-table.soal-arab {

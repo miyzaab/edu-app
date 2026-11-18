@@ -126,7 +126,8 @@ require_once __DIR__ . '/subnav.php';
 
 <!-- FLASH NOTIFICATION -->
 <?php if (isset($_SESSION['flash'])): ?>
-    <div class="alert alert-<?= htmlspecialchars($_SESSION['flash']['type']) ?> alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+    <div class="alert alert-<?= htmlspecialchars($_SESSION['flash']['type']) ?> alert-dismissible fade show rounded-4 shadow-sm mb-4"
+        role="alert">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-info-circle-fill fs-5"></i>
             <div><?= htmlspecialchars($_SESSION['flash']['message']) ?></div>
@@ -144,22 +145,27 @@ require_once __DIR__ . '/subnav.php';
             <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
                 style="background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px);">
                 <i class="bi bi-pencil-square text-white fs-6"></i>
-                <span class="small fw-bold text-white" style="letter-spacing: 0.8px;">PERANGKAT GURU • BANK SOAL ASESMEN</span>
+                <span class="small fw-bold text-white" style="letter-spacing: 0.8px;">PERANGKAT GURU • BANK SOAL
+                    ASESMEN</span>
             </div>
-            <h2 class="fw-extrabold mb-1" style="font-family: 'Outfit', sans-serif;">Penyusunan Soal Ujian (AAS)</h2>
+            <h2 class="fw-extrabold mb-1" style="font-family: 'Outfit', sans-serif;">Penyusunan Soal Ujian</h2>
             <p class="opacity-75 small mb-0 fs-6" style="max-width: 680px;">
-                Fasilitas guru untuk menyusun butir soal AAS (Pilihan Ganda A-D, Isian Singkat, &amp; Essay) dengan pembobotan poin otomatis, ekspor Microsoft Word (.doc), serta cetak PDF presisi ber-KOP resmi.
+                Fasilitas guru untuk menyusun butir soal AAS (Pilihan Ganda A-D, Isian Singkat, &amp; Essay) dengan
+                pembobotan poin otomatis, ekspor Microsoft Word (.doc), serta cetak PDF presisi ber-KOP resmi.
             </p>
         </div>
         <div class="d-flex align-items-center gap-2">
             <?php if ($userRole === 'admin'): ?>
-            <button type="button" class="btn btn-outline-light px-3 py-3 fw-bold rounded-pill shadow-xs d-inline-flex align-items-center gap-2"
-                data-bs-toggle="modal" data-bs-target="#modalKopSoal" style="font-size: 0.95rem; border-color: rgba(255,255,255,0.4);">
-                <i class="bi bi-image fs-5"></i>
-                <span>Upload KOP Soal (PNG)</span>
-            </button>
+                <button type="button"
+                    class="btn btn-outline-light px-3 py-3 fw-bold rounded-pill shadow-xs d-inline-flex align-items-center gap-2"
+                    data-bs-toggle="modal" data-bs-target="#modalKopSoal"
+                    style="font-size: 0.95rem; border-color: rgba(255,255,255,0.4);">
+                    <i class="bi bi-image fs-5"></i>
+                    <span>Upload KOP Soal (PNG)</span>
+                </button>
             <?php endif; ?>
-            <button type="button" class="btn btn-light px-4 py-3 fw-bold rounded-pill shadow-lg d-inline-flex align-items-center gap-2"
+            <button type="button"
+                class="btn btn-light px-4 py-3 fw-bold rounded-pill shadow-lg d-inline-flex align-items-center gap-2"
                 data-bs-toggle="modal" data-bs-target="#modalCreateNaskah" style="color: #312e81; font-size: 0.95rem;">
                 <i class="bi bi-plus-circle-fill text-primary fs-5"></i>
                 <span>Buat Naskah Soal Baru</span>
@@ -175,7 +181,8 @@ require_once __DIR__ . '/subnav.php';
             <div class="col-md-3">
                 <div class="input-group">
                     <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                    <input type="text" name="q" class="form-control bg-light border-start-0" placeholder="Cari mapel atau judul..." value="<?= htmlspecialchars($filterSearch) ?>">
+                    <input type="text" name="q" class="form-control bg-light border-start-0"
+                        placeholder="Cari mapel atau judul..." value="<?= htmlspecialchars($filterSearch) ?>">
                 </div>
             </div>
             <div class="col-md-3">
@@ -216,108 +223,124 @@ require_once __DIR__ . '/subnav.php';
 </div>
 
 <style>
-.table-modern {
-    border-collapse: separate;
-    border-spacing: 0;
-}
-.table-modern thead th {
-    background: #f8fafc;
-    color: #64748b;
-    font-weight: 700;
-    font-size: 0.72rem;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 13px 16px;
-}
-.table-modern tbody tr {
-    transition: all 0.15s ease-in-out;
-}
-.table-modern tbody tr:hover {
-    background-color: #f8fafc !important;
-}
-.table-modern tbody td {
-    padding: 15px 16px;
-    border-bottom: 1px solid #f1f5f9;
-    vertical-align: middle;
-}
-.mapel-avatar-box {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-    color: #4f46e5;
-    border: 1px solid #c7d2fe;
-    flex-shrink: 0;
-    transition: transform 0.2s ease;
-}
-.table-modern tbody tr:hover .mapel-avatar-box {
-    transform: scale(1.05);
-}
-.mapel-title-link {
-    font-size: 0.98rem;
-    font-weight: 700;
-    color: #1e293b;
-    text-decoration: none;
-    transition: color 0.15s ease;
-}
-.mapel-title-link:hover {
-    color: #4f46e5;
-}
-.badge-subtle-neutral {
-    background: #f1f5f9;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-    font-weight: 600;
-    font-size: 0.72rem;
-}
-.badge-poin-pill {
-    font-weight: 700;
-    font-size: 0.75rem;
-    padding: 3px 9px;
-}
-.btn-action-primary {
-    background: #4f46e5;
-    color: #ffffff;
-    border: none;
-    transition: all 0.15s ease;
-}
-.btn-action-primary:hover {
-    background: #4338ca;
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-}
-.btn-action-koreksi {
-    background: #fffbeb;
-    color: #92400e;
-    border: 1px solid #fde68a;
-    transition: all 0.15s ease;
-}
-.btn-action-koreksi:hover {
-    background: #fef3c7;
-    color: #78350f;
-    border-color: #fcd34d;
-}
-.btn-more-circle {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #64748b;
-    transition: all 0.15s ease;
-}
-.btn-more-circle:hover {
-    background: #f8fafc;
-    color: #1e293b;
-    border-color: #cbd5e1;
-}
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-modern thead th {
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        font-size: 0.72rem;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 13px 16px;
+    }
+
+    .table-modern tbody tr {
+        transition: all 0.15s ease-in-out;
+    }
+
+    .table-modern tbody tr:hover {
+        background-color: #f8fafc !important;
+    }
+
+    .table-modern tbody td {
+        padding: 15px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .mapel-avatar-box {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        color: #4f46e5;
+        border: 1px solid #c7d2fe;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+    }
+
+    .table-modern tbody tr:hover .mapel-avatar-box {
+        transform: scale(1.05);
+    }
+
+    .mapel-title-link {
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: #1e293b;
+        text-decoration: none;
+        transition: color 0.15s ease;
+    }
+
+    .mapel-title-link:hover {
+        color: #4f46e5;
+    }
+
+    .badge-subtle-neutral {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+        font-weight: 600;
+        font-size: 0.72rem;
+    }
+
+    .badge-poin-pill {
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 3px 9px;
+    }
+
+    .btn-action-primary {
+        background: #4f46e5;
+        color: #ffffff;
+        border: none;
+        transition: all 0.15s ease;
+    }
+
+    .btn-action-primary:hover {
+        background: #4338ca;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-action-koreksi {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        transition: all 0.15s ease;
+    }
+
+    .btn-action-koreksi:hover {
+        background: #fef3c7;
+        color: #78350f;
+        border-color: #fcd34d;
+    }
+
+    .btn-more-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        transition: all 0.15s ease;
+    }
+
+    .btn-more-circle:hover {
+        background: #f8fafc;
+        color: #1e293b;
+        border-color: #cbd5e1;
+    }
 </style>
 
 <!-- LIST NASKAH SOAL -->
@@ -327,9 +350,11 @@ require_once __DIR__ . '/subnav.php';
             <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                 <i class="bi bi-file-earmark-text-fill text-primary"></i> Daftar Naskah Soal Ujian
             </h5>
-            <div class="text-muted small mt-0.5">Kelola butir soal, cetak lembar ujian presisi, dan lakukan koreksi cepat</div>
+            <div class="text-muted small mt-0.5">Kelola butir soal, cetak lembar ujian presisi, dan lakukan koreksi
+                cepat</div>
         </div>
-        <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill font-monospace fw-medium" style="font-size: 0.78rem;">
+        <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill font-monospace fw-medium"
+            style="font-size: 0.78rem;">
             <?= count($listNaskah) ?> Paket Soal
         </span>
     </div>
@@ -341,9 +366,11 @@ require_once __DIR__ . '/subnav.php';
             </div>
             <h5 class="fw-bold text-dark">Belum Ada Naskah Soal</h5>
             <p class="text-muted small" style="max-width: 480px; margin: 0 auto 20px auto;">
-                Mulai susun naskah soal Ujian Akhir Semester (AAS) Anda dengan mudah. Lengkapi dengan butir pilihan ganda, isian, dan essay beserta bobot nilainya.
+                Mulai susun naskah soal Ujian Akhir Semester (AAS) Anda dengan mudah. Lengkapi dengan butir pilihan ganda,
+                isian, dan essay beserta bobot nilainya.
             </p>
-            <button type="button" class="btn btn-primary rounded-pill px-4 py-2.5 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCreateNaskah">
+            <button type="button" class="btn btn-primary rounded-pill px-4 py-2.5 fw-bold shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#modalCreateNaskah">
                 <i class="bi bi-plus-circle me-1"></i> Buat Naskah Soal Pertama
             </button>
         </div>
@@ -362,10 +389,10 @@ require_once __DIR__ . '/subnav.php';
                 </thead>
                 <tbody>
                     <?php foreach ($listNaskah as $idx => $n):
-                        $totalSoal = (int)$n['total_pg'] + (int)$n['total_isian'] + (int)$n['total_essay'];
+                        $totalSoal = (int) $n['total_pg'] + (int) $n['total_isian'] + (int) $n['total_essay'];
                         $isOwner = ($n['guru_id'] == $userId);
                         $canManage = ($isOwner || $userRole === 'admin');
-                    ?>
+                        ?>
                         <tr>
                             <td class="text-center fw-bold text-muted"><?= $idx + 1 ?></td>
                             <td>
@@ -379,7 +406,8 @@ require_once __DIR__ . '/subnav.php';
                                                 <?= htmlspecialchars($n['nama_mapel']) ?>
                                             </a>
                                         <?php else: ?>
-                                            <a href="print.php?id=<?= $n['id'] ?>" target="_blank" class="mapel-title-link d-block mb-1" title="Klik untuk Pratinjau Lembar Soal">
+                                            <a href="print.php?id=<?= $n['id'] ?>" target="_blank"
+                                                class="mapel-title-link d-block mb-1" title="Klik untuk Pratinjau Lembar Soal">
                                                 <?= htmlspecialchars($n['nama_mapel']) ?>
                                             </a>
                                         <?php endif; ?>
@@ -388,18 +416,23 @@ require_once __DIR__ . '/subnav.php';
                                             <span class="badge badge-subtle-neutral rounded-pill px-2 py-0.5">
                                                 <?= htmlspecialchars($n['judul_ujian']) ?>
                                             </span>
-                                            <span class="text-muted small" style="font-size: 0.76rem;">• <?= htmlspecialchars($n['semester']) ?> <?= htmlspecialchars($n['tahun_ajaran']) ?></span>
+                                            <span class="text-muted small" style="font-size: 0.76rem;">•
+                                                <?= htmlspecialchars($n['semester']) ?>
+                                                <?= htmlspecialchars($n['tahun_ajaran']) ?></span>
                                         </div>
 
                                         <!-- INDIKATOR GURU PEMBUAT -->
                                         <div class="mt-1 d-flex align-items-center gap-1" style="font-size: 0.74rem;">
                                             <?php if ($isOwner): ?>
-                                                <span class="badge rounded-pill fw-medium" style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.7rem;">
+                                                <span class="badge rounded-pill fw-medium"
+                                                    style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.7rem;">
                                                     <i class="bi bi-person-check-fill me-1"></i>Naskah Anda
                                                 </span>
                                             <?php elseif (!empty($n['nama_guru'])): ?>
-                                                <span class="badge rounded-pill bg-light text-secondary border fw-medium" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-person-fill me-1"></i>Guru: <?= htmlspecialchars($n['nama_guru']) ?>
+                                                <span class="badge rounded-pill bg-light text-secondary border fw-medium"
+                                                    style="font-size: 0.7rem;">
+                                                    <i class="bi bi-person-fill me-1"></i>Guru:
+                                                    <?= htmlspecialchars($n['nama_guru']) ?>
                                                 </span>
                                             <?php endif; ?>
                                         </div>
@@ -407,38 +440,47 @@ require_once __DIR__ . '/subnav.php';
                                 </div>
                             </td>
                             <td>
-                                <div class="d-inline-flex align-items-center gap-1.5 fw-bold text-dark px-2.5 py-1 rounded-pill" style="font-size: 0.82rem; background: #f1f5f9; border: 1px solid #e2e8f0;">
+                                <div class="d-inline-flex align-items-center gap-1.5 fw-bold text-dark px-2.5 py-1 rounded-pill"
+                                    style="font-size: 0.82rem; background: #f1f5f9; border: 1px solid #e2e8f0;">
                                     <i class="bi bi-mortarboard-fill text-primary" style="font-size: 0.8rem;"></i>
                                     <span>Kelas <?= htmlspecialchars($n['tingkat_kelas']) ?></span>
                                 </div>
-                                <div class="text-muted small mt-1.5 d-flex align-items-center gap-1" style="font-size: 0.78rem;">
+                                <div class="text-muted small mt-1.5 d-flex align-items-center gap-1"
+                                    style="font-size: 0.78rem;">
                                     <i class="bi bi-clock-history text-muted"></i>
-                                    <span><?= (int)$n['alokasi_waktu'] ?> Menit</span>
+                                    <span><?= (int) $n['alokasi_waktu'] ?> Menit</span>
                                 </div>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center gap-2 mb-1.5">
-                                    <span class="fw-bold text-dark fs-6"><?= $totalSoal ?> <small class="text-muted fw-normal" style="font-size: 0.76rem;">Butir</small></span>
-                                    <span class="badge <?= (float)$n['total_poin'] >= 100 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle' ?> badge-poin-pill rounded-pill">
-                                        <i class="bi bi-award-fill me-1"></i><?= (float)$n['total_poin'] ?> Poin
+                                    <span class="fw-bold text-dark fs-6"><?= $totalSoal ?> <small class="text-muted fw-normal"
+                                            style="font-size: 0.76rem;">Butir</small></span>
+                                    <span
+                                        class="badge <?= (float) $n['total_poin'] >= 100 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle' ?> badge-poin-pill rounded-pill">
+                                        <i class="bi bi-award-fill me-1"></i><?= (float) $n['total_poin'] ?> Poin
                                     </span>
                                 </div>
                                 <div class="d-flex flex-wrap align-items-center gap-1 text-muted" style="font-size: 0.74rem;">
-                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">PG: <strong><?= (int)$n['total_pg'] ?></strong></span>
-                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">Isian: <strong><?= (int)$n['total_isian'] ?></strong></span>
-                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">Essay: <strong><?= (int)$n['total_essay'] ?></strong></span>
+                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">PG:
+                                        <strong><?= (int) $n['total_pg'] ?></strong></span>
+                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">Isian:
+                                        <strong><?= (int) $n['total_isian'] ?></strong></span>
+                                    <span class="badge bg-light text-secondary border px-2 py-0.5 rounded">Essay:
+                                        <strong><?= (int) $n['total_essay'] ?></strong></span>
                                 </div>
                             </td>
                             <td>
                                 <?php if ($n['status'] === 'siap_cetak'): ?>
-                                    <span class="badge rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold" 
-                                          style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.76rem;">
+                                    <span
+                                        class="badge rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold"
+                                        style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 0.76rem;">
                                         <span class="rounded-circle" style="width: 6px; height: 6px; background: #10b981;"></span>
                                         Siap Cetak
                                     </span>
                                 <?php else: ?>
-                                    <span class="badge rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold" 
-                                          style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-size: 0.76rem;">
+                                    <span
+                                        class="badge rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 fw-semibold"
+                                        style="background: #f8fafc; color: #64748b; border: 1px solid #cbd5e1; font-size: 0.76rem;">
                                         <span class="rounded-circle" style="width: 6px; height: 6px; background: #94a3b8;"></span>
                                         Draft
                                     </span>
@@ -448,48 +490,70 @@ require_once __DIR__ . '/subnav.php';
                                 <div class="d-inline-flex align-items-center gap-2">
                                     <?php if ($canManage): ?>
                                         <!-- HANYA GURU PEMBUAT / ADMIN: BISA EDIT & KOREKSI -->
-                                        <a href="edit.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" title="Susun &amp; Edit Butir Soal">
+                                        <a href="edit.php?id=<?= $n['id'] ?>"
+                                            class="btn btn-sm btn-action-primary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs"
+                                            title="Susun &amp; Edit Butir Soal">
                                             <i class="bi bi-pencil-square"></i>
                                             <span>Susun Soal</span>
                                         </a>
-                                        <a href="koreksi.php?id=<?= $n['id'] ?>" class="btn btn-sm btn-action-koreksi rounded-pill px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs" title="Meja Koreksi Cepat &amp; Rekap Nilai Siswa">
+                                        <a href="koreksi.php?id=<?= $n['id'] ?>"
+                                            class="btn btn-sm btn-action-koreksi rounded-pill px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs"
+                                            title="Meja Koreksi Cepat &amp; Rekap Nilai Siswa">
                                             <i class="bi bi-lightning-charge-fill text-warning"></i>
                                             <span class="d-none d-xl-inline">Koreksi</span>
                                         </a>
                                         <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-more-circle shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Opsi Dokumen &amp; Tindakan">
+                                            <button class="btn btn-sm btn-more-circle shadow-2xs" type="button"
+                                                data-bs-toggle="dropdown" aria-expanded="false"
+                                                title="Menu Opsi Dokumen &amp; Tindakan">
                                                 <i class="bi bi-three-dots-vertical"></i>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border" style="min-width: 220px; font-size: 0.84rem;">
-                                                <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Cetak &amp; Dokumen</h6></li>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border"
+                                                style="min-width: 220px; font-size: 0.84rem;">
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print.php?id=<?= $n['id'] ?>" target="_blank">
+                                                    <h6 class="dropdown-header text-uppercase text-muted"
+                                                        style="font-size: 0.68rem; letter-spacing: 0.5px;">Cetak &amp; Dokumen</h6>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="print.php?id=<?= $n['id'] ?>" target="_blank">
                                                         <i class="bi bi-printer-fill text-danger fs-6"></i>
                                                         <span>Cetak Lembar Ujian (PDF)</span>
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="export_word.php?id=<?= $n['id'] ?>">
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="export_word.php?id=<?= $n['id'] ?>">
                                                         <i class="bi bi-file-earmark-word-fill text-primary fs-6"></i>
                                                         <span>Unduh File Word (.doc)</span>
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
                                                         <i class="bi bi-key-fill text-success fs-6"></i>
                                                         <span>Kunci Jawaban &amp; Rubrik</span>
                                                     </a>
                                                 </li>
-                                                <li><hr class="dropdown-divider my-1"></li>
-                                                <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Pengelolaan</h6></li>
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="duplicate.php?id=<?= $n['id'] ?>" onclick="return confirm('Duplikasi naskah soal ini untuk membuat paket baru?')">
+                                                    <hr class="dropdown-divider my-1">
+                                                </li>
+                                                <li>
+                                                    <h6 class="dropdown-header text-uppercase text-muted"
+                                                        style="font-size: 0.68rem; letter-spacing: 0.5px;">Pengelolaan</h6>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="duplicate.php?id=<?= $n['id'] ?>"
+                                                        onclick="return confirm('Duplikasi naskah soal ini untuk membuat paket baru?')">
                                                         <i class="bi bi-copy text-secondary fs-6"></i>
                                                         <span>Duplikat Paket Soal</span>
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2 text-danger" href="delete.php?id=<?= $n['id'] ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus naskah soal ini beserta butir-butir soal di dalamnya?')">
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2 text-danger"
+                                                        href="delete.php?id=<?= $n['id'] ?>"
+                                                        onclick="return confirm('Apakah Anda yakin ingin menghapus naskah soal ini beserta butir-butir soal di dalamnya?')">
                                                         <i class="bi bi-trash fs-6"></i>
                                                         <span>Hapus Naskah Soal</span>
                                                     </a>
@@ -498,37 +562,52 @@ require_once __DIR__ . '/subnav.php';
                                         </div>
                                     <?php else: ?>
                                         <!-- GURU LAIN: HANYA BISA LIHAT / CETAK & DUPLIKASI (TIDAK BISA EDIT, KOREKSI, MAUPUN HAPUS) -->
-                                        <a href="print.php?id=<?= $n['id'] ?>" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" title="Pratinjau &amp; Cetak Soal (Hanya Lihat)">
+                                        <a href="print.php?id=<?= $n['id'] ?>" target="_blank"
+                                            class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5"
+                                            title="Pratinjau &amp; Cetak Soal (Hanya Lihat)">
                                             <i class="bi bi-printer-fill text-danger"></i>
                                             <span>Cetak / Lihat</span>
                                         </a>
                                         <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-more-circle shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Menu Opsi Dokumen">
+                                            <button class="btn btn-sm btn-more-circle shadow-2xs" type="button"
+                                                data-bs-toggle="dropdown" aria-expanded="false" title="Menu Opsi Dokumen">
                                                 <i class="bi bi-three-dots-vertical"></i>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border" style="min-width: 210px; font-size: 0.84rem;">
-                                                <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size: 0.68rem; letter-spacing: 0.5px;">Opsi Dokumen (Hanya Lihat)</h6></li>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 py-1.5 border"
+                                                style="min-width: 210px; font-size: 0.84rem;">
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print.php?id=<?= $n['id'] ?>" target="_blank">
+                                                    <h6 class="dropdown-header text-uppercase text-muted"
+                                                        style="font-size: 0.68rem; letter-spacing: 0.5px;">Opsi Dokumen (Hanya
+                                                        Lihat)</h6>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="print.php?id=<?= $n['id'] ?>" target="_blank">
                                                         <i class="bi bi-printer-fill text-danger fs-6"></i>
                                                         <span>Cetak Lembar Ujian (PDF)</span>
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="export_word.php?id=<?= $n['id'] ?>">
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="export_word.php?id=<?= $n['id'] ?>">
                                                         <i class="bi bi-file-earmark-word-fill text-primary fs-6"></i>
                                                         <span>Unduh File Word (.doc)</span>
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="print_kunci.php?id=<?= $n['id'] ?>" target="_blank">
                                                         <i class="bi bi-key-fill text-success fs-6"></i>
                                                         <span>Kunci Jawaban &amp; Rubrik</span>
                                                     </a>
                                                 </li>
-                                                <li><hr class="dropdown-divider my-1"></li>
                                                 <li>
-                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2" href="duplicate.php?id=<?= $n['id'] ?>" onclick="return confirm('Salin paket soal ini menjadi naskah milik Anda sendiri?')">
+                                                    <hr class="dropdown-divider my-1">
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 d-flex align-items-center gap-2"
+                                                        href="duplicate.php?id=<?= $n['id'] ?>"
+                                                        onclick="return confirm('Salin paket soal ini menjadi naskah milik Anda sendiri?')">
                                                         <i class="bi bi-copy text-primary fs-6"></i>
                                                         <span>Salin ke Naskah Saya</span>
                                                     </a>
@@ -547,20 +626,24 @@ require_once __DIR__ . '/subnav.php';
 </div>
 
 <!-- MODAL BUAT NASKAH SOAL BARU -->
-<div class="modal fade" id="modalCreateNaskah" tabindex="-1" aria-labelledby="modalCreateNaskahLabel" aria-hidden="true">
+<div class="modal fade" id="modalCreateNaskah" tabindex="-1" aria-labelledby="modalCreateNaskahLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-            <div class="modal-header text-white px-4 py-3" style="background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);">
+            <div class="modal-header text-white px-4 py-3"
+                style="background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%);">
                 <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalCreateNaskahLabel">
                     <i class="bi bi-magic fs-5"></i> Buat Naskah Soal Ujian Baru
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <form action="create_action.php" method="POST">
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Mata Pelajaran <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small text-muted">Mata Pelajaran <span
+                                    class="text-danger">*</span></label>
                             <select name="mapel_id" class="form-select" required onchange="syncMapelName(this)">
                                 <option value="">-- Pilih Mata Pelajaran --</option>
                                 <?php foreach ($guruMapels as $m): ?>
@@ -572,7 +655,8 @@ require_once __DIR__ . '/subnav.php';
                             <input type="hidden" name="nama_mapel" id="namaMapelInput" value="">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Tingkat Kelas <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small text-muted">Tingkat Kelas <span
+                                    class="text-danger">*</span></label>
                             <select name="tingkat_kelas" class="form-select" required>
                                 <option value="VII">Kelas VII (Tujuh)</option>
                                 <option value="VIII">Kelas VIII (Delapan)</option>
@@ -580,8 +664,10 @@ require_once __DIR__ . '/subnav.php';
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Target Kolom Penilaian Guru <span class="text-danger">*</span></label>
-                            <select name="tipe_ujian" class="form-select fw-bold" id="modalTipeUjianSelect" required onchange="syncModalJudulUjian(this)">
+                            <label class="form-label fw-bold small text-muted">Target Kolom Penilaian Guru <span
+                                    class="text-danger">*</span></label>
+                            <select name="tipe_ujian" class="form-select fw-bold" id="modalTipeUjianSelect" required
+                                onchange="syncModalJudulUjian(this)">
                                 <option value="sumatif_1">Sumatif 1 (Lingkup Materi 1 / Bab 1)</option>
                                 <option value="sumatif_2">Sumatif 2 (Lingkup Materi 2 / Bab 2)</option>
                                 <option value="sumatif_3">Sumatif 3 (Lingkup Materi 3 / Bab 3)</option>
@@ -591,24 +677,31 @@ require_once __DIR__ . '/subnav.php';
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Judul Kop Lembar Ujian <span class="text-danger">*</span></label>
-                            <input type="text" name="judul_ujian" id="modalJudulUjianInput" class="form-control" value="ASESMEN AKHIR SEMESTER (AAS)" required>
+                            <label class="form-label fw-bold small text-muted">Judul Kop Lembar Ujian <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" name="judul_ujian" id="modalJudulUjianInput" class="form-control"
+                                value="ASESMEN AKHIR SEMESTER (AAS)" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label fw-bold small text-muted">Semester <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small text-muted">Semester <span
+                                    class="text-danger">*</span></label>
                             <select name="semester" class="form-select" required>
                                 <option value="Ganjil" selected>Ganjil</option>
                                 <option value="Genap">Genap</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label fw-bold small text-muted">Tahun Ajaran <span class="text-danger">*</span></label>
-                            <input type="text" name="tahun_ajaran" class="form-control font-monospace" value="2025 – 2026" required>
+                            <label class="form-label fw-bold small text-muted">Tahun Ajaran <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" name="tahun_ajaran" class="form-control font-monospace"
+                                value="2025 – 2026" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-muted">Alokasi Waktu (Menit) <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold small text-muted">Alokasi Waktu (Menit) <span
+                                    class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" name="alokasi_waktu" class="form-control" value="90" min="15" max="300" required>
+                                <input type="number" name="alokasi_waktu" class="form-control" value="90" min="15"
+                                    max="300" required>
                                 <span class="input-group-text">Menit</span>
                             </div>
                         </div>
@@ -619,7 +712,8 @@ require_once __DIR__ . '/subnav.php';
                     </div>
                 </div>
                 <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                        data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
                         <i class="bi bi-arrow-right-circle me-1"></i> Simpan &amp; Lanjut Susun Soal
                     </button>
@@ -630,87 +724,96 @@ require_once __DIR__ . '/subnav.php';
 </div>
 
 <?php if ($userRole === 'admin'): ?>
-<!-- MODAL UPLOAD KOP SOAL PNG -->
-<div class="modal fade" id="modalKopSoal" tabindex="-1" aria-labelledby="modalKopSoalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-            <div class="modal-header text-white px-4 py-3" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
-                <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalKopSoalLabel">
-                    <i class="bi bi-image fs-5 text-warning"></i> Upload &amp; Pengaturan KOP Soal (PNG)
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- MODAL UPLOAD KOP SOAL PNG -->
+    <div class="modal fade" id="modalKopSoal" tabindex="-1" aria-labelledby="modalKopSoalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+                <div class="modal-header text-white px-4 py-3"
+                    style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                    <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="modalKopSoalLabel">
+                        <i class="bi bi-image fs-5 text-warning"></i> Upload &amp; Pengaturan KOP Soal (PNG)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <form action="index.php" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="upload_kop_soal">
+                    <div class="modal-body p-4">
+                        <p class="text-muted small mb-3">
+                            KOP naskah soal dicetak dalam bentuk gambar <strong>PNG</strong> agar presisi, rapi, dan sesuai
+                            standar sekolah. Anda dapat mengunggah file KOP PNG baru di sini.
+                        </p>
+
+                        <!-- Preview KOP Saat Ini -->
+                        <div class="mb-4 p-3 bg-light rounded-3 border text-center">
+                            <label class="form-label fw-bold small text-muted d-block text-start mb-2">Pratinjau KOP Soal
+                                Aktif:</label>
+                            <?php
+                            $kopPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
+                            if (file_exists($kopPath)):
+                                ?>
+                                <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopPath) ?>"
+                                    alt="KOP Soal" class="img-fluid border rounded shadow-xs" style="max-height: 120px;">
+                            <?php else: ?>
+                                <div class="text-muted py-3">Belum ada file KOP PNG.</div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-dark">Pilih File KOP Baru (.PNG) <span
+                                    class="text-danger">*</span></label>
+                            <input type="file" name="kop_file" class="form-control"
+                                accept="image/png, image/jpeg, image/webp" required>
+                            <small class="text-muted d-block mt-1">Rekomendasi format: PNG transparan atau putih, rasio
+                                lebar ~700 x 120 px.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light px-4 py-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                            data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                            <i class="bi bi-upload me-1"></i> Simpan Gambar KOP
+                        </button>
+                    </div>
+                </form>
             </div>
-            <form action="index.php" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="action" value="upload_kop_soal">
-                <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">
-                        KOP naskah soal dicetak dalam bentuk gambar <strong>PNG</strong> agar presisi, rapi, dan sesuai standar sekolah. Anda dapat mengunggah file KOP PNG baru di sini.
-                    </p>
-
-                    <!-- Preview KOP Saat Ini -->
-                    <div class="mb-4 p-3 bg-light rounded-3 border text-center">
-                        <label class="form-label fw-bold small text-muted d-block text-start mb-2">Pratinjau KOP Soal Aktif:</label>
-                        <?php 
-                        $kopPath = __DIR__ . '/../../assets/img/kop_soal_ismi.png';
-                        if (file_exists($kopPath)):
-                        ?>
-                            <img src="<?= BASE_URL ?>/assets/img/kop_soal_ismi.png?v=<?= filemtime($kopPath) ?>" alt="KOP Soal" class="img-fluid border rounded shadow-xs" style="max-height: 120px;">
-                        <?php else: ?>
-                            <div class="text-muted py-3">Belum ada file KOP PNG.</div>
-                        <?php endif; ?>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-dark">Pilih File KOP Baru (.PNG) <span class="text-danger">*</span></label>
-                        <input type="file" name="kop_file" class="form-control" accept="image/png, image/jpeg, image/webp" required>
-                        <small class="text-muted d-block mt-1">Rekomendasi format: PNG transparan atau putih, rasio lebar ~700 x 120 px.</small>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light px-4 py-3">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
-                        <i class="bi bi-upload me-1"></i> Simpan Gambar KOP
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
-</div>
 <?php endif; ?>
 
 <script>
-function syncMapelName(select) {
-    var opt = select.options[select.selectedIndex];
-    var name = opt.getAttribute('data-name') || '';
-    document.getElementById('namaMapelInput').value = name;
-}
-
-function syncModalJudulUjian(select) {
-    var val = select.value;
-    var judulInput = document.getElementById('modalJudulUjianInput');
-    if (!judulInput) return;
-    
-    switch(val) {
-        case 'sumatif_1':
-            judulInput.value = 'PENILAIAN SUMATIF 1 (BAB 1)';
-            break;
-        case 'sumatif_2':
-            judulInput.value = 'PENILAIAN SUMATIF 2 (BAB 2)';
-            break;
-        case 'sumatif_3':
-            judulInput.value = 'PENILAIAN SUMATIF 3 (BAB 3)';
-            break;
-        case 'sumatif_4':
-            judulInput.value = 'PENILAIAN SUMATIF 4 (BAB 4)';
-            break;
-        case 'ats':
-            judulInput.value = 'ASESMEN TENGAH SEMESTER (ATS)';
-            break;
-        case 'aas':
-            judulInput.value = 'ASESMEN AKHIR SEMESTER (AAS)';
-            break;
+    function syncMapelName(select) {
+        var opt = select.options[select.selectedIndex];
+        var name = opt.getAttribute('data-name') || '';
+        document.getElementById('namaMapelInput').value = name;
     }
-}
+
+    function syncModalJudulUjian(select) {
+        var val = select.value;
+        var judulInput = document.getElementById('modalJudulUjianInput');
+        if (!judulInput) return;
+
+        switch (val) {
+            case 'sumatif_1':
+                judulInput.value = 'PENILAIAN SUMATIF 1 (BAB 1)';
+                break;
+            case 'sumatif_2':
+                judulInput.value = 'PENILAIAN SUMATIF 2 (BAB 2)';
+                break;
+            case 'sumatif_3':
+                judulInput.value = 'PENILAIAN SUMATIF 3 (BAB 3)';
+                break;
+            case 'sumatif_4':
+                judulInput.value = 'PENILAIAN SUMATIF 4 (BAB 4)';
+                break;
+            case 'ats':
+                judulInput.value = 'ASESMEN TENGAH SEMESTER (ATS)';
+                break;
+            case 'aas':
+                judulInput.value = 'ASESMEN AKHIR SEMESTER (AAS)';
+                break;
+        }
+    }
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
