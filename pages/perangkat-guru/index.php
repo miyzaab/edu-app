@@ -101,6 +101,25 @@ foreach ($listNaskah as $n) {
 $stmtMapels = $pdo->query("SELECT id, nama_mapel, kelompok FROM mata_pelajaran WHERE status = 'aktif' ORDER BY kelompok ASC, nama_mapel ASC");
 $allMapels = $stmtMapels->fetchAll(PDO::FETCH_ASSOC);
 
+// Filter mapel yang diampu guru jika role adalah Guru
+$guruMapels = [];
+if ($userRole === 'guru') {
+    $stmtGuruMapel = $pdo->prepare("
+        SELECT DISTINCT m.id, m.nama_mapel, m.kelompok
+        FROM guru_mapel_kelas gmk
+        JOIN mata_pelajaran m ON gmk.mapel_id = m.id
+        WHERE gmk.user_id = :uid AND m.status = 'aktif'
+        ORDER BY m.kelompok ASC, m.nama_mapel ASC
+    ");
+    $stmtGuruMapel->execute([':uid' => $userId]);
+    $guruMapels = $stmtGuruMapel->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Jika admin atau guru belum memiliki plotting khusus di guru_mapel_kelas, tampilkan semua mapel
+if (empty($guruMapels)) {
+    $guruMapels = $allMapels;
+}
+
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/subnav.php';
 ?>
@@ -391,7 +410,7 @@ require_once __DIR__ . '/subnav.php';
                             <label class="form-label fw-bold small text-muted">Mata Pelajaran <span class="text-danger">*</span></label>
                             <select name="mapel_id" class="form-select" required onchange="syncMapelName(this)">
                                 <option value="">-- Pilih Mata Pelajaran --</option>
-                                <?php foreach ($allMapels as $m): ?>
+                                <?php foreach ($guruMapels as $m): ?>
                                     <option value="<?= $m['id'] ?>" data-name="<?= htmlspecialchars($m['nama_mapel']) ?>">
                                         <?= htmlspecialchars($m['nama_mapel']) ?>
                                     </option>

@@ -14,8 +14,33 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $userId = (int) $_SESSION['user_id'];
+$userRole = strtolower($_SESSION['role'] ?? 'guru');
 $mapelId = !empty($_POST['mapel_id']) ? (int) $_POST['mapel_id'] : null;
 $namaMapel = trim($_POST['nama_mapel'] ?? '');
+
+// Validasi hak ampu mapel jika role Guru
+if ($userRole === 'guru' && $mapelId > 0) {
+    $stmtCheckPlot = $pdo->prepare("
+        SELECT COUNT(*) 
+        FROM guru_mapel_kelas 
+        WHERE user_id = :uid AND mapel_id = :mid
+    ");
+    $stmtCheckPlot->execute([':uid' => $userId, ':mid' => $mapelId]);
+    $hasPlotting = (int) $stmtCheckPlot->fetchColumn();
+
+    $stmtAnyPlot = $pdo->prepare("SELECT COUNT(*) FROM guru_mapel_kelas WHERE user_id = :uid");
+    $stmtAnyPlot->execute([':uid' => $userId]);
+    $totalPlot = (int) $stmtAnyPlot->fetchColumn();
+
+    if ($totalPlot > 0 && $hasPlotting === 0) {
+        $_SESSION['flash'] = [
+            'type' => 'danger',
+            'message' => 'Anda hanya dapat membuat naskah soal untuk mata pelajaran yang Anda ampu.'
+        ];
+        header('Location: index.php');
+        exit;
+    }
+}
 
 // Jika nama mapel kosong, cari dari mapel_id
 if ($namaMapel === '' && $mapelId) {
