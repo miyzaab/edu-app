@@ -140,15 +140,14 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             padding: 0;
         }
 
-        /* FONT ARAB: Scheherazade New 15pt, spasi 1.0 */
+        /* FONT ARAB: Scheherazade New 15pt, spasi & line-height lega agar harakat tidak bertabrakan */
         .teks-arab {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: 15pt !important;
-            line-height: 1.0 !important;
+            line-height: 1.85 !important;
             direction: rtl;
             unicode-bidi: isolate;
-            display: inline-block;
-            vertical-align: middle;
+            display: inline;
         }
 
         .no-print {
@@ -342,22 +341,22 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             font-size: 12pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin-top: 14px;
-            margin-bottom: 4px;
+            margin-top: 18px;
+            margin-bottom: 6px;
             border-bottom: 1px dashed #666;
-            padding-bottom: 2px;
+            padding-bottom: 3px;
             line-height: 1.35;
         }
 
         .section-desc {
             font-size: 10pt;
             font-style: italic;
-            margin-bottom: 10px;
-            line-height: 1.35;
+            margin-bottom: 14px;
+            line-height: 1.4;
         }
 
         .soal-item {
-            margin-bottom: 12px;
+            margin-bottom: 22px;
             page-break-inside: avoid;
         }
 
@@ -372,21 +371,22 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         }
 
         .soal-no {
-            width: 26px;
+            width: 28px;
             font-weight: bold;
             text-align: left;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1.6;
+            padding-right: 6px;
         }
 
         .soal-text {
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1.65;
             text-align: justify;
         }
 
         .soal-img-box {
-            margin: 6px 0;
+            margin: 8px 0;
         }
 
         .soal-img-box img {
@@ -399,23 +399,24 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
         /* PILIHAN A - D */
         .opsi-table {
             width: 100%;
-            margin-top: 6px;
+            margin-top: 12px;
             margin-left: 2px;
             border-collapse: collapse;
         }
 
         .opsi-table td {
             vertical-align: top;
-            padding: 3px 6px;
+            padding: 6px 10px;
             width: 50%;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1.65;
         }
 
         .opsi-letter {
             font-weight: bold;
             display: inline-block;
-            width: 20px;
+            width: 26px;
+            margin-right: 4px;
         }
 
         /* FOOTER ON SCREEN PREVIEW */

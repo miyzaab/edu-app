@@ -61,7 +61,7 @@ function renderTeksWord($text) {
     $wrapped = preg_replace_callback($pattern, function($m) {
         $clean = trim($m[0]);
         if ($clean === '') return $m[0];
-        return '<span class="teks-arab" dir="rtl" style="font-family:\'Scheherazade New\', \'Traditional Arabic\', serif; font-size:15pt; line-height:1.0;">' . $clean . '</span>';
+        return '<span class="teks-arab" dir="rtl" style="font-family:\'Scheherazade New\', \'Traditional Arabic\', serif; font-size:15pt; line-height:1.85;">' . $clean . '</span>';
     }, $safe);
     
     return nl2br($wrapped);
@@ -156,7 +156,7 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
         .teks-arab {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: 15pt !important;
-            line-height: 1.0 !important;
+            line-height: 1.85 !important;
             direction: rtl;
         }
 
@@ -251,24 +251,30 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 
         .soal-table {
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 20px;
         }
         .soal-table td {
             vertical-align: top;
-            padding: 2pt 0;
+            padding: 3pt 0;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1.65;
         }
 
         .opsi-table {
             width: 100%;
-            margin-top: 4pt;
+            margin-top: 10pt;
         }
         .opsi-table td {
             width: 50%;
-            padding: 2pt 4pt;
+            padding: 5pt 6pt;
             font-size: 12pt;
-            line-height: 1.5;
+            line-height: 1.65;
+        }
+
+        .opsi-letter {
+            font-weight: bold;
+            display: inline-block;
+            width: 24px;
         }
 
         /* NATIVE WORD FOOTER STYLES */

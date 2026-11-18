@@ -130,10 +130,10 @@ $footerText = trim(($naskah['nama_mapel'] ?? '') . ' ' . $cleanKelas);
         .teks-arab {
             font-family: 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
             font-size: 15pt !important;
-            line-height: 1.0 !important;
+            line-height: 1.85 !important;
             direction: rtl;
             unicode-bidi: isolate;
-            display: inline-block;
+            display: inline;
         }
 
         .no-print {
