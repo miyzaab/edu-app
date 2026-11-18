@@ -119,22 +119,7 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
     <style>
         @page {
             size: A4 portrait;
-            margin: 15mm 15mm 20mm 15mm;
-
-            @bottom-left {
-                content: "<?= addslashes($footerText) ?>";
-                font-family: 'Cambria', Georgia, serif;
-                font-size: 10pt;
-                font-style: italic;
-                color: #222222;
-            }
-
-            @bottom-right {
-                content: "Halaman " counter(page);
-                font-family: 'Cambria', Georgia, serif;
-                font-size: 10pt;
-                color: #222222;
-            }
+            margin: 15mm 15mm 15mm 15mm;
         }
 
         * {
@@ -223,25 +208,6 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 margin: 0 !important;
                 padding: 0 !important;
                 box-shadow: none !important;
-            }
-
-            .screen-footer {
-                display: none !important;
-            }
-
-            .print-footer-bar {
-                display: flex !important;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                justify-content: space-between;
-                align-items: center;
-                font-family: 'Cambria', Georgia, serif;
-                font-size: 10pt;
-                border-top: 0.75pt solid #888;
-                padding-top: 4px;
-                background: transparent;
             }
 
             .wacana-box {
@@ -679,23 +645,6 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
             margin-right: 6px;
             margin-left: 0;
         }
-
-        /* FOOTER ON SCREEN PREVIEW */
-        .screen-footer {
-            margin-top: 30px;
-            padding-top: 8px;
-            border-top: 1px solid #ccc;
-            font-size: 10pt;
-            color: #555;
-            display: flex;
-            justify-content: space-between;
-            font-style: italic;
-        }
-
-        /* PRINT FOOTER FALLBACK */
-        .print-footer-bar {
-            display: none;
-        }
     </style>
 </head>
 
@@ -1103,18 +1052,6 @@ $uploadDirSoal = __DIR__ . '/../../uploads/soal';
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
-
-        <!-- FOOTER TAMPILAN LAYAR (PRATINJAU) -->
-        <div class="screen-footer">
-            <span><?= htmlspecialchars($footerText) ?></span>
-            <span>1</span>
-        </div>
-
-        <!-- PRINT FOOTER BAR (UNTUK PRINTER/BROWSER FALLBACK) -->
-        <div class="print-footer-bar">
-            <span><?= htmlspecialchars($footerText) ?></span>
-            <span>Naskah Ujian SMP ISMI</span>
-        </div>
     </div>
 
     <script>

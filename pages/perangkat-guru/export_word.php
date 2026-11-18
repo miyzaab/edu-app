@@ -194,7 +194,6 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             mso-page-orientation: portrait;
             mso-header-margin: 1.0cm;
             mso-footer-margin: 1.0cm;
-            mso-footer: f1;
         }
 
         div.Section1 {
@@ -848,24 +847,6 @@ header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
                 </table>
             <?php endforeach; ?>
         <?php endif; ?>
-
-        <!-- NATIVE MICROSOFT WORD FOOTER ELEMENT -->
-        <div style='mso-element:footer' id='f1'>
-            <p class='MsoFooter' style='margin:0; font-family:"Cambria",serif; font-size:10pt;'>
-            <table width='100%' style='width:100%; border:none; border-top:0.75pt solid #888888; padding-top:4pt;'>
-                <tr>
-                    <td
-                        style='border:none; text-align:left; font-style:italic; font-family:"Cambria",serif; font-size:10pt;'>
-                        <?= htmlspecialchars($footerText) ?>
-                    </td>
-                    <td style='border:none; text-align:right; font-family:"Cambria",serif; font-size:10pt;'>
-                        Halaman <span style='mso-field-code:" PAGE "'></span> dari <span
-                            style='mso-field-code:" NUMPAGES "'></span>
-                    </td>
-                </tr>
-            </table>
-            </p>
-        </div>
 
     </div>
 
