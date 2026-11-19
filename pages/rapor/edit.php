@@ -10,6 +10,7 @@ requirePermission('rapor');
 
 $pdo = getConnection();
 require_once __DIR__ . '/init_rapor.php';
+require_once __DIR__ . '/../../includes/rapor_helpers.php';
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);
 
@@ -422,16 +423,13 @@ require_once __DIR__ . '/../../includes/header.php';
                                 // Ambil deskripsi: Utamakan langsung dari deskripsi guru pengampu jika sudah diinput oleh guru
                                 if (!empty($guruDesk)) {
                                     $currentDesk = $guruDesk;
+                                } elseif (!$isAts && $na !== null && $na > 0) {
+                                    $currentDesk = resolveDeskripsiAas($savedDeskripsiMapel[$mName] ?? '', (float) $na, $mName, $pdo, (int) $kid, $semester);
                                 } elseif (!empty($savedDeskripsiMapel[$mName])) {
                                     $currentDesk = trim($savedDeskripsiMapel[$mName]);
                                 } elseif ($na !== null && $na > 0) {
-                                    if ($na >= 85) {
-                                        $currentDesk = "Menunjukkan penguasaan yang sangat baik dalam memahami materi pokok " . $mName . ", mampu menerapkan konsep secara mandiri dan bernalar kritis.";
-                                    } elseif ($na >= 75) {
-                                        $currentDesk = "Menunjukkan penguasaan yang baik dalam memahami konsep dasar " . $mName . ", perlu pemantapan pada beberapa indikator capaian.";
-                                    } else {
-                                        $currentDesk = "Cukup memahami materi pokok " . $mName . ", membutuhkan bimbingan dan pendampingan lebih lanjut untuk penguatan kompetensi.";
-                                    }
+                                    $materi = getMateriMapelAas($mName, $pdo, (int) $kid, $semester);
+                                    $currentDesk = buildDeskripsiAas((float) $na, $materi);
                                 } else {
                                     $currentDesk = "Telah mengikuti pembelajaran mata pelajaran " . $mName . " dengan baik.";
                                 }
@@ -472,7 +470,7 @@ require_once __DIR__ . '/../../includes/header.php';
                                             <?php if ($na !== null && $na > 0): ?>
                                                 <span
                                                     class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle fs-6 font-monospace px-3 py-1">
-                                                    <?= number_format($na, 1) ?>
+                                                    <?= (int) round($na) ?>
                                                 </span>
                                             <?php else: ?>
                                                 <span class="badge bg-secondary bg-opacity-10 text-muted px-2 py-1">Belum ada</span>

@@ -93,3 +93,36 @@ if (!function_exists('buildDeskripsiAas')) {
     }
 }
 
+if (!function_exists('resolveDeskripsiAas')) {
+    /**
+     * Menentukan deskripsi capaian kompetensi Rapor AAS:
+     * - Jika belum ada atau merupakan hasil template otomatis (yang mungkin berasal dari nilai lama yang belum tersinkron),
+     *   otomatis bangun ulang sesuai Nilai Akhir bulat terbaru.
+     */
+    function resolveDeskripsiAas(string $savedDesc, float $score, string $mapelName, PDO $pdo, int $kelasId = 0, string $semester = 'Ganjil'): string
+    {
+        $savedDesc = trim($savedDesc);
+        $scoreRounded = round($score);
+        if ($scoreRounded <= 0) {
+            return $savedDesc;
+        }
+
+        $isAutoTemplate = (
+            $savedDesc === '' ||
+            strpos($savedDesc, 'Ananda Butuh bimbingan dalam memahami ') === 0 ||
+            strpos($savedDesc, 'Ananda Cukup baik dalam memahami ') === 0 ||
+            strpos($savedDesc, 'Ananda menunjukkan pemahaman yang Baik dalam memahami ') === 0 ||
+            strpos($savedDesc, 'Ananda menunjukkan pemahaman yang Sangat Baik dalam memahami ') === 0 ||
+            strpos($savedDesc, 'Menunjukkan penguasaan yang ') === 0 ||
+            strpos($savedDesc, 'Cukup memahami materi pokok ') === 0
+        );
+
+        if ($isAutoTemplate) {
+            $materi = getMateriMapelAas($mapelName, $pdo, $kelasId, $semester);
+            return buildDeskripsiAas($scoreRounded, $materi);
+        }
+
+        return $savedDesc;
+    }
+}
+

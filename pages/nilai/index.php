@@ -170,9 +170,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
             // Formula Pembobotan: Sumatif 80%, ATS 10%, AAS 10%
             // Hitung rata-rata sumatif dari lingkup materi yang telah diisi
+            // Jika Sumatif 1-4 belum diisi sama sekali (Pilihan B Proporsional), ambil dari ATS / AAS yang sudah ada
             $sumArr = array_filter([$s1, $s2, $s3, $s4], fn($v) => $v > 0);
             $rSumatif = !empty($sumArr) ? (array_sum($sumArr) / count($sumArr)) : 0.0;
-            $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
+            if (!empty($sumArr)) {
+                $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
+            } elseif ($ats > 0 && $aas > 0) {
+                $na = ($ats + $aas) / 2.0;
+            } elseif ($ats > 0) {
+                $na = $ats;
+            } elseif ($aas > 0) {
+                $na = $aas;
+            } else {
+                $na = 0.0;
+            }
             $na = round($na, 2);
 
             if ($na >= 90)
@@ -704,7 +715,17 @@ require_once __DIR__ . '/../../includes/header.php';
                                 $sumArr = array_filter([$s1, $s2, $s3, $s4], fn($v) => $v > 0);
                                 $rSumatif = !empty($sumArr) ? (array_sum($sumArr) / count($sumArr)) : 0.0;
 
-                                $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
+                                if (!empty($sumArr)) {
+                                    $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
+                                } elseif ($ats > 0 && $aas > 0) {
+                                    $na = ($ats + $aas) / 2.0;
+                                } elseif ($ats > 0) {
+                                    $na = $ats;
+                                } elseif ($aas > 0) {
+                                    $na = $aas;
+                                } else {
+                                    $na = 0.0;
+                                }
                                 $na = round($na, 2);
 
                                 if ($na >= 90)
@@ -885,7 +906,16 @@ require_once __DIR__ . '/../../includes/header.php';
         const validSumatifs = [s1, s2, s3, s4].filter(v => v > 0);
         const rSumatif = validSumatifs.length > 0 ? (validSumatifs.reduce((a, b) => a + b, 0) / validSumatifs.length) : 0;
 
-        const na = (rSumatif * 0.80) + (ats * 0.10) + (aas * 0.10);
+        let na = 0;
+        if (validSumatifs.length > 0) {
+            na = (rSumatif * 0.80) + (ats * 0.10) + (aas * 0.10);
+        } else if (ats > 0 && aas > 0) {
+            na = (ats + aas) / 2.0;
+        } else if (ats > 0) {
+            na = ats;
+        } else if (aas > 0) {
+            na = aas;
+        }
         const naRounded = na.toFixed(2);
 
         let pred = 'D';

@@ -855,12 +855,10 @@ if (empty($mapelList)) {
                             : (($nl['aas'] !== null && (float)$nl['aas'] > 0) ? (float)$nl['aas'] : 0);
                         $scoreDisplay = $score > 0 ? (int)round($score) : '-';
 
-                        // Deskripsi capaian
-                        $desc = $savedDeskripsi[$mName] ?? '';
-                        if (empty($desc) && $score > 0) {
-                            $materi = getMateriMapelAas($mName, $pdo, $kelasId, $semester);
-                            $desc = buildDeskripsiAas($score, $materi);
-                        }
+                        // Deskripsi capaian (prioritaskan deskripsi khusus guru jika ada, lalu sesuaikan template otomatis dengan Nilai Akhir bulat)
+                        $guruDesc = trim($nl['deskripsi_aas'] ?? '');
+                        $rawSavedDesc = !empty($guruDesc) ? $guruDesc : ($savedDeskripsi[$mName] ?? '');
+                        $desc = resolveDeskripsiAas($rawSavedDesc, $score, $mName, $pdo, $kelasId, $semester);
                     ?>
                     <tr>
                         <td style="border: 1px solid #000; padding: 7px 4px; text-align: center; vertical-align: top;"><?= $idx + 1 ?></td>

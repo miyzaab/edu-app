@@ -202,7 +202,46 @@ if (!function_exists('angkaKeTerbilang')) {
 }
 
 /**
+ * Helper menghitung Nilai Akhir Gabungan (S1, S2, S3, S4, ATS, AAS)
+ * - Jika Sumatif (S1..S4) ada yang diisi (> 0): (Rata_Sumatif_Terisi * 80%) + (ATS * 10%) + (AAS * 10%)
+ * - Jika Sumatif belum diisi sama sekali (Pilihan B Proporsional Otomatis):
+ *   Ambil dari komponen ATS / AAS yang sudah ada agar nilai rapor tidak anjlok jadi 10.
+ */
+if (!function_exists('hitungNilaiAkhirRapor')) {
+    function hitungNilaiAkhirRapor($row): float
+    {
+        if (empty($row) || !is_array($row)) {
+            return 0.0;
+        }
+        $s1 = (float) ($row['sumatif_1'] ?? 0);
+        $s2 = (float) ($row['sumatif_2'] ?? 0);
+        $s3 = (float) ($row['sumatif_3'] ?? 0);
+        $s4 = (float) ($row['sumatif_4'] ?? 0);
+        $ats = (float) ($row['ats'] ?? 0);
+        $aas = (float) ($row['aas'] ?? 0);
+
+        $sumArr = array_filter([$s1, $s2, $s3, $s4], fn($v) => $v > 0);
+        if (!empty($sumArr)) {
+            $rSumatif = array_sum($sumArr) / count($sumArr);
+            $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
+            return round($na, 2);
+        }
+
+        if ($ats > 0 && $aas > 0) {
+            return round(($ats + $aas) / 2.0, 2);
+        } elseif ($ats > 0) {
+            return round($ats, 2);
+        } elseif ($aas > 0) {
+            return round($aas, 2);
+        }
+
+        return (float) ($row['nilai_akhir'] ?? 0);
+    }
+}
+
+/**
  * Helper untuk mencocokkan baris nilai_siswa dengan nama mapel secara cerdas (mendukung alias nama mapel)
+ * sekaligus memastikan nilai_akhir selalu dihitung dari gabungan S1-S4, ATS, dan AAS.
  */
 if (!function_exists('matchMapelNilai')) {
     function matchMapelNilai($rawNilaiRows, $targetMapelName)
@@ -212,10 +251,23 @@ if (!function_exists('matchMapelNilai')) {
         $targetClean = trim($targetMapelName);
         $targetAlpha = preg_replace('/[^a-z0-9]/', '', mb_strtolower($targetClean));
 
+        $finalizeRow = function ($row) {
+            if (!$row) return null;
+            $na = hitungNilaiAkhirRapor($row);
+            if ($na > 0) {
+                $row['nilai_akhir'] = $na;
+                if ($na >= 90) $row['predikat'] = 'A';
+                elseif ($na >= 80) $row['predikat'] = 'B';
+                elseif ($na >= 70) $row['predikat'] = 'C';
+                else $row['predikat'] = 'D';
+            }
+            return $row;
+        };
+
         // 1. Exact match
         foreach ($rawNilaiRows as $row) {
             if (isset($row['mapel']) && strcasecmp(trim($row['mapel']), $targetClean) === 0) {
-                return $row;
+                return $finalizeRow($row);
             }
         }
 
@@ -224,7 +276,7 @@ if (!function_exists('matchMapelNilai')) {
             if (isset($row['mapel'])) {
                 $rowAlpha = preg_replace('/[^a-z0-9]/', '', mb_strtolower(trim($row['mapel'])));
                 if ($rowAlpha === $targetAlpha && $rowAlpha !== '') {
-                    return $row;
+                    return $finalizeRow($row);
                 }
             }
         }
@@ -236,8 +288,8 @@ if (!function_exists('matchMapelNilai')) {
             'aqidah' => ['aqidah', 'akidah', 'aqidahakhlak', 'akidahakhlak', 'aqidahislam'],
             'akidah' => ['aqidah', 'akidah', 'aqidahakhlak', 'akidahakhlak', 'aqidahislam'],
             'adabakhlak' => ['adabakhlak', 'adab', 'akhlak', 'akhlaq', 'adabdanakhlak'],
-            'alquran' => ['alquran', 'quran', 'alquranhadits', 'quranhadits', 'tahfidz', 'tahfidzulquran'],
-            'tahfidz' => ['tahfidz', 'tahfidzulquran', 'alquran', 'quran'],
+            'alquran' => ['alquran', 'quran', 'alquranhadits', 'quranhadits', 'tahfidz', 'tahfidzulquran', 'hifdzulquran'],
+            'tahfidz' => ['tahfidz', 'tahfidzulquran', 'alquran', 'quran', 'hifdzulquran'],
             'bahasaindonesia' => ['bahasaindonesia', 'bindo', 'bindonesia'],
             'bahasainggris' => ['bahasainggris', 'bing', 'binggris'],
             'bahasaarab' => ['bahasaarab', 'barab'],
@@ -254,7 +306,7 @@ if (!function_exists('matchMapelNilai')) {
                     if (isset($row['mapel'])) {
                         $rowAlpha = preg_replace('/[^a-z0-9]/', '', mb_strtolower(trim($row['mapel'])));
                         if (in_array($rowAlpha, $varList)) {
-                            return $row;
+                            return $finalizeRow($row);
                         }
                     }
                 }
@@ -267,7 +319,7 @@ if (!function_exists('matchMapelNilai')) {
                 if (isset($row['mapel'])) {
                     $rowAlpha = preg_replace('/[^a-z0-9]/', '', mb_strtolower(trim($row['mapel'])));
                     if (strlen($rowAlpha) >= 4 && (strpos($rowAlpha, $targetAlpha) !== false || strpos($targetAlpha, $rowAlpha) !== false)) {
-                        return $row;
+                        return $finalizeRow($row);
                     }
                 }
             }

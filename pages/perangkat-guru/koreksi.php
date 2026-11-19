@@ -238,9 +238,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             elseif ($targetCol === 'aas') $curAas = $naUjian;
 
             // Formula Pembobotan Kurikulum Merdeka SMP ISMI: Sumatif 80%, ATS 10%, AAS 10%
+            // Jika Sumatif 1-4 belum diisi sama sekali (Pilihan B Proporsional), ambil dari ATS / AAS yang sudah ada
             $sumArr = array_filter([$s1, $s2, $s3, $s4], fn($v) => $v > 0);
-            $rSumatif = !empty($sumArr) ? (array_sum($sumArr) / count($sumArr)) : $naUjian;
-            $naRapor = ($rSumatif * 0.80) + ($curAts * 0.10) + ($curAas * 0.10);
+            if (!empty($sumArr)) {
+                $rSumatif = array_sum($sumArr) / count($sumArr);
+                $naRapor = ($rSumatif * 0.80) + ($curAts * 0.10) + ($curAas * 0.10);
+            } elseif ($curAts > 0 && $curAas > 0) {
+                $naRapor = ($curAts + $curAas) / 2.0;
+            } elseif ($curAts > 0) {
+                $naRapor = $curAts;
+            } elseif ($curAas > 0) {
+                $naRapor = $curAas;
+            } else {
+                $naRapor = 0.0;
+            }
             $naRapor = round($naRapor, 2);
 
             if ($naRapor >= 90) $pred = 'A';

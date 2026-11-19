@@ -361,14 +361,16 @@ $namaGuru = $_SESSION['nama_lengkap'] ?? 'Guru Pengampu';
                         $sumatifVals = array_filter([$s1, $s2, $s3, $s4], fn($v) => $v > 0);
                         $rSumatif = !empty($sumatifVals) ? (array_sum($sumatifVals) / count($sumatifVals)) : 0;
 
-                        if ($ats > 0 && $aas > 0) {
+                        if (!empty($sumatifVals)) {
                             $na = ($rSumatif * 0.80) + ($ats * 0.10) + ($aas * 0.10);
+                        } elseif ($ats > 0 && $aas > 0) {
+                            $na = ($ats + $aas) / 2.0;
                         } elseif ($ats > 0) {
-                            $na = ($rSumatif * 0.85) + ($ats * 0.15);
+                            $na = $ats;
                         } elseif ($aas > 0) {
-                            $na = ($rSumatif * 0.85) + ($aas * 0.15);
+                            $na = $aas;
                         } else {
-                            $na = $rSumatif;
+                            $na = 0;
                         }
                         $na = round($na, 2);
 

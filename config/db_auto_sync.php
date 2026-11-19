@@ -197,8 +197,29 @@ if (!defined('DB_AUTO_SYNC_RUN')) {
                 $pdo->exec("UPDATE materi_sumatif SET mapel = TRIM(mapel) WHERE mapel != TRIM(mapel)");
                 $pdo->exec("
                     UPDATE nilai_siswa 
-                    SET nilai_akhir = ROUND((((sumatif_1 + sumatif_2 + sumatif_3 + sumatif_4) / 4.0) * 0.80) + (ats * 0.10) + (aas * 0.10), 2)
+                    SET nilai_akhir = CASE 
+                        WHEN ((sumatif_1 > 0) + (sumatif_2 > 0) + (sumatif_3 > 0) + (sumatif_4 > 0)) > 0 THEN
+                            ROUND(
+                                (((sumatif_1 + sumatif_2 + sumatif_3 + sumatif_4) / ((sumatif_1 > 0) + (sumatif_2 > 0) + (sumatif_3 > 0) + (sumatif_4 > 0))) * 0.80)
+                                + (ats * 0.10) + (aas * 0.10),
+                                2
+                            )
+                        WHEN ats > 0 AND aas > 0 THEN ROUND((ats + aas) / 2.0, 2)
+                        WHEN ats > 0 THEN ROUND(ats, 2)
+                        WHEN aas > 0 THEN ROUND(aas, 2)
+                        ELSE 0
+                    END
                     WHERE (sumatif_1 > 0 OR sumatif_2 > 0 OR sumatif_3 > 0 OR sumatif_4 > 0 OR ats > 0 OR aas > 0)
+                ");
+                $pdo->exec("
+                    UPDATE nilai_siswa
+                    SET predikat = CASE
+                        WHEN nilai_akhir >= 90 THEN 'A'
+                        WHEN nilai_akhir >= 80 THEN 'B'
+                        WHEN nilai_akhir >= 70 THEN 'C'
+                        ELSE 'D'
+                    END
+                    WHERE nilai_akhir > 0
                 ");
             } catch (Exception $eTrim) {
             }
